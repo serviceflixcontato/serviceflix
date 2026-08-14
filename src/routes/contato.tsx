@@ -78,7 +78,14 @@ function ContatoPage() {
     }
 
     setLoading(true);
-    const { error } = await supabase.from("contact_leads").insert(parsed.data);
+    const { error } = await supabase.from("contact_leads").insert({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      phone: parsed.data.phone,
+      property_type: parsed.data.property_type,
+      plan_interest: parsed.data.plan_interest ?? null,
+      message: parsed.data.message ?? null,
+    });
     setLoading(false);
 
     if (error) {
