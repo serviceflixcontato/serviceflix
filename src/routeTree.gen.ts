@@ -18,6 +18,7 @@ import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedPainelIndexRouteImport } from './routes/_authenticated/painel.index'
 import { Route as AuthenticatedPainelContratoRouteImport } from './routes/_authenticated/painel.contrato'
 import { Route as AuthenticatedPainelOrdensRouteImport } from './routes/_authenticated/painel.ordens'
+import { Route as AuthenticatedPainelPagamentosRouteImport } from './routes/_authenticated/painel.pagamentos'
 import { Route as AuthenticatedPainelSolicitacoesRouteImport } from './routes/_authenticated/painel.solicitacoes'
 
 const IndexRoute = IndexRouteImport.update({
@@ -67,6 +68,12 @@ const AuthenticatedPainelOrdensRoute =
     path: '/ordens',
     getParentRoute: () => AuthenticatedPainelRoute,
   } as any)
+const AuthenticatedPainelPagamentosRoute =
+  AuthenticatedPainelPagamentosRouteImport.update({
+    id: '/pagamentos',
+    path: '/pagamentos',
+    getParentRoute: () => AuthenticatedPainelRoute,
+  } as any)
 const AuthenticatedPainelSolicitacoesRoute =
   AuthenticatedPainelSolicitacoesRouteImport.update({
     id: '/solicitacoes',
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/painel': typeof AuthenticatedPainelRouteWithChildren
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/painel/ordens': typeof AuthenticatedPainelOrdensRoute
+  '/painel/pagamentos': typeof AuthenticatedPainelPagamentosRoute
   '/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/painel/': typeof AuthenticatedPainelIndexRoute
 }
@@ -92,6 +100,7 @@ export interface FileRoutesByTo {
   '/planos': typeof PlanosRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/painel/ordens': typeof AuthenticatedPainelOrdensRoute
+  '/painel/pagamentos': typeof AuthenticatedPainelPagamentosRoute
   '/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/painel': typeof AuthenticatedPainelIndexRoute
 }
@@ -105,6 +114,7 @@ export interface FileRoutesById {
   '/_authenticated/painel': typeof AuthenticatedPainelRouteWithChildren
   '/_authenticated/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/_authenticated/painel/ordens': typeof AuthenticatedPainelOrdensRoute
+  '/_authenticated/painel/pagamentos': typeof AuthenticatedPainelPagamentosRoute
   '/_authenticated/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/_authenticated/painel/': typeof AuthenticatedPainelIndexRoute
 }
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/painel'
     | '/painel/contrato'
     | '/painel/ordens'
+    | '/painel/pagamentos'
     | '/painel/solicitacoes'
     | '/painel/'
   fileRoutesByTo: FileRoutesByTo
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/planos'
     | '/painel/contrato'
     | '/painel/ordens'
+    | '/painel/pagamentos'
     | '/painel/solicitacoes'
     | '/painel'
   id:
@@ -140,6 +152,7 @@ export interface FileRouteTypes {
     | '/_authenticated/painel'
     | '/_authenticated/painel/contrato'
     | '/_authenticated/painel/ordens'
+    | '/_authenticated/painel/pagamentos'
     | '/_authenticated/painel/solicitacoes'
     | '/_authenticated/painel/'
   fileRoutesById: FileRoutesById
@@ -217,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelOrdensRouteImport
       parentRoute: typeof AuthenticatedPainelRoute
     }
+    '/_authenticated/painel/pagamentos': {
+      id: '/_authenticated/painel/pagamentos'
+      path: '/pagamentos'
+      fullPath: '/painel/pagamentos'
+      preLoaderRoute: typeof AuthenticatedPainelPagamentosRouteImport
+      parentRoute: typeof AuthenticatedPainelRoute
+    }
     '/_authenticated/painel/solicitacoes': {
       id: '/_authenticated/painel/solicitacoes'
       path: '/solicitacoes'
@@ -230,6 +250,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedPainelRouteChildren {
   AuthenticatedPainelContratoRoute: typeof AuthenticatedPainelContratoRoute
   AuthenticatedPainelOrdensRoute: typeof AuthenticatedPainelOrdensRoute
+  AuthenticatedPainelPagamentosRoute: typeof AuthenticatedPainelPagamentosRoute
   AuthenticatedPainelSolicitacoesRoute: typeof AuthenticatedPainelSolicitacoesRoute
   AuthenticatedPainelIndexRoute: typeof AuthenticatedPainelIndexRoute
 }
@@ -237,6 +258,7 @@ interface AuthenticatedPainelRouteChildren {
 const AuthenticatedPainelRouteChildren: AuthenticatedPainelRouteChildren = {
   AuthenticatedPainelContratoRoute: AuthenticatedPainelContratoRoute,
   AuthenticatedPainelOrdensRoute: AuthenticatedPainelOrdensRoute,
+  AuthenticatedPainelPagamentosRoute: AuthenticatedPainelPagamentosRoute,
   AuthenticatedPainelSolicitacoesRoute: AuthenticatedPainelSolicitacoesRoute,
   AuthenticatedPainelIndexRoute: AuthenticatedPainelIndexRoute,
 }
