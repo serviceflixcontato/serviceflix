@@ -86,7 +86,7 @@ function Solicitacoes() {
       user_id: userId,
       title: parsed.data.title,
       category: parsed.data.category,
-      priority: parsed.data.priority,
+      urgency: parsed.data.priority,
       location: parsed.data.location ?? null,
       description: parsed.data.description,
     });
