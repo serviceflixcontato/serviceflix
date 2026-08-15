@@ -71,7 +71,7 @@ function Contrato() {
         </dl>
         <p className="mt-6 text-sm text-muted-foreground">
           Para atualizar dados cadastrais ou condições do contrato, fale com nosso time pelo WhatsApp{" "}
-          {CONTACT.phoneDisplay}.
+          {CONTACT.whatsappLabel}.
         </p>
       </section>
     </div>
