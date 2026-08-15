@@ -16,6 +16,7 @@ import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedPainelIndexRouteImport } from './routes/_authenticated/painel.index'
+import { Route as AuthenticatedPainelOrdensRouteImport } from './routes/_authenticated/painel.ordens'
 import { Route as AuthenticatedPainelSolicitacoesRouteImport } from './routes/_authenticated/painel.solicitacoes'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +54,12 @@ const AuthenticatedPainelIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedPainelRoute,
   } as any)
+const AuthenticatedPainelOrdensRoute =
+  AuthenticatedPainelOrdensRouteImport.update({
+    id: '/ordens',
+    path: '/ordens',
+    getParentRoute: () => AuthenticatedPainelRoute,
+  } as any)
 const AuthenticatedPainelSolicitacoesRoute =
   AuthenticatedPainelSolicitacoesRouteImport.update({
     id: '/solicitacoes',
@@ -66,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
   '/painel': typeof AuthenticatedPainelRouteWithChildren
+  '/painel/ordens': typeof AuthenticatedPainelOrdensRoute
   '/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/painel/': typeof AuthenticatedPainelIndexRoute
 }
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
+  '/painel/ordens': typeof AuthenticatedPainelOrdensRoute
   '/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/painel': typeof AuthenticatedPainelIndexRoute
 }
@@ -85,6 +94,7 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRouteWithChildren
+  '/_authenticated/painel/ordens': typeof AuthenticatedPainelOrdensRoute
   '/_authenticated/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/_authenticated/painel/': typeof AuthenticatedPainelIndexRoute
 }
@@ -96,11 +106,18 @@ export interface FileRouteTypes {
     | '/contato'
     | '/planos'
     | '/painel'
+    | '/painel/ordens'
     | '/painel/solicitacoes'
     | '/painel/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/auth' | '/contato' | '/planos' | '/painel/solicitacoes' | '/painel'
+    | '/'
+    | '/auth'
+    | '/contato'
+    | '/planos'
+    | '/painel/ordens'
+    | '/painel/solicitacoes'
+    | '/painel'
   id:
     | '__root__'
     | '/'
@@ -109,6 +126,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/planos'
     | '/_authenticated/painel'
+    | '/_authenticated/painel/ordens'
     | '/_authenticated/painel/solicitacoes'
     | '/_authenticated/painel/'
   fileRoutesById: FileRoutesById
@@ -172,6 +190,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelIndexRouteImport
       parentRoute: typeof AuthenticatedPainelRoute
     }
+    '/_authenticated/painel/ordens': {
+      id: '/_authenticated/painel/ordens'
+      path: '/ordens'
+      fullPath: '/painel/ordens'
+      preLoaderRoute: typeof AuthenticatedPainelOrdensRouteImport
+      parentRoute: typeof AuthenticatedPainelRoute
+    }
     '/_authenticated/painel/solicitacoes': {
       id: '/_authenticated/painel/solicitacoes'
       path: '/solicitacoes'
@@ -183,11 +208,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedPainelRouteChildren {
+  AuthenticatedPainelOrdensRoute: typeof AuthenticatedPainelOrdensRoute
   AuthenticatedPainelSolicitacoesRoute: typeof AuthenticatedPainelSolicitacoesRoute
   AuthenticatedPainelIndexRoute: typeof AuthenticatedPainelIndexRoute
 }
 
 const AuthenticatedPainelRouteChildren: AuthenticatedPainelRouteChildren = {
+  AuthenticatedPainelOrdensRoute: AuthenticatedPainelOrdensRoute,
   AuthenticatedPainelSolicitacoesRoute: AuthenticatedPainelSolicitacoesRoute,
   AuthenticatedPainelIndexRoute: AuthenticatedPainelIndexRoute,
 }
