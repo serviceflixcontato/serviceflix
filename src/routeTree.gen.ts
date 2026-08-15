@@ -16,6 +16,7 @@ import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedPainelIndexRouteImport } from './routes/_authenticated/painel.index'
+import { Route as AuthenticatedPainelSolicitacoesRouteImport } from './routes/_authenticated/painel.solicitacoes'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,12 @@ const AuthenticatedPainelIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedPainelRoute,
   } as any)
+const AuthenticatedPainelSolicitacoesRoute =
+  AuthenticatedPainelSolicitacoesRouteImport.update({
+    id: '/solicitacoes',
+    path: '/solicitacoes',
+    getParentRoute: () => AuthenticatedPainelRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
   '/painel': typeof AuthenticatedPainelRouteWithChildren
+  '/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/painel/': typeof AuthenticatedPainelIndexRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
+  '/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/painel': typeof AuthenticatedPainelIndexRoute
 }
 export interface FileRoutesById {
@@ -76,13 +85,22 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRouteWithChildren
+  '/_authenticated/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/_authenticated/painel/': typeof AuthenticatedPainelIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/contato' | '/planos' | '/painel' | '/painel/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/contato'
+    | '/planos'
+    | '/painel'
+    | '/painel/solicitacoes'
+    | '/painel/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/contato' | '/planos' | '/painel'
+  to:
+    '/' | '/auth' | '/contato' | '/planos' | '/painel/solicitacoes' | '/painel'
   id:
     | '__root__'
     | '/'
@@ -91,6 +109,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/planos'
     | '/_authenticated/painel'
+    | '/_authenticated/painel/solicitacoes'
     | '/_authenticated/painel/'
   fileRoutesById: FileRoutesById
 }
@@ -153,14 +172,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelIndexRouteImport
       parentRoute: typeof AuthenticatedPainelRoute
     }
+    '/_authenticated/painel/solicitacoes': {
+      id: '/_authenticated/painel/solicitacoes'
+      path: '/solicitacoes'
+      fullPath: '/painel/solicitacoes'
+      preLoaderRoute: typeof AuthenticatedPainelSolicitacoesRouteImport
+      parentRoute: typeof AuthenticatedPainelRoute
+    }
   }
 }
 
 interface AuthenticatedPainelRouteChildren {
+  AuthenticatedPainelSolicitacoesRoute: typeof AuthenticatedPainelSolicitacoesRoute
   AuthenticatedPainelIndexRoute: typeof AuthenticatedPainelIndexRoute
 }
 
 const AuthenticatedPainelRouteChildren: AuthenticatedPainelRouteChildren = {
+  AuthenticatedPainelSolicitacoesRoute: AuthenticatedPainelSolicitacoesRoute,
   AuthenticatedPainelIndexRoute: AuthenticatedPainelIndexRoute,
 }
 
