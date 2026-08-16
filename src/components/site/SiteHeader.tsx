@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import logo from "@/assets/serviceflix-logo.png.asset.json";
+import logo from "@/assets/serviceflix-logo-transparente.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
