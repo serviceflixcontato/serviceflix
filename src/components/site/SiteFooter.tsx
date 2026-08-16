@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Mail, Phone } from "lucide-react";
 
-import logo from "@/assets/serviceflix-logo.png.asset.json";
+import logo from "@/assets/serviceflix-logo-transparente.png.asset.json";
 import { CONTACT } from "@/lib/plans";
 
 export function SiteFooter() {

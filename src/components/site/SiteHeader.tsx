@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Menu, X } from "lucide-react";
+import { Mail, Menu, Phone, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import logo from "@/assets/serviceflix-logo.png.asset.json";
+import logo from "@/assets/serviceflix-logo-transparente.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { CONTACT, whatsappLink } from "@/lib/plans";
 
 const NAV = [
   { to: "/", label: "Início" },
@@ -26,6 +27,22 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur">
+      <div className="bg-ink text-ink-foreground">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-2 text-xs">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <a href={whatsappLink("Olá! Gostaria de falar com a Service Flix.")} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-primary">
+              <Phone className="h-3.5 w-3.5 text-primary" /> {CONTACT.whatsappLabel}
+            </a>
+            <a href={`mailto:${CONTACT.email}`} className="flex items-center gap-1.5 hover:text-primary">
+              <Mail className="h-3.5 w-3.5 text-primary" /> {CONTACT.email}
+            </a>
+          </div>
+          <span className="uppercase tracking-[0.18em] text-ink-foreground/70">
+            Serviços com flexibilidade
+          </span>
+        </div>
+      </div>
+
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4">
         <Link to="/" className="flex items-center gap-2">
           <img src={logo.url} alt="Service Flix" className="h-10 w-10 object-contain" />
