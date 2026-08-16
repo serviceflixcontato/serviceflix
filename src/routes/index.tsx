@@ -121,7 +121,12 @@ function Home_() {
                     Ver planos <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="outline">
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="border-ink-foreground/40 bg-transparent text-ink-foreground hover:bg-ink-foreground/10 hover:text-ink-foreground"
+                >
                   <Link to="/contato">Solicitar orçamento</Link>
                 </Button>
               </div>
@@ -141,7 +146,7 @@ function Home_() {
         </section>
 
         {/* CARDS SOBREPOSTOS */}
-        <section className="mx-auto -mt-20 w-full max-w-6xl px-4 sm:-mt-24">
+        <section className="relative z-10 mx-auto -mt-20 w-full max-w-6xl px-4 sm:-mt-24">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {DESTAQUES.map((item) => (
               <div
