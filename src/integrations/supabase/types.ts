@@ -47,15 +47,40 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_settings: {
+        Row: {
+          id: string
+          mode: string
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          mode?: string
+          provider?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          mode?: string
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_cents: number
+          checkout_url: string | null
           created_at: string
           description: string
           due_date: string
           id: string
           method: string | null
           paid_at: string | null
+          provider: string | null
+          provider_mode: string | null
+          provider_payment_id: string | null
           reference: string | null
           status: string
           subscription_id: string | null
@@ -64,12 +89,16 @@ export type Database = {
         }
         Insert: {
           amount_cents: number
+          checkout_url?: string | null
           created_at?: string
           description?: string
           due_date: string
           id?: string
           method?: string | null
           paid_at?: string | null
+          provider?: string | null
+          provider_mode?: string | null
+          provider_payment_id?: string | null
           reference?: string | null
           status?: string
           subscription_id?: string | null
@@ -78,12 +107,16 @@ export type Database = {
         }
         Update: {
           amount_cents?: number
+          checkout_url?: string | null
           created_at?: string
           description?: string
           due_date?: string
           id?: string
           method?: string | null
           paid_at?: string | null
+          provider?: string | null
+          provider_mode?: string | null
+          provider_payment_id?: string | null
           reference?: string | null
           status?: string
           subscription_id?: string | null
@@ -185,6 +218,9 @@ export type Database = {
           next_billing_date: string | null
           plan_name: string
           plan_slug: string
+          provider: string | null
+          provider_mode: string | null
+          provider_subscription_id: string | null
           started_at: string | null
           status: string
           updated_at: string
@@ -199,6 +235,9 @@ export type Database = {
           next_billing_date?: string | null
           plan_name: string
           plan_slug: string
+          provider?: string | null
+          provider_mode?: string | null
+          provider_subscription_id?: string | null
           started_at?: string | null
           status?: string
           updated_at?: string
@@ -213,9 +252,33 @@ export type Database = {
           next_billing_date?: string | null
           plan_name?: string
           plan_slug?: string
+          provider?: string | null
+          provider_mode?: string | null
+          provider_subscription_id?: string | null
           started_at?: string | null
           status?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -281,10 +344,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -411,6 +480,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
