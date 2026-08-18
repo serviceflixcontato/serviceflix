@@ -16,10 +16,12 @@ import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AuthenticatedPainelIndexRouteImport } from './routes/_authenticated/painel.index'
+import { Route as AuthenticatedPainelConfiguracoesRouteImport } from './routes/_authenticated/painel.configuracoes'
 import { Route as AuthenticatedPainelContratoRouteImport } from './routes/_authenticated/painel.contrato'
 import { Route as AuthenticatedPainelOrdensRouteImport } from './routes/_authenticated/painel.ordens'
 import { Route as AuthenticatedPainelPagamentosRouteImport } from './routes/_authenticated/painel.pagamentos'
 import { Route as AuthenticatedPainelSolicitacoesRouteImport } from './routes/_authenticated/painel.solicitacoes'
+import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -56,6 +58,12 @@ const AuthenticatedPainelIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedPainelRoute,
   } as any)
+const AuthenticatedPainelConfiguracoesRoute =
+  AuthenticatedPainelConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedPainelRoute,
+  } as any)
 const AuthenticatedPainelContratoRoute =
   AuthenticatedPainelContratoRouteImport.update({
     id: '/contrato',
@@ -80,6 +88,12 @@ const AuthenticatedPainelSolicitacoesRoute =
     path: '/solicitacoes',
     getParentRoute: () => AuthenticatedPainelRoute,
   } as any)
+const ApiPublicMercadopagoWebhookRoute =
+  ApiPublicMercadopagoWebhookRouteImport.update({
+    id: '/api/public/mercadopago-webhook',
+    path: '/api/public/mercadopago-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -87,10 +101,12 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
   '/painel': typeof AuthenticatedPainelRouteWithChildren
+  '/painel/configuracoes': typeof AuthenticatedPainelConfiguracoesRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/painel/ordens': typeof AuthenticatedPainelOrdensRoute
   '/painel/pagamentos': typeof AuthenticatedPainelPagamentosRoute
   '/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
+  '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/painel/': typeof AuthenticatedPainelIndexRoute
 }
 export interface FileRoutesByTo {
@@ -98,10 +114,12 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
+  '/painel/configuracoes': typeof AuthenticatedPainelConfiguracoesRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/painel/ordens': typeof AuthenticatedPainelOrdensRoute
   '/painel/pagamentos': typeof AuthenticatedPainelPagamentosRoute
   '/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
+  '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/painel': typeof AuthenticatedPainelIndexRoute
 }
 export interface FileRoutesById {
@@ -112,10 +130,12 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRouteWithChildren
+  '/_authenticated/painel/configuracoes': typeof AuthenticatedPainelConfiguracoesRoute
   '/_authenticated/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/_authenticated/painel/ordens': typeof AuthenticatedPainelOrdensRoute
   '/_authenticated/painel/pagamentos': typeof AuthenticatedPainelPagamentosRoute
   '/_authenticated/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
+  '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/_authenticated/painel/': typeof AuthenticatedPainelIndexRoute
 }
 export interface FileRouteTypes {
@@ -126,10 +146,12 @@ export interface FileRouteTypes {
     | '/contato'
     | '/planos'
     | '/painel'
+    | '/painel/configuracoes'
     | '/painel/contrato'
     | '/painel/ordens'
     | '/painel/pagamentos'
     | '/painel/solicitacoes'
+    | '/api/public/mercadopago-webhook'
     | '/painel/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -137,10 +159,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/contato'
     | '/planos'
+    | '/painel/configuracoes'
     | '/painel/contrato'
     | '/painel/ordens'
     | '/painel/pagamentos'
     | '/painel/solicitacoes'
+    | '/api/public/mercadopago-webhook'
     | '/painel'
   id:
     | '__root__'
@@ -150,10 +174,12 @@ export interface FileRouteTypes {
     | '/contato'
     | '/planos'
     | '/_authenticated/painel'
+    | '/_authenticated/painel/configuracoes'
     | '/_authenticated/painel/contrato'
     | '/_authenticated/painel/ordens'
     | '/_authenticated/painel/pagamentos'
     | '/_authenticated/painel/solicitacoes'
+    | '/api/public/mercadopago-webhook'
     | '/_authenticated/painel/'
   fileRoutesById: FileRoutesById
 }
@@ -163,6 +189,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ContatoRoute: typeof ContatoRoute
   PlanosRoute: typeof PlanosRoute
+  ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -216,6 +243,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelIndexRouteImport
       parentRoute: typeof AuthenticatedPainelRoute
     }
+    '/_authenticated/painel/configuracoes': {
+      id: '/_authenticated/painel/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/painel/configuracoes'
+      preLoaderRoute: typeof AuthenticatedPainelConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedPainelRoute
+    }
     '/_authenticated/painel/contrato': {
       id: '/_authenticated/painel/contrato'
       path: '/contrato'
@@ -244,10 +278,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelSolicitacoesRouteImport
       parentRoute: typeof AuthenticatedPainelRoute
     }
+    '/api/public/mercadopago-webhook': {
+      id: '/api/public/mercadopago-webhook'
+      path: '/api/public/mercadopago-webhook'
+      fullPath: '/api/public/mercadopago-webhook'
+      preLoaderRoute: typeof ApiPublicMercadopagoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedPainelRouteChildren {
+  AuthenticatedPainelConfiguracoesRoute: typeof AuthenticatedPainelConfiguracoesRoute
   AuthenticatedPainelContratoRoute: typeof AuthenticatedPainelContratoRoute
   AuthenticatedPainelOrdensRoute: typeof AuthenticatedPainelOrdensRoute
   AuthenticatedPainelPagamentosRoute: typeof AuthenticatedPainelPagamentosRoute
@@ -256,6 +298,7 @@ interface AuthenticatedPainelRouteChildren {
 }
 
 const AuthenticatedPainelRouteChildren: AuthenticatedPainelRouteChildren = {
+  AuthenticatedPainelConfiguracoesRoute: AuthenticatedPainelConfiguracoesRoute,
   AuthenticatedPainelContratoRoute: AuthenticatedPainelContratoRoute,
   AuthenticatedPainelOrdensRoute: AuthenticatedPainelOrdensRoute,
   AuthenticatedPainelPagamentosRoute: AuthenticatedPainelPagamentosRoute,
@@ -283,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ContatoRoute: ContatoRoute,
   PlanosRoute: PlanosRoute,
+  ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

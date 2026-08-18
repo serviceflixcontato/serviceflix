@@ -1,10 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckCircle2, Clock } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { CheckCircle2, Clock, FlaskConical, Loader2, Repeat } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CONTACT } from "@/lib/plans";
+import { createInvoiceCheckout, createSubscriptionCheckout } from "@/lib/payments.functions";
+import { usePaymentConfig } from "@/hooks/use-payment-config";
 import {
   STATUS_LABELS,
   formatBRL,
@@ -17,21 +21,64 @@ export const Route = createFileRoute("/_authenticated/painel/pagamentos")({
   component: Pagamentos,
 });
 
+function notConfiguredToast() {
+  toast.info(
+    "O pagamento online está sendo configurado. Enquanto isso, fale com nosso time pelo WhatsApp " +
+      CONTACT.whatsappLabel + " para receber o link de cobrança.",
+  );
+}
+
 function Pagamentos() {
   const { data: payments = [], isLoading } = usePayments();
   const { data: subscription } = useSubscription();
+  const { data: config } = usePaymentConfig();
   const open = payments.filter((payment) => payment.status !== "pago");
   const paid = payments.filter((payment) => payment.status === "pago");
 
-  function handlePay() {
-    toast.info(
-      "O pagamento online está sendo ativado. Enquanto isso, fale com nosso time pelo WhatsApp " +
-        CONTACT.whatsappLabel + " para receber o link de cobrança.",
-    );
-  }
+  const invoiceCheckout = useServerFn(createInvoiceCheckout);
+  const subscriptionCheckout = useServerFn(createSubscriptionCheckout);
+
+  const payInvoice = useMutation({
+    mutationFn: (paymentId: string) => invoiceCheckout({ data: { paymentId } }),
+    onSuccess: (result) => {
+      if (result.ok) {
+        window.location.href = result.checkoutUrl;
+        return;
+      }
+      notConfiguredToast();
+    },
+    onError: () => toast.error("Não foi possível gerar o pagamento. Tente novamente."),
+  });
+
+  const startSubscription = useMutation({
+    mutationFn: () => subscriptionCheckout(),
+    onSuccess: (result) => {
+      if (result.ok) {
+        window.location.href = result.checkoutUrl;
+        return;
+      }
+      if (result.reason === "no_subscription") {
+        toast.info("Você ainda não tem um plano com valor definido. Fale com nosso time.");
+        return;
+      }
+      if (result.reason === "no_email") {
+        toast.info("Cadastre seu e-mail no perfil para ativar a assinatura recorrente.");
+        return;
+      }
+      notConfiguredToast();
+    },
+    onError: () => toast.error("Não foi possível iniciar a assinatura. Tente novamente."),
+  });
 
   return (
     <div className="space-y-6">
+      {config?.mode === "sandbox" ? (
+        <p className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-muted/60 p-3 text-xs text-muted-foreground">
+          <FlaskConical className="h-4 w-4 text-primary" />
+          Pagamentos em <strong>modo teste</strong> do Mercado Pago — nenhuma cobrança real é feita.
+        </p>
+      ) : null}
+
       <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -50,6 +97,28 @@ function Pagamentos() {
           <Badge variant={open.length === 0 ? "default" : "secondary"}>
             {open.length === 0 ? "Pagamentos em dia" : `${open.length} em aberto`}
           </Badge>
+        </div>
+
+        <div className="mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-border p-4">
+          <div className="flex-1">
+            <p className="text-sm font-semibold">Débito automático mensal</p>
+            <p className="text-xs text-muted-foreground">
+              Autorize uma vez no cartão e a mensalidade é cobrada todo mês pelo Mercado Pago.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={startSubscription.isPending}
+            onClick={() => startSubscription.mutate()}
+          >
+            {startSubscription.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Repeat className="mr-2 h-4 w-4" />
+            )}
+            Ativar recorrência
+          </Button>
         </div>
       </section>
 
@@ -77,7 +146,12 @@ function Pagamentos() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-semibold">{formatBRL(payment.amount_cents)}</span>
-                  <Button size="sm" onClick={handlePay}>
+                  <Button
+                    size="sm"
+                    disabled={payInvoice.isPending}
+                    onClick={() => payInvoice.mutate(payment.id)}
+                  >
+                    {payInvoice.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Pagar
                   </Button>
                 </div>
