@@ -72,7 +72,7 @@ function PainelLayout() {
 
       <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         <nav className="mb-6 flex gap-2 overflow-x-auto rounded-xl border border-border bg-card p-2 shadow-card">
-          {NAV.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}
