@@ -146,7 +146,12 @@ function Pagamentos() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-semibold">{formatBRL(payment.amount_cents)}</span>
-                  <Button size="sm" onClick={handlePay}>
+                  <Button
+                    size="sm"
+                    disabled={payInvoice.isPending}
+                    onClick={() => payInvoice.mutate(payment.id)}
+                  >
+                    {payInvoice.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Pagar
                   </Button>
                 </div>
