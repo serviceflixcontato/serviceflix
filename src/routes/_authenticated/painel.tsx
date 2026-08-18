@@ -39,6 +39,8 @@ function PainelLayout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
+  const { data: paymentConfig } = usePaymentConfig();
+  const navItems = paymentConfig?.isAdmin ? [...NAV, ADMIN_NAV] : [...NAV];
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
