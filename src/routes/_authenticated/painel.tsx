@@ -6,6 +6,7 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  Settings,
   Wrench,
 } from "lucide-react";
 
@@ -13,6 +14,7 @@ import logo from "@/assets/serviceflix-logo-transparente.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-panel-data";
+import { usePaymentConfig } from "@/hooks/use-payment-config";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   component: PainelLayout,
@@ -25,6 +27,13 @@ const NAV = [
   { to: "/painel/contrato", label: "Contrato", icon: FileText, exact: false },
   { to: "/painel/pagamentos", label: "Pagamentos", icon: CreditCard, exact: false },
 ] as const;
+
+const ADMIN_NAV = {
+  to: "/painel/configuracoes",
+  label: "Config. pagamento",
+  icon: Settings,
+  exact: false,
+} as const;
 
 function PainelLayout() {
   const navigate = useNavigate();
