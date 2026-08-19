@@ -166,6 +166,60 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          address: string
+          cnpj: string | null
+          contact_email: string | null
+          contact_name: string
+          contact_phone: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          property_name: string
+          property_type: string
+          referrer_id: string
+          reward_cents: number
+          reward_status: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          cnpj?: string | null
+          contact_email?: string | null
+          contact_name: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_name: string
+          property_type?: string
+          referrer_id: string
+          reward_cents?: number
+          reward_status?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          cnpj?: string | null
+          contact_email?: string | null
+          contact_name?: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_name?: string
+          property_type?: string
+          referrer_id?: string
+          reward_cents?: number
+          reward_status?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_requests: {
         Row: {
           category: string
