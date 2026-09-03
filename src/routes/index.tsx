@@ -4,6 +4,7 @@ import {
   Building2,
   ClipboardList,
   Droplets,
+  Gift,
   Hammer,
   Home,
   PaintRoller,
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Manutenção predial e residencial por assinatura: equipe fixa, atendimentos semanais, ordens de serviço e painel do cliente. Para condomínios, empresas e residências.",
+          "Manutenção predial e residencial por assinatura: equipe fixa, atendimentos semanais, ordens de serviço e painel do cliente. Para condomínios e residências.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -41,7 +42,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Equipe de manutenção quando você precisa: planos semanais para condomínios, empresas e residências, com painel do cliente completo.",
+          "Equipe de manutenção quando você precisa: planos semanais para condomínios e residências, com painel do cliente completo.",
       },
     ],
   }),
@@ -67,15 +68,15 @@ const DESTAQUES = [
   {
     icon: Wrench,
     title: "Multisserviços",
-    text: "Elétrica, hidráulica, pintura, reparos e montagem.",
+    text: "Elétrica, hidráulica, reparos de pintura e reparos gerais.",
   },
 ];
 
 const SERVICOS = [
   { icon: Zap, title: "Elétrica", text: "Quadros, tomadas, iluminação e pequenas instalações." },
   { icon: Droplets, title: "Hidráulica", text: "Vazamentos, torneiras, caixas d'água e desentupimento." },
-  { icon: PaintRoller, title: "Pintura", text: "Retoques, áreas comuns, fachadas e acabamentos." },
-  { icon: Hammer, title: "Reparos gerais", text: "Alvenaria, montagem, fixações e pequenas reformas." },
+  { icon: PaintRoller, title: "Pintura (reparos)", text: "Retoques e reparos de pintura em áreas comuns e ambientes." },
+  { icon: Hammer, title: "Reparos gerais", text: "Alvenaria, fixações e ajustes do dia a dia. Reformas são feitas por contrato." },
 ];
 
 const PASSOS = [
@@ -109,7 +110,7 @@ function Home_() {
               </span>
               <h1 className="mt-5 text-4xl font-bold leading-[1.08] sm:text-5xl lg:text-6xl">
                 Manutenção inteligente para{" "}
-                <span className="text-primary">condomínios, empresas e residências</span>
+                <span className="text-primary">condomínios e residências</span>
               </h1>
               <p className="mt-5 max-w-xl text-base text-ink-foreground/80 sm:text-lg">
                 Uma equipe de manutenção disponível nos dias contratados, com ordens de serviço,
@@ -132,7 +133,7 @@ function Home_() {
               </div>
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-ink-foreground/70">
                 <span className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-primary" /> Condomínios e empresas
+                  <Building2 className="h-4 w-4 text-primary" /> Condomínios
                 </span>
                 <span className="flex items-center gap-2">
                   <Home className="h-4 w-4 text-primary" /> Residências e proprietários
@@ -173,7 +174,7 @@ function Home_() {
               Dois públicos, o mesmo padrão de atendimento
             </h2>
             <p className="mt-3 text-muted-foreground">
-              A Service Flix atende quem administra imóveis e também quem só precisa de um
+              A Service Flix atende quem administra condomínios e também quem só precisa de um
               profissional de confiança em casa.
             </p>
           </div>
@@ -184,9 +185,9 @@ function Home_() {
                 img: condominiosImg,
                 alt: "Equipe de manutenção em frente a um condomínio residencial",
                 icon: Building2,
-                eyebrow: "Condomínios e empresas",
+                eyebrow: "Condomínios",
                 title: "Manutenção contratada, sem depender de autônomos",
-                text: "Para síndicos, administradoras e empresas que precisam de presença programada, responsabilidade técnica e relatórios de cada atendimento.",
+                text: "Para síndicos e administradoras que precisam de presença programada, responsabilidade técnica e relatórios de cada atendimento.",
                 items: [
                   "Equipe fixa em dias definidos no contrato",
                   "Plano preventivo de áreas comuns e fachadas",
@@ -205,8 +206,8 @@ function Home_() {
                 text: "Para quem cansou de procurar alguém a cada problema: reparos, instalações e manutenção da casa com preço previsível e equipe conhecida.",
                 items: [
                   "Atendimentos semanais conforme o plano",
-                  "Reparos elétricos, hidráulicos e pintura",
-                  "Montagem de móveis, fixações e pequenos ajustes",
+                  "Reparos elétricos, hidráulicos e de pintura",
+                  "Fixações, instalações e pequenos ajustes",
                   "Solicitação de serviço direto pelo painel",
                 ],
                 cta: "Falar sobre residências",
@@ -318,7 +319,7 @@ function Home_() {
                 </span>
                 <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Escolha a frequência ideal</h2>
                 <p className="mt-3 max-w-2xl text-muted-foreground">
-                  Todos os planos servem residências, condomínios e empresas, com painel do cliente,
+                  Todos os planos servem residências e condomínios, com painel do cliente,
                   abertura de solicitações e histórico de atendimentos.
                 </p>
               </div>
@@ -336,13 +337,65 @@ function Home_() {
           </div>
         </section>
 
+        {/* INDIQUE E GANHE */}
+        <section className="mx-auto w-full max-w-6xl px-4 py-16" id="indique-e-ganhe">
+          <div className="grid gap-8 rounded-3xl border border-border bg-card p-8 shadow-card lg:grid-cols-[1.1fr_0.9fr] lg:items-center sm:p-10">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-foreground">
+                <Gift className="h-3.5 w-3.5" /> Indique e ganhe
+              </span>
+              <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
+                Ganhe R$ 500 por indicação que fechar contrato
+              </h2>
+              <p className="mt-3 text-muted-foreground">
+                Conhece um condomínio ou uma residência que precisa de manutenção? Faça seu
+                cadastro gratuito, envie a indicação pelo painel e receba a recompensa quando o
+                indicado contratar um plano Service Flix.
+              </p>
+              <ol className="mt-6 space-y-3 text-sm text-muted-foreground">
+                <li className="flex gap-2">
+                  <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  Crie sua conta (ou entre) na área do cliente.
+                </li>
+                <li className="flex gap-2">
+                  <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  Preencha o cadastro da indicação: responsável, nome do condomínio ou residência,
+                  endereço e CNPJ.
+                </li>
+                <li className="flex gap-2">
+                  <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  Acompanhe a indicação e a recompensa na aba <strong>Indique e ganhe</strong>.
+                </li>
+              </ol>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Button asChild size="lg">
+                  <Link to="/auth">Cadastrar e indicar</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link to="/painel/indicacoes">Já tenho conta</Link>
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-brand-gradient p-8 text-primary-foreground">
+              <p className="text-sm uppercase tracking-wider text-primary-foreground/80">
+                Recompensa por indicação
+              </p>
+              <p className="mt-2 font-display text-5xl font-bold">R$ 500</p>
+              <p className="mt-3 text-sm text-primary-foreground/90">
+                Valor pago por cada indicação que se tornar cliente Service Flix. Sem limite de
+                indicações.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="mx-auto w-full max-w-6xl px-4 py-16">
           <div className="rounded-3xl bg-brand-gradient p-8 text-primary-foreground sm:p-12">
             <h2 className="text-3xl font-bold">Pronto para ter manutenção sem dor de cabeça?</h2>
             <p className="mt-3 max-w-2xl text-primary-foreground/90">
               Deixe seus dados e nossa equipe entra em contato para entender a sua necessidade —
-              seja no seu condomínio, na sua empresa ou na sua casa.
+              seja no seu condomínio ou na sua casa.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button asChild size="lg" variant="secondary">
