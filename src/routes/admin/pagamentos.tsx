@@ -3,14 +3,34 @@ import { AlertTriangle, CheckCircle2, Copy, FlaskConical, Rocket } from "lucide-
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { AdminShell } from "@/components/admin/AdminShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { MODE_LABELS, usePaymentConfig, useSetPaymentMode } from "@/hooks/use-payment-config";
 
-export const Route = createFileRoute("/_authenticated/painel/configuracoes")({
-  component: ConfiguracoesPagamento,
+export const Route = createFileRoute("/admin/pagamentos")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Configuração de pagamento — Service Flix" },
+      {
+        name: "description",
+        content: "Alternância entre ambiente de teste e produção do Mercado Pago.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:title", content: "Configuração de pagamento — Service Flix" },
+      { property: "og:description", content: "Área restrita da equipe Service Flix." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: () => (
+    <AdminShell>
+      <ConfiguracoesPagamento />
+    </AdminShell>
+  ),
 });
 
 function ConfiguracoesPagamento() {
