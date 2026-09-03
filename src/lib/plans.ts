@@ -49,7 +49,7 @@ export const PLANS: Plan[] = [
     frequency: "4 dias por semana",
     hours: "4 horas por dia",
     monthlyHours: "≈ 64 h/mês",
-    bestFor: "Condomínios grandes e empresas",
+    bestFor: "Condomínios grandes",
     features: [
       "4 atendimentos semanais de 4 horas",
       "Cronograma preventivo e corretivo",

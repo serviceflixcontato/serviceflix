@@ -3,10 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   ClipboardList,
   CreditCard,
+  Gift,
   FileText,
   LayoutDashboard,
   LogOut,
   Settings,
+  ShieldCheck,
   Wrench,
 } from "lucide-react";
 
@@ -26,21 +28,30 @@ const NAV = [
   { to: "/painel/ordens", label: "OS e histórico", icon: Wrench, exact: false },
   { to: "/painel/contrato", label: "Contrato", icon: FileText, exact: false },
   { to: "/painel/pagamentos", label: "Pagamentos", icon: CreditCard, exact: false },
+  { to: "/painel/indicacoes", label: "Indique e ganhe", icon: Gift, exact: false },
 ] as const;
 
-const ADMIN_NAV = {
-  to: "/painel/configuracoes",
-  label: "Config. pagamento",
-  icon: Settings,
-  exact: false,
-} as const;
+const ADMIN_NAV = [
+  {
+    to: "/painel/administracao",
+    label: "Administração",
+    icon: ShieldCheck,
+    exact: false,
+  },
+  {
+    to: "/painel/configuracoes",
+    label: "Config. pagamento",
+    icon: Settings,
+    exact: false,
+  },
+] as const;
 
 function PainelLayout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
   const { data: paymentConfig } = usePaymentConfig();
-  const navItems = paymentConfig?.isAdmin ? [...NAV, ADMIN_NAV] : [...NAV];
+  const navItems = paymentConfig?.isAdmin ? [...NAV, ...ADMIN_NAV] : [...NAV];
 
   async function handleSignOut() {
     await queryClient.cancelQueries();

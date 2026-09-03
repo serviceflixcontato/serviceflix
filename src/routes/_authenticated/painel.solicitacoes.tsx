@@ -35,9 +35,8 @@ const schema = z.object({
 const CATEGORIES = [
   "Elétrica",
   "Hidráulica",
-  "Pintura",
+  "Pintura (reparos)",
   "Alvenaria",
-  "Marcenaria",
   "Ar-condicionado",
   "Jardinagem",
   "Outros",

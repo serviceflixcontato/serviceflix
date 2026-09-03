@@ -48,7 +48,7 @@ const leadSchema = z.object({
   name: z.string().trim().min(2, "Informe seu nome completo").max(120),
   email: z.string().trim().email("E-mail inválido").max(255),
   phone: z.string().trim().min(8, "Informe um telefone válido").max(30),
-  property_type: z.enum(["residencia", "condominio", "empresa"]),
+  property_type: z.enum(["residencia", "condominio"]),
   plan_interest: z.string().max(60).optional(),
   message: z.string().trim().max(1000).optional(),
 });
@@ -151,7 +151,6 @@ function ContatoPage() {
                       <SelectContent>
                         <SelectItem value="residencia">Residência</SelectItem>
                         <SelectItem value="condominio">Condomínio</SelectItem>
-                        <SelectItem value="empresa">Empresa / comércio</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
