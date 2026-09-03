@@ -17,8 +17,6 @@ import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AuthenticatedPainelIndexRouteImport } from './routes/_authenticated/painel.index'
-import { Route as AuthenticatedPainelAdministracaoRouteImport } from './routes/_authenticated/painel.administracao'
-import { Route as AuthenticatedPainelConfiguracoesRouteImport } from './routes/_authenticated/painel.configuracoes'
 import { Route as AuthenticatedPainelContratoRouteImport } from './routes/_authenticated/painel.contrato'
 import { Route as AuthenticatedPainelIndicacoesRouteImport } from './routes/_authenticated/painel.indicacoes'
 import { Route as AuthenticatedPainelOrdensRouteImport } from './routes/_authenticated/painel.ordens'
@@ -66,18 +64,6 @@ const AuthenticatedPainelIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedPainelRoute,
   } as any)
-const AuthenticatedPainelAdministracaoRoute =
-  AuthenticatedPainelAdministracaoRouteImport.update({
-    id: '/administracao',
-    path: '/administracao',
-    getParentRoute: () => AuthenticatedPainelRoute,
-  } as any)
-const AuthenticatedPainelConfiguracoesRoute =
-  AuthenticatedPainelConfiguracoesRouteImport.update({
-    id: '/configuracoes',
-    path: '/configuracoes',
-    getParentRoute: () => AuthenticatedPainelRoute,
-  } as any)
 const AuthenticatedPainelContratoRoute =
   AuthenticatedPainelContratoRouteImport.update({
     id: '/contrato',
@@ -122,8 +108,6 @@ export interface FileRoutesByFullPath {
   '/planos': typeof PlanosRoute
   '/painel': typeof AuthenticatedPainelRouteWithChildren
   '/admin/': typeof AdminIndexRoute
-  '/painel/administracao': typeof AuthenticatedPainelAdministracaoRoute
-  '/painel/configuracoes': typeof AuthenticatedPainelConfiguracoesRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/painel/indicacoes': typeof AuthenticatedPainelIndicacoesRoute
   '/painel/ordens': typeof AuthenticatedPainelOrdensRoute
@@ -138,8 +122,6 @@ export interface FileRoutesByTo {
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
   '/admin': typeof AdminIndexRoute
-  '/painel/administracao': typeof AuthenticatedPainelAdministracaoRoute
-  '/painel/configuracoes': typeof AuthenticatedPainelConfiguracoesRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/painel/indicacoes': typeof AuthenticatedPainelIndicacoesRoute
   '/painel/ordens': typeof AuthenticatedPainelOrdensRoute
@@ -157,8 +139,6 @@ export interface FileRoutesById {
   '/planos': typeof PlanosRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRouteWithChildren
   '/admin/': typeof AdminIndexRoute
-  '/_authenticated/painel/administracao': typeof AuthenticatedPainelAdministracaoRoute
-  '/_authenticated/painel/configuracoes': typeof AuthenticatedPainelConfiguracoesRoute
   '/_authenticated/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/_authenticated/painel/indicacoes': typeof AuthenticatedPainelIndicacoesRoute
   '/_authenticated/painel/ordens': typeof AuthenticatedPainelOrdensRoute
@@ -176,8 +156,6 @@ export interface FileRouteTypes {
     | '/planos'
     | '/painel'
     | '/admin/'
-    | '/painel/administracao'
-    | '/painel/configuracoes'
     | '/painel/contrato'
     | '/painel/indicacoes'
     | '/painel/ordens'
@@ -192,8 +170,6 @@ export interface FileRouteTypes {
     | '/contato'
     | '/planos'
     | '/admin'
-    | '/painel/administracao'
-    | '/painel/configuracoes'
     | '/painel/contrato'
     | '/painel/indicacoes'
     | '/painel/ordens'
@@ -210,8 +186,6 @@ export interface FileRouteTypes {
     | '/planos'
     | '/_authenticated/painel'
     | '/admin/'
-    | '/_authenticated/painel/administracao'
-    | '/_authenticated/painel/configuracoes'
     | '/_authenticated/painel/contrato'
     | '/_authenticated/painel/indicacoes'
     | '/_authenticated/painel/ordens'
@@ -289,20 +263,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelIndexRouteImport
       parentRoute: typeof AuthenticatedPainelRoute
     }
-    '/_authenticated/painel/administracao': {
-      id: '/_authenticated/painel/administracao'
-      path: '/administracao'
-      fullPath: '/painel/administracao'
-      preLoaderRoute: typeof AuthenticatedPainelAdministracaoRouteImport
-      parentRoute: typeof AuthenticatedPainelRoute
-    }
-    '/_authenticated/painel/configuracoes': {
-      id: '/_authenticated/painel/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/painel/configuracoes'
-      preLoaderRoute: typeof AuthenticatedPainelConfiguracoesRouteImport
-      parentRoute: typeof AuthenticatedPainelRoute
-    }
     '/_authenticated/painel/contrato': {
       id: '/_authenticated/painel/contrato'
       path: '/contrato'
@@ -349,8 +309,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedPainelRouteChildren {
-  AuthenticatedPainelAdministracaoRoute: typeof AuthenticatedPainelAdministracaoRoute
-  AuthenticatedPainelConfiguracoesRoute: typeof AuthenticatedPainelConfiguracoesRoute
   AuthenticatedPainelContratoRoute: typeof AuthenticatedPainelContratoRoute
   AuthenticatedPainelIndicacoesRoute: typeof AuthenticatedPainelIndicacoesRoute
   AuthenticatedPainelOrdensRoute: typeof AuthenticatedPainelOrdensRoute
@@ -360,8 +318,6 @@ interface AuthenticatedPainelRouteChildren {
 }
 
 const AuthenticatedPainelRouteChildren: AuthenticatedPainelRouteChildren = {
-  AuthenticatedPainelAdministracaoRoute: AuthenticatedPainelAdministracaoRoute,
-  AuthenticatedPainelConfiguracoesRoute: AuthenticatedPainelConfiguracoesRoute,
   AuthenticatedPainelContratoRoute: AuthenticatedPainelContratoRoute,
   AuthenticatedPainelIndicacoesRoute: AuthenticatedPainelIndicacoesRoute,
   AuthenticatedPainelOrdensRoute: AuthenticatedPainelOrdensRoute,
