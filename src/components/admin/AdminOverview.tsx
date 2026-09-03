@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CheckCircle2, Clock, Gift, Users, Wrench } from "lucide-react";
@@ -23,9 +22,6 @@ import {
   REWARD_STATUS_OPTIONS,
 } from "@/lib/referrals";
 
-export const Route = createFileRoute("/_authenticated/painel/administracao")({
-  component: Administracao,
-});
 
 const TABS = [
   { id: "clientes", label: "Clientes" },
@@ -43,7 +39,7 @@ function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Administracao() {
+export function AdminOverview() {
   const fetchOverview = useServerFn(getAdminOverview);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabId>("clientes");
