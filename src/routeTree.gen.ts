@@ -16,6 +16,7 @@ import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminPagamentosRouteImport } from './routes/admin/pagamentos'
 import { Route as AdminPainelRouteImport } from './routes/admin/painel'
 import { Route as AuthenticatedPainelIndexRouteImport } from './routes/_authenticated/painel.index'
 import { Route as AuthenticatedPainelContratoRouteImport } from './routes/_authenticated/painel.contrato'
@@ -57,6 +58,11 @@ const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPagamentosRoute = AdminPagamentosRouteImport.update({
+  id: '/admin/pagamentos',
+  path: '/admin/pagamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminPainelRoute = AdminPainelRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
   '/painel': typeof AuthenticatedPainelRouteWithChildren
+  '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/painel': typeof AdminPainelRoute
   '/admin/': typeof AdminIndexRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
+  '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/painel': typeof AdminPainelRoute
   '/admin': typeof AdminIndexRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/planos': typeof PlanosRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRouteWithChildren
+  '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/painel': typeof AdminPainelRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/painel/contrato': typeof AuthenticatedPainelContratoRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/planos'
     | '/painel'
+    | '/admin/pagamentos'
     | '/admin/painel'
     | '/admin/'
     | '/painel/contrato'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/contato'
     | '/planos'
+    | '/admin/pagamentos'
     | '/admin/painel'
     | '/admin'
     | '/painel/contrato'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/planos'
     | '/_authenticated/painel'
+    | '/admin/pagamentos'
     | '/admin/painel'
     | '/admin/'
     | '/_authenticated/painel/contrato'
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ContatoRoute: typeof ContatoRoute
   PlanosRoute: typeof PlanosRoute
+  AdminPagamentosRoute: typeof AdminPagamentosRoute
   AdminPainelRoute: typeof AdminPainelRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/pagamentos': {
+      id: '/admin/pagamentos'
+      path: '/admin/pagamentos'
+      fullPath: '/admin/pagamentos'
+      preLoaderRoute: typeof AdminPagamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/painel': {
@@ -366,6 +386,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ContatoRoute: ContatoRoute,
   PlanosRoute: PlanosRoute,
+  AdminPagamentosRoute: AdminPagamentosRoute,
   AdminPainelRoute: AdminPainelRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
