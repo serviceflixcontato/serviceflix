@@ -52,8 +52,8 @@ export function SiteFooter() {
           <ul className="mt-3 space-y-2 text-sm text-ink-foreground/75">
             <li>Manutenção preventiva</li>
             <li>Reparos hidráulicos e elétricos</li>
-            <li>Pintura e acabamentos</li>
-            <li>Pequenas reformas</li>
+            <li>Reparos de pintura</li>
+            <li>Reformas por contrato</li>
           </ul>
         </div>
 
@@ -71,6 +71,10 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-ink-foreground/10 py-5 text-center text-xs text-ink-foreground/60">
         © {new Date().getFullYear()} Service Flix — Serviços com flexibilidade.
+        <span className="mx-2 text-ink-foreground/30">|</span>
+        <Link to="/admin" className="text-[10px] text-ink-foreground/40 hover:text-primary">
+          Acesso administrativo
+        </Link>
       </div>
     </footer>
   );
