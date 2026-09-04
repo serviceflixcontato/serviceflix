@@ -62,7 +62,7 @@ function AdminLogin() {
         toast.error("Não foi possível entrar. Tente novamente.");
         return;
       }
-      void navigate({ to: "/painel/administracao", replace: true });
+      void navigate({ to: "/admin/painel", replace: true });
     } catch {
       toast.error("Falha ao acessar o painel administrativo.");
     } finally {
