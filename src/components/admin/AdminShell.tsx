@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { LayoutDashboard, Loader2, LogOut, Settings, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import logo from "@/assets/serviceflix-logo-transparente.png.asset.json";
+import logo from "@/assets/serviceflix-logo-amarelo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -62,10 +62,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-border bg-ink text-ink-foreground">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4">
           <Link to="/admin/painel" className="flex items-center gap-2">
-            <img src={logo.url} alt="Service Flix" className="h-9 w-9 object-contain" />
-            <span className="font-display text-base font-semibold">
-              Service<span className="text-primary">Flix</span>
-            </span>
+            <img src={logo.url} alt="Service Flix" className="h-9 w-auto object-contain" />
           </Link>
           <div className="flex items-center gap-3">
             <span className="hidden items-center gap-1.5 text-xs uppercase tracking-wider text-ink-foreground/70 sm:flex">
