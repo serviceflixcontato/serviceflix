@@ -11,9 +11,6 @@ export function SiteFooter() {
         <div>
           <div className="flex items-center gap-2">
             <img src={logo.url} alt="Service Flix" className="h-10 w-auto object-contain" />
-            <span className="font-display text-lg font-semibold">
-              Service<span className="text-primary">Flix</span>
-            </span>
           </div>
           <p className="mt-3 text-sm text-ink-foreground/70">
             Serviços com flexibilidade. Manutenção predial por assinatura para residências e

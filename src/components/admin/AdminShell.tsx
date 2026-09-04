@@ -63,9 +63,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4">
           <Link to="/admin/painel" className="flex items-center gap-2">
             <img src={logo.url} alt="Service Flix" className="h-9 w-auto object-contain" />
-            <span className="font-display text-base font-semibold">
-              Service<span className="text-primary">Flix</span>
-            </span>
           </Link>
           <div className="flex items-center gap-3">
             <span className="hidden items-center gap-1.5 text-xs uppercase tracking-wider text-ink-foreground/70 sm:flex">

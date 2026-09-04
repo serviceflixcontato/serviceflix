@@ -46,9 +46,6 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4">
         <Link to="/" className="flex items-center gap-2">
           <img src={logo.url} alt="Service Flix" className="h-10 w-auto object-contain" />
-          <span className="font-display text-lg font-semibold leading-none">
-            Service<span className="text-primary">Flix</span>
-          </span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

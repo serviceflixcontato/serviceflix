@@ -75,9 +75,6 @@ function AdminLogin() {
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-12">
         <Link to="/" className="mx-auto flex items-center gap-2">
           <img src={logo.url} alt="Service Flix" className="h-11 w-auto object-contain" />
-          <span className="font-display text-lg font-semibold">
-            Service<span className="text-primary">Flix</span>
-          </span>
         </Link>
 
         <div className="mt-8 rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-elevated">
