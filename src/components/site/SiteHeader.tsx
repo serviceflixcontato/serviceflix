@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Mail, Menu, Phone, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import logo from "@/assets/serviceflix-logo-transparente.png.asset.json";
+import logo from "@/assets/serviceflix-logo-amarelo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTACT, whatsappLink } from "@/lib/plans";
@@ -45,7 +45,7 @@ export function SiteHeader() {
 
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo.url} alt="Service Flix" className="h-10 w-10 object-contain" />
+          <img src={logo.url} alt="Service Flix" className="h-10 w-auto object-contain" />
           <span className="font-display text-lg font-semibold leading-none">
             Service<span className="text-primary">Flix</span>
           </span>

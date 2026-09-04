@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Mail, Phone } from "lucide-react";
 
-import logo from "@/assets/serviceflix-logo-transparente.png.asset.json";
+import logo from "@/assets/serviceflix-logo-amarelo.png.asset.json";
 import { CONTACT } from "@/lib/plans";
 
 export function SiteFooter() {
@@ -10,7 +10,7 @@ export function SiteFooter() {
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
-            <img src={logo.url} alt="Service Flix" className="h-10 w-10 object-contain" />
+            <img src={logo.url} alt="Service Flix" className="h-10 w-auto object-contain" />
             <span className="font-display text-lg font-semibold">
               Service<span className="text-primary">Flix</span>
             </span>

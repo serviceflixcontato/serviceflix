@@ -4,7 +4,7 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import logo from "@/assets/serviceflix-logo-transparente.png.asset.json";
+import logo from "@/assets/serviceflix-logo-amarelo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,7 +74,7 @@ function AdminLogin() {
     <div className="flex min-h-screen flex-col bg-ink text-ink-foreground">
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-12">
         <Link to="/" className="mx-auto flex items-center gap-2">
-          <img src={logo.url} alt="Service Flix" className="h-11 w-11 object-contain" />
+          <img src={logo.url} alt="Service Flix" className="h-11 w-auto object-contain" />
           <span className="font-display text-lg font-semibold">
             Service<span className="text-primary">Flix</span>
           </span>

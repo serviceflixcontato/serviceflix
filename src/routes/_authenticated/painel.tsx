@@ -10,7 +10,7 @@ import {
   Wrench,
 } from "lucide-react";
 
-import logo from "@/assets/serviceflix-logo-transparente.png.asset.json";
+import logo from "@/assets/serviceflix-logo-amarelo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-panel-data";
@@ -47,7 +47,7 @@ function PainelLayout() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo.url} alt="Service Flix" className="h-9 w-9 object-contain" />
+            <img src={logo.url} alt="Service Flix" className="h-9 w-auto object-contain" />
             <span className="font-display text-base font-semibold">
               Service<span className="text-primary">Flix</span>
             </span>
