@@ -133,6 +133,30 @@ export type Database = {
           },
         ]
       }
+      plan_prices: {
+        Row: {
+          created_at: string
+          price_cents: number | null
+          price_note: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          price_cents?: number | null
+          price_note?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          price_cents?: number | null
+          price_note?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
