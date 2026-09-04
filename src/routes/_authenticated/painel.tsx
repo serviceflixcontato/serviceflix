@@ -7,8 +7,6 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
-  Settings,
-  ShieldCheck,
   Wrench,
 } from "lucide-react";
 
@@ -16,7 +14,6 @@ import logo from "@/assets/serviceflix-logo-transparente.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-panel-data";
-import { usePaymentConfig } from "@/hooks/use-payment-config";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   component: PainelLayout,
@@ -31,27 +28,11 @@ const NAV = [
   { to: "/painel/indicacoes", label: "Indique e ganhe", icon: Gift, exact: false },
 ] as const;
 
-const ADMIN_NAV = [
-  {
-    to: "/painel/administracao",
-    label: "Administração",
-    icon: ShieldCheck,
-    exact: false,
-  },
-  {
-    to: "/painel/configuracoes",
-    label: "Config. pagamento",
-    icon: Settings,
-    exact: false,
-  },
-] as const;
-
 function PainelLayout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
-  const { data: paymentConfig } = usePaymentConfig();
-  const navItems = paymentConfig?.isAdmin ? [...NAV, ...ADMIN_NAV] : [...NAV];
+  const navItems = NAV;
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -59,6 +40,7 @@ function PainelLayout() {
     await supabase.auth.signOut();
     void navigate({ to: "/auth", replace: true });
   }
+
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/40">
