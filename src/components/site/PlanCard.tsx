@@ -3,9 +3,13 @@ import { CalendarDays, Check, Clock } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { planPriceLabel, usePlanPrices } from "@/hooks/use-plan-prices";
 import type { Plan } from "@/lib/plans";
 
 export function PlanCard({ plan }: { plan: Plan }) {
+  const { data: prices } = usePlanPrices();
+  const priceLabel = planPriceLabel(prices?.find((item) => item.slug === plan.slug));
+
   return (
     <article
       className={`relative flex h-full flex-col rounded-2xl border bg-card p-6 shadow-card transition-transform duration-200 hover:-translate-y-1 ${
@@ -18,6 +22,15 @@ export function PlanCard({ plan }: { plan: Plan }) {
 
       <h3 className="text-xl font-semibold">{plan.name}</h3>
       <p className="mt-2 text-sm text-muted-foreground">{plan.tagline}</p>
+
+      {priceLabel ? (
+        <p className="mt-4 flex items-baseline gap-1.5">
+          <span className="text-3xl font-bold">{priceLabel}</span>
+          {priceLabel.startsWith("R$") ? (
+            <span className="text-sm text-muted-foreground">/ mês</span>
+          ) : null}
+        </p>
+      ) : null}
 
       <dl className="mt-5 space-y-2 rounded-xl bg-muted/60 p-4 text-sm">
         <div className="flex items-center gap-2">

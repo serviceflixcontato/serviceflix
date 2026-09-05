@@ -18,6 +18,7 @@ import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminPagamentosRouteImport } from './routes/admin/pagamentos'
 import { Route as AdminPainelRouteImport } from './routes/admin/painel'
+import { Route as AdminPlanosRouteImport } from './routes/admin/planos'
 import { Route as AuthenticatedPainelIndexRouteImport } from './routes/_authenticated/painel.index'
 import { Route as AuthenticatedPainelContratoRouteImport } from './routes/_authenticated/painel.contrato'
 import { Route as AuthenticatedPainelIndicacoesRouteImport } from './routes/_authenticated/painel.indicacoes'
@@ -68,6 +69,11 @@ const AdminPagamentosRoute = AdminPagamentosRouteImport.update({
 const AdminPainelRoute = AdminPainelRouteImport.update({
   id: '/admin/painel',
   path: '/admin/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPlanosRoute = AdminPlanosRouteImport.update({
+  id: '/admin/planos',
+  path: '/admin/planos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedPainelIndexRoute =
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/painel': typeof AuthenticatedPainelRouteWithChildren
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/painel': typeof AdminPainelRoute
+  '/admin/planos': typeof AdminPlanosRoute
   '/admin/': typeof AdminIndexRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/painel/indicacoes': typeof AuthenticatedPainelIndicacoesRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/planos': typeof PlanosRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/painel': typeof AdminPainelRoute
+  '/admin/planos': typeof AdminPlanosRoute
   '/admin': typeof AdminIndexRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/painel/indicacoes': typeof AuthenticatedPainelIndicacoesRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/_authenticated/painel': typeof AuthenticatedPainelRouteWithChildren
   '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/painel': typeof AdminPainelRoute
+  '/admin/planos': typeof AdminPlanosRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/_authenticated/painel/indicacoes': typeof AuthenticatedPainelIndicacoesRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/painel'
     | '/admin/pagamentos'
     | '/admin/painel'
+    | '/admin/planos'
     | '/admin/'
     | '/painel/contrato'
     | '/painel/indicacoes'
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/planos'
     | '/admin/pagamentos'
     | '/admin/painel'
+    | '/admin/planos'
     | '/admin'
     | '/painel/contrato'
     | '/painel/indicacoes'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/_authenticated/painel'
     | '/admin/pagamentos'
     | '/admin/painel'
+    | '/admin/planos'
     | '/admin/'
     | '/_authenticated/painel/contrato'
     | '/_authenticated/painel/indicacoes'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   PlanosRoute: typeof PlanosRoute
   AdminPagamentosRoute: typeof AdminPagamentosRoute
   AdminPainelRoute: typeof AdminPainelRoute
+  AdminPlanosRoute: typeof AdminPlanosRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
 }
@@ -294,6 +307,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/painel'
       fullPath: '/admin/painel'
       preLoaderRoute: typeof AdminPainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/planos': {
+      id: '/admin/planos'
+      path: '/admin/planos'
+      fullPath: '/admin/planos'
+      preLoaderRoute: typeof AdminPlanosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/painel/': {
@@ -388,6 +408,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlanosRoute: PlanosRoute,
   AdminPagamentosRoute: AdminPagamentosRoute,
   AdminPainelRoute: AdminPainelRoute,
+  AdminPlanosRoute: AdminPlanosRoute,
   AdminIndexRoute: AdminIndexRoute,
   ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
 }

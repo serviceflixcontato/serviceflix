@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, Loader2, LogOut, Settings, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Loader2, LogOut, Settings, ShieldCheck, Tags } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import logo from "@/assets/serviceflix-logo-amarelo.png.asset.json";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const ADMIN_NAV = [
   { to: "/admin/painel", label: "Visão geral", icon: LayoutDashboard },
+  { to: "/admin/planos", label: "Valores dos planos", icon: Tags },
   { to: "/admin/pagamentos", label: "Config. pagamento", icon: Settings },
 ] as const;
 
