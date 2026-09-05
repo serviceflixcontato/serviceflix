@@ -52,6 +52,14 @@ function PlanosPage() {
               de serviço por atendimento. Precisa de outra configuração? O plano Personalizado é
               montado conforme a sua necessidade.
             </p>
+            </div>
+            <img
+              src={mascoteAsset.url}
+              alt="Mascote Service Flix"
+              width={512}
+              height={683}
+              className="mx-auto mt-8 w-40 drop-shadow-xl lg:mx-0 lg:mt-0 lg:w-52"
+            />
           </div>
         </section>
 
