@@ -140,6 +140,14 @@ function Home_() {
                   <Link to="/contato">Solicitar orçamento</Link>
                 </Button>
               </div>
+              <img
+                src={mascoteAsset.url}
+                alt="Mascote Service Flix"
+                width={512}
+                height={683}
+                loading="lazy"
+                className="mx-auto mt-10 w-40 drop-shadow-2xl md:hidden"
+              />
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-ink-foreground/70">
                 <span className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-primary" /> Condomínios
