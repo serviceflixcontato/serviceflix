@@ -55,7 +55,10 @@ function ValoresPlanos() {
   }, [prices]);
 
   function setField(slug: string, field: keyof FormRow, value: string) {
-    setForm((prev) => ({ ...prev, [slug]: { ...prev[slug], [field]: value } }));
+    setForm((prev) => {
+      const current: FormRow = prev[slug] ?? { value: "", note: "" };
+      return { ...prev, [slug]: { ...current, [field]: value } };
+    });
   }
 
   function handleSave(slug: string) {
