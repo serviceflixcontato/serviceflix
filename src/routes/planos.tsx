@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 
+import mascoteAsset from "@/assets/mascote-serviceflix.png.asset.json";
 import { PlanCard } from "@/components/site/PlanCard";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
@@ -43,13 +44,22 @@ function PlanosPage() {
 
       <main className="flex-1">
         <section className="border-b border-border bg-muted/40 py-14">
-          <div className="mx-auto w-full max-w-6xl px-4">
-            <h1 className="text-4xl font-bold">Planos de manutenção por assinatura</h1>
+          <div className="mx-auto w-full max-w-6xl px-4 lg:flex lg:items-center lg:justify-between lg:gap-10">
+            <div>
+              <h1 className="text-4xl font-bold">Planos de manutenção por assinatura</h1>
             <p className="mt-4 max-w-2xl text-muted-foreground">
               Cada plano define quantos dias por semana nossa equipe está no seu imóvel, com 4 horas
               de serviço por atendimento. Precisa de outra configuração? O plano Personalizado é
               montado conforme a sua necessidade.
             </p>
+            </div>
+            <img
+              src={mascoteAsset.url}
+              alt="Mascote Service Flix"
+              width={512}
+              height={683}
+              className="mx-auto mt-8 w-40 drop-shadow-xl lg:mx-0 lg:mt-0 lg:w-52"
+            />
           </div>
         </section>
 
