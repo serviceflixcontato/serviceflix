@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import heroImg from "@/assets/hero-manutencao.jpg";
+import mascoteAsset from "@/assets/mascote-serviceflix.png.asset.json";
 import condominiosImg from "@/assets/publico-condominios.jpg";
 import residenciasImg from "@/assets/publico-residencias.jpg";
 import { PlanCard } from "@/components/site/PlanCard";
@@ -102,6 +103,14 @@ function Home_() {
             className="absolute inset-0 -z-10 h-full w-full object-cover object-right"
           />
           <div className="absolute inset-0 -z-10 bg-gradient-to-r from-ink/95 via-ink/80 to-ink/30" />
+
+          <img
+            src={mascoteAsset.url}
+            alt="Mascote Service Flix"
+            width={512}
+            height={683}
+            className="pointer-events-none absolute bottom-0 right-2 hidden h-[380px] w-auto drop-shadow-2xl md:block lg:right-10 lg:h-[480px]"
+          />
 
           <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-16 sm:pb-36 md:pt-24">
             <div className="max-w-2xl text-ink-foreground">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import mascoteAsset from "@/assets/mascote-serviceflix.png.asset.json";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Button } from "@/components/ui/button";
@@ -191,6 +192,14 @@ function ContatoPage() {
           </div>
 
           <aside className="space-y-4">
+            <img
+              src={mascoteAsset.url}
+              alt="Mascote Service Flix"
+              width={512}
+              height={683}
+              loading="lazy"
+              className="mx-auto w-48 drop-shadow-xl sm:w-56"
+            />
             <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
               <h2 className="text-lg font-semibold">Atendimento direto</h2>
               <ul className="mt-4 space-y-3 text-sm">
