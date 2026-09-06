@@ -17,8 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PhotoGrid } from "@/components/site/PhotoGrid";
 import { supabase } from "@/integrations/supabase/client";
 import { STATUS_LABELS, formatDateTime, useServiceRequests } from "@/hooks/use-panel-data";
+import { groupPhotos, useServicePhotos } from "@/hooks/use-service-photos";
+import { uploadServicePhotos } from "@/lib/service-photos";
 
 export const Route = createFileRoute("/_authenticated/painel/solicitacoes")({
   component: Solicitacoes,
@@ -52,9 +55,13 @@ const PRIORITIES = [
 function Solicitacoes() {
   const queryClient = useQueryClient();
   const { data: requests = [], isLoading } = useServiceRequests();
+  const { data: photos = [] } = useServicePhotos();
   const [submitting, setSubmitting] = useState(false);
   const [category, setCategory] = useState("");
   const [priority, setPriority] = useState("media");
+  const [files, setFiles] = useState<File[]>([]);
+
+  const photosByRequest = groupPhotos(photos).byRequest;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -81,25 +88,51 @@ function Solicitacoes() {
       return;
     }
 
-    const { error } = await supabase.from("service_requests").insert({
-      user_id: userId,
-      title: parsed.data.title,
-      category: parsed.data.category,
-      urgency: parsed.data.priority,
-      location: parsed.data.location ?? null,
-      description: parsed.data.description,
-    });
-    setSubmitting(false);
+    const { data: created, error } = await supabase
+      .from("service_requests")
+      .insert({
+        user_id: userId,
+        title: parsed.data.title,
+        category: parsed.data.category,
+        urgency: parsed.data.priority,
+        location: parsed.data.location ?? null,
+        description: parsed.data.description,
+      })
+      .select("id")
+      .single();
 
-    if (error) {
+    if (error || !created) {
+      setSubmitting(false);
       toast.error("Não foi possível registrar a solicitação. Tente novamente.");
       return;
     }
+
+    if (files.length > 0) {
+      try {
+        await uploadServicePhotos({
+          files,
+          ownerId: userId,
+          uploadedBy: userId,
+          kind: "cliente",
+          requestId: created.id,
+        });
+      } catch (uploadError) {
+        toast.error(
+          uploadError instanceof Error
+            ? uploadError.message
+            : "A solicitação foi enviada, mas as fotos não subiram.",
+        );
+      }
+    }
+
+    setSubmitting(false);
     toast.success("Solicitação enviada! Nossa equipe já foi notificada.");
     formEl.reset();
     setCategory("");
     setPriority("media");
+    setFiles([]);
     void queryClient.invalidateQueries({ queryKey: ["service_requests"] });
+    void queryClient.invalidateQueries({ queryKey: ["service_photos"] });
   }
 
   return (
@@ -165,6 +198,24 @@ function Solicitacoes() {
             />
           </div>
 
+
+          <div className="space-y-2">
+            <Label htmlFor="photos">Fotos do problema (opcional)</Label>
+            <Input
+              id="photos"
+              name="photos"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+            />
+            <p className="text-xs text-muted-foreground">
+              {files.length > 0
+                ? `${files.length} foto(s) selecionada(s)`
+                : "Você pode anexar várias fotos, até 10 MB cada."}
+            </p>
+          </div>
+
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Enviar solicitação
@@ -195,6 +246,18 @@ function Solicitacoes() {
                   {formatDateTime(request.created_at)}
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">{request.description}</p>
+                <PhotoGrid
+                  photos={(photosByRequest.get(request.id) ?? []).filter(
+                    (photo) => photo.kind === "cliente",
+                  )}
+                  title="Fotos enviadas por você"
+                />
+                <PhotoGrid
+                  photos={(photosByRequest.get(request.id) ?? []).filter(
+                    (photo) => photo.kind === "conclusao",
+                  )}
+                  title="Serviço finalizado pela equipe"
+                />
               </li>
             ))}
           </ul>
