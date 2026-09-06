@@ -55,6 +55,9 @@ export function AdminOverview() {
     queryFn: () => fetchOverview(),
   });
 
+  const { data: photos = [] } = useServicePhotos();
+  const photosByRequest = groupPhotos(photos).byRequest;
+
   const updateReferral = useServerFn(updateReferralStatus);
   const referralMutation = useMutation({
     mutationFn: (input: { id: string; status: string; reward_status: string }) =>
