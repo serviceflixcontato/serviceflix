@@ -525,3 +525,65 @@ function Empty({ text }: { text: string }) {
     </p>
   );
 }
+
+/** Envio de fotos do serviço concluído para o cliente ver no painel dele. */
+function FinishedPhotoUpload({ requestId, clientId }: { requestId: string; clientId: string }) {
+  const queryClient = useQueryClient();
+  const [files, setFiles] = useState<File[]>([]);
+  const [caption, setCaption] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function handleSend() {
+    if (files.length === 0) {
+      toast.error("Selecione ao menos uma foto.");
+      return;
+    }
+    setSending(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const adminId = userData.user?.id;
+      if (!adminId) throw new Error("Sessão expirada. Entre novamente.");
+      await uploadServicePhotos({
+        files,
+        ownerId: clientId,
+        uploadedBy: adminId,
+        kind: "conclusao",
+        requestId,
+        caption: caption.trim() || null,
+      });
+      toast.success("Fotos enviadas ao cliente.");
+      setFiles([]);
+      setCaption("");
+      void queryClient.invalidateQueries({ queryKey: ["service_photos"] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível enviar as fotos.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border border-dashed border-border p-3">
+      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Enviar fotos do serviço finalizado
+      </Label>
+      <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <Input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+        />
+        <Input
+          value={caption}
+          onChange={(event) => setCaption(event.target.value)}
+          placeholder="Observação do serviço executado (opcional)"
+          maxLength={200}
+        />
+        <Button type="button" onClick={handleSend} disabled={sending}>
+          {sending ? "Enviando..." : "Enviar ao cliente"}
+        </Button>
+      </div>
+    </div>
+  );
+}
