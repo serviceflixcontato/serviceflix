@@ -55,9 +55,13 @@ const PRIORITIES = [
 function Solicitacoes() {
   const queryClient = useQueryClient();
   const { data: requests = [], isLoading } = useServiceRequests();
+  const { data: photos = [] } = useServicePhotos();
   const [submitting, setSubmitting] = useState(false);
   const [category, setCategory] = useState("");
   const [priority, setPriority] = useState("media");
+  const [files, setFiles] = useState<File[]>([]);
+
+  const photosByRequest = groupPhotos(photos).byRequest;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,25 +88,51 @@ function Solicitacoes() {
       return;
     }
 
-    const { error } = await supabase.from("service_requests").insert({
-      user_id: userId,
-      title: parsed.data.title,
-      category: parsed.data.category,
-      urgency: parsed.data.priority,
-      location: parsed.data.location ?? null,
-      description: parsed.data.description,
-    });
-    setSubmitting(false);
+    const { data: created, error } = await supabase
+      .from("service_requests")
+      .insert({
+        user_id: userId,
+        title: parsed.data.title,
+        category: parsed.data.category,
+        urgency: parsed.data.priority,
+        location: parsed.data.location ?? null,
+        description: parsed.data.description,
+      })
+      .select("id")
+      .single();
 
-    if (error) {
+    if (error || !created) {
+      setSubmitting(false);
       toast.error("Não foi possível registrar a solicitação. Tente novamente.");
       return;
     }
+
+    if (files.length > 0) {
+      try {
+        await uploadServicePhotos({
+          files,
+          ownerId: userId,
+          uploadedBy: userId,
+          kind: "cliente",
+          requestId: created.id,
+        });
+      } catch (uploadError) {
+        toast.error(
+          uploadError instanceof Error
+            ? uploadError.message
+            : "A solicitação foi enviada, mas as fotos não subiram.",
+        );
+      }
+    }
+
+    setSubmitting(false);
     toast.success("Solicitação enviada! Nossa equipe já foi notificada.");
     formEl.reset();
     setCategory("");
     setPriority("media");
+    setFiles([]);
     void queryClient.invalidateQueries({ queryKey: ["service_requests"] });
+    void queryClient.invalidateQueries({ queryKey: ["service_photos"] });
   }
 
   return (
