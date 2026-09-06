@@ -198,6 +198,24 @@ function Solicitacoes() {
             />
           </div>
 
+
+          <div className="space-y-2">
+            <Label htmlFor="photos">Fotos do problema (opcional)</Label>
+            <Input
+              id="photos"
+              name="photos"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+            />
+            <p className="text-xs text-muted-foreground">
+              {files.length > 0
+                ? `${files.length} foto(s) selecionada(s)`
+                : "Você pode anexar várias fotos, até 10 MB cada."}
+            </p>
+          </div>
+
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Enviar solicitação
