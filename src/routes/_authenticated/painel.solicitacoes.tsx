@@ -246,6 +246,18 @@ function Solicitacoes() {
                   {formatDateTime(request.created_at)}
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">{request.description}</p>
+                <PhotoGrid
+                  photos={(photosByRequest.get(request.id) ?? []).filter(
+                    (photo) => photo.kind === "cliente",
+                  )}
+                  title="Fotos enviadas por você"
+                />
+                <PhotoGrid
+                  photos={(photosByRequest.get(request.id) ?? []).filter(
+                    (photo) => photo.kind === "conclusao",
+                  )}
+                  title="Serviço finalizado pela equipe"
+                />
               </li>
             ))}
           </ul>
