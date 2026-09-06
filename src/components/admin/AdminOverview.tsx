@@ -21,6 +21,12 @@ import {
   REWARD_STATUS_LABELS,
   REWARD_STATUS_OPTIONS,
 } from "@/lib/referrals";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PhotoGrid } from "@/components/site/PhotoGrid";
+import { groupPhotos, useServicePhotos } from "@/hooks/use-service-photos";
+import { uploadServicePhotos } from "@/lib/service-photos";
+import { supabase } from "@/integrations/supabase/client";
 
 
 const TABS = [
