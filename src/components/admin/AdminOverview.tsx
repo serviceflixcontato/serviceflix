@@ -283,6 +283,19 @@ export function AdminOverview() {
                     {request.location ? (
                       <p className="mt-1 text-sm text-muted-foreground">Local: {request.location}</p>
                     ) : null}
+                    <PhotoGrid
+                      photos={(photosByRequest.get(request.id) ?? []).filter(
+                        (photo) => photo.kind === "cliente",
+                      )}
+                      title="Fotos enviadas pelo cliente"
+                    />
+                    <PhotoGrid
+                      photos={(photosByRequest.get(request.id) ?? []).filter(
+                        (photo) => photo.kind === "conclusao",
+                      )}
+                      title="Fotos do serviço finalizado"
+                    />
+                    <FinishedPhotoUpload requestId={request.id} clientId={request.user_id} />
                   </li>
                 ))}
               </ul>
