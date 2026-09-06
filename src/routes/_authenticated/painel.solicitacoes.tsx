@@ -17,8 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PhotoGrid } from "@/components/site/PhotoGrid";
 import { supabase } from "@/integrations/supabase/client";
 import { STATUS_LABELS, formatDateTime, useServiceRequests } from "@/hooks/use-panel-data";
+import { groupPhotos, useServicePhotos } from "@/hooks/use-service-photos";
+import { uploadServicePhotos } from "@/lib/service-photos";
 
 export const Route = createFileRoute("/_authenticated/painel/solicitacoes")({
   component: Solicitacoes,
