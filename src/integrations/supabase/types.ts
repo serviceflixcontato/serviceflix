@@ -244,6 +244,57 @@ export type Database = {
         }
         Relationships: []
       }
+      service_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          kind: string
+          request_id: string | null
+          storage_path: string
+          uploaded_by: string | null
+          user_id: string
+          work_order_id: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          request_id?: string | null
+          storage_path: string
+          uploaded_by?: string | null
+          user_id: string
+          work_order_id?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          request_id?: string | null
+          storage_path?: string
+          uploaded_by?: string | null
+          user_id?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_photos_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_photos_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_requests: {
         Row: {
           category: string
