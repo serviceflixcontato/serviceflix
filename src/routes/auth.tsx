@@ -119,11 +119,8 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen flex-col bg-hero">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-12">
-        <Link to="/" className="mx-auto flex items-center gap-2 text-ink-foreground">
-          <img src={logo.url} alt="Service Flix" className="h-12 w-12 object-contain" />
-          <span className="font-display text-xl font-semibold">
-            Service<span className="text-primary">Flix</span>
-          </span>
+        <Link to="/" className="mx-auto flex items-center justify-center">
+          <img src={logo.url} alt="Service Flix" className="h-14 w-auto object-contain" />
         </Link>
 
         <div className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-elevated">
