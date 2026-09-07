@@ -17,7 +17,7 @@ import {
 
 import heroImg from "@/assets/hero-manutencao.jpg";
 import mascoteAsset from "@/assets/mascote-serviceflix.png.asset.json";
-import condominiosImg from "@/assets/publico-condominios.jpg";
+import condominiosAsset from "@/assets/equipe-condominios.jpg.asset.json";
 import residenciasImg from "@/assets/publico-residencias.jpg";
 import { PlanCard } from "@/components/site/PlanCard";
 import { SiteFooter } from "@/components/site/SiteFooter";
