@@ -109,7 +109,7 @@ function Home_() {
             alt="Mascote Service Flix"
             width={512}
             height={683}
-            className="pointer-events-none absolute bottom-0 right-2 hidden h-[380px] w-auto drop-shadow-2xl md:block lg:right-10 lg:h-[480px]"
+            className="pointer-events-none absolute bottom-8 right-2 hidden h-[380px] w-auto drop-shadow-2xl md:block lg:bottom-12 lg:right-10 lg:h-[480px]"
           />
 
           <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-16 sm:pb-36 md:pt-24">
