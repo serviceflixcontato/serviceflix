@@ -199,8 +199,8 @@ function Home_() {
           <div className="mt-12 grid gap-8 lg:grid-cols-2">
             {[
               {
-                img: condominiosImg,
-                alt: "Equipe de manutenção em frente a um condomínio residencial",
+                img: condominiosAsset.url,
+                alt: "Equipe técnica da Service Flix pronta para atender condomínios",
                 icon: Building2,
                 eyebrow: "Condomínios",
                 title: "Manutenção contratada, sem depender de autônomos",
