@@ -235,7 +235,17 @@ export function AdminOverview() {
             ) : (
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[760px] text-sm">
-                  <Head cells={["Cliente", "Descrição", "Valor", "Vencimento", "Situação", "Pago em"]} />
+                  <Head
+                    cells={[
+                      "Cliente",
+                      "Descrição",
+                      "Valor",
+                      "Vencimento",
+                      "Situação",
+                      "Pago em",
+                      "Ação",
+                    ]}
+                  />
                   <tbody>
                     {payments.map((payment) => (
                       <tr key={payment.id} className="border-b border-border/60">
@@ -252,7 +262,41 @@ export function AdminOverview() {
                             {STATUS_LABELS[payment.status] ?? payment.status}
                           </Badge>
                         </td>
-                        <td className="py-3 text-muted-foreground">{formatDate(payment.paid_at)}</td>
+                        <td className="py-3 pr-4 text-muted-foreground">
+                          {formatDate(payment.paid_at)}
+                          {payment.method ? ` · ${payment.method}` : ""}
+                        </td>
+                        <td className="py-3">
+                          {payment.status === "pago" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={paymentMutation.isPending}
+                              onClick={() =>
+                                paymentMutation.mutate({
+                                  payment_id: payment.id,
+                                  status: "pendente",
+                                })
+                              }
+                            >
+                              Voltar p/ pendente
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              disabled={paymentMutation.isPending}
+                              onClick={() =>
+                                paymentMutation.mutate({
+                                  payment_id: payment.id,
+                                  status: "pago",
+                                  method: "dinheiro",
+                                })
+                              }
+                            >
+                              Recebi em dinheiro
+                            </Button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
