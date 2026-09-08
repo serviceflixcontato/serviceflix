@@ -14,7 +14,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { STATUS_LABELS, formatBRL, formatDate, formatDateTime } from "@/hooks/use-panel-data";
-import { getAdminOverview, updateReferralStatus } from "@/lib/admin.functions";
+import {
+  getAdminOverview,
+  setPaymentStatusManually,
+  updateReferralStatus,
+} from "@/lib/admin.functions";
+import { ManualPlanActivation } from "@/components/admin/ManualPlanActivation";
 import {
   REFERRAL_STATUS_LABELS,
   REFERRAL_STATUS_OPTIONS,
@@ -57,6 +62,17 @@ export function AdminOverview() {
 
   const { data: photos = [] } = useServicePhotos();
   const photosByRequest = groupPhotos(photos).byRequest;
+
+  const setPaymentStatus = useServerFn(setPaymentStatusManually);
+  const paymentMutation = useMutation({
+    mutationFn: (input: { payment_id: string; status: string; method?: string }) =>
+      setPaymentStatus({ data: input as never }),
+    onSuccess: () => {
+      toast.success("Pagamento atualizado.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+    onError: () => toast.error("Não foi possível atualizar o pagamento."),
+  });
 
   const updateReferral = useServerFn(updateReferralStatus);
   const referralMutation = useMutation({
@@ -187,6 +203,7 @@ export function AdminOverview() {
 
       {tab === "assinaturas" ? (
         <div className="space-y-6">
+          <ManualPlanActivation clients={profiles} />
           <Card>
             <h2 className="text-lg font-semibold">Assinaturas</h2>
             {subscriptions.length === 0 ? (
@@ -235,7 +252,17 @@ export function AdminOverview() {
             ) : (
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[760px] text-sm">
-                  <Head cells={["Cliente", "Descrição", "Valor", "Vencimento", "Situação", "Pago em"]} />
+                  <Head
+                    cells={[
+                      "Cliente",
+                      "Descrição",
+                      "Valor",
+                      "Vencimento",
+                      "Situação",
+                      "Pago em",
+                      "Ação",
+                    ]}
+                  />
                   <tbody>
                     {payments.map((payment) => (
                       <tr key={payment.id} className="border-b border-border/60">
@@ -252,7 +279,41 @@ export function AdminOverview() {
                             {STATUS_LABELS[payment.status] ?? payment.status}
                           </Badge>
                         </td>
-                        <td className="py-3 text-muted-foreground">{formatDate(payment.paid_at)}</td>
+                        <td className="py-3 pr-4 text-muted-foreground">
+                          {formatDate(payment.paid_at)}
+                          {payment.method ? ` · ${payment.method}` : ""}
+                        </td>
+                        <td className="py-3">
+                          {payment.status === "pago" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={paymentMutation.isPending}
+                              onClick={() =>
+                                paymentMutation.mutate({
+                                  payment_id: payment.id,
+                                  status: "pendente",
+                                })
+                              }
+                            >
+                              Voltar p/ pendente
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              disabled={paymentMutation.isPending}
+                              onClick={() =>
+                                paymentMutation.mutate({
+                                  payment_id: payment.id,
+                                  status: "pago",
+                                  method: "dinheiro",
+                                })
+                              }
+                            >
+                              Recebi em dinheiro
+                            </Button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
