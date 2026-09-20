@@ -431,12 +431,15 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          activation_requested_at: string | null
           contract_notes: string | null
           contract_number: string | null
           created_at: string
           id: string
           monthly_price_cents: number | null
           next_billing_date: string | null
+          payment_choice: string | null
+          payment_method: string | null
           plan_name: string
           plan_slug: string
           provider: string | null
@@ -448,12 +451,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          activation_requested_at?: string | null
           contract_notes?: string | null
           contract_number?: string | null
           created_at?: string
           id?: string
           monthly_price_cents?: number | null
           next_billing_date?: string | null
+          payment_choice?: string | null
+          payment_method?: string | null
           plan_name: string
           plan_slug: string
           provider?: string | null
@@ -465,12 +471,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          activation_requested_at?: string | null
           contract_notes?: string | null
           contract_number?: string | null
           created_at?: string
           id?: string
           monthly_price_cents?: number | null
           next_billing_date?: string | null
+          payment_choice?: string | null
+          payment_method?: string | null
           plan_name?: string
           plan_slug?: string
           provider?: string | null
