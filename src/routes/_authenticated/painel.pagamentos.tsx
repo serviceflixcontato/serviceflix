@@ -19,7 +19,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CONTACT } from "@/lib/plans";
 import { chooseSubscriptionPayment } from "@/lib/activation.functions";
-import { createInvoiceCheckout, createSubscriptionCheckout } from "@/lib/payments.functions";
+import {
+  createInvoiceCheckout,
+  createSubscriptionCheckout,
+  createUpcomingInvoice,
+} from "@/lib/payments.functions";
+import { dueLabel, isDueSoon, monthLabel } from "@/lib/billing";
 import { usePaymentConfig } from "@/hooks/use-payment-config";
 import { useMyContracts } from "@/hooks/use-contract";
 import { useApplyAvailableVouchers, useApplyVoucher, useMyVouchers } from "@/hooks/use-vouchers";
