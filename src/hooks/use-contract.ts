@@ -22,20 +22,31 @@ export type ContractAcceptance = {
   fields: Record<string, string> | null;
 };
 
-/** Último aceite de contrato do cliente logado. */
-export function useMyContract() {
+export type ContractAcceptanceRow = ContractAcceptance & {
+  subscription_id: string | null;
+  contract_code?: string | null;
+};
+
+/** Todos os contratos assinados pelo cliente logado (ele pode ter mais de um). */
+export function useMyContracts() {
   return useQuery({
-    queryKey: ["contract-acceptance"],
+    queryKey: ["contract-acceptances"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contract_acceptances")
         .select("*")
-        .order("accepted_at", { ascending: false })
-        .limit(1);
+        .order("accepted_at", { ascending: false });
       if (error) throw error;
-      return (data?.[0] as ContractAcceptance | undefined) ?? null;
+      return (data ?? []) as ContractAcceptanceRow[];
     },
   });
+}
+
+/** Último aceite de contrato do cliente logado. */
+export function useMyContract() {
+  const query = useMyContracts();
+  const main = query.data?.[0] ?? null;
+  return { ...query, data: main } as typeof query & { data: ContractAcceptanceRow | null };
 }
 
 /** Registra o aceite eletrônico do contrato e vincula o plano escolhido. */
