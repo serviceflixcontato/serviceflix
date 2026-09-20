@@ -89,12 +89,16 @@ export const createInvoiceCheckout = createServerFn({ method: "POST" })
 
     const { data: payment, error } = await context.supabase
       .from("payments")
-      .select("id, description, amount_cents, status")
+      .select("id, description, amount_cents, voucher_discount_cents, status")
       .eq("id", data.paymentId)
       .maybeSingle();
     if (error) throw error;
     if (!payment) throw new Error("Fatura não encontrada.");
     if (payment.status === "pago") throw new Error("Esta fatura já está paga.");
+
+    // O crédito do voucher já abatido não vai para o checkout: o cliente paga só a diferença.
+    const dueCents = Math.max(payment.amount_cents - (payment.voucher_discount_cents ?? 0), 0);
+    if (dueCents <= 0) return { ok: false as const, reason: "nothing_due" as const, mode };
 
     const { data: profile } = await context.supabase
       .from("profiles")
@@ -105,7 +109,7 @@ export const createInvoiceCheckout = createServerFn({ method: "POST" })
     const origin = requestOrigin();
     const preference = await createPreference(mode, token, {
       title: payment.description ?? "Mensalidade Service Flix",
-      amountCents: payment.amount_cents,
+      amountCents: dueCents,
       externalReference: payment.id,
       payerEmail: profile?.email ?? null,
       origin,
