@@ -404,6 +404,7 @@ export type Database = {
           request_code: string | null
           schedule_status: string
           scheduled_at: string | null
+          scheduled_technician: string | null
           status: string
           team_message: string | null
           title: string
@@ -424,6 +425,7 @@ export type Database = {
           request_code?: string | null
           schedule_status?: string
           scheduled_at?: string | null
+          scheduled_technician?: string | null
           status?: string
           team_message?: string | null
           title: string
@@ -444,6 +446,7 @@ export type Database = {
           request_code?: string | null
           schedule_status?: string
           scheduled_at?: string | null
+          scheduled_technician?: string | null
           status?: string
           team_message?: string | null
           title?: string
