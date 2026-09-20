@@ -767,15 +767,26 @@ export function AdminOverview() {
                           {contract.accept_ip ? ` · IP ${contract.accept_ip}` : ""}
                         </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          downloadContractPdf(merged, `contrato-serviceflix-${contract.id}.pdf`)
-                        }
-                      >
-                        Baixar PDF
-                      </Button>
+                      <div className="space-y-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            downloadContractPdf(
+                              merged,
+                              `contrato-serviceflix-${contract.contract_code ?? contract.id}.pdf`,
+                            )
+                          }
+                        >
+                          Baixar PDF
+                        </Button>
+                        <ContractRowActions
+                          contract={contract}
+                          subscriptionId={
+                            subscriptions.find((s) => s.user_id === contract.user_id)?.id ?? null
+                          }
+                        />
+                      </div>
                     </div>
                   </li>
                 );
