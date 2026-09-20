@@ -24,19 +24,27 @@ export function useProfile() {
   });
 }
 
-export function useSubscription() {
+/** Todos os contratos/assinaturas do cliente (ele pode ter mais de um). */
+export function useSubscriptions() {
   return useQuery({
-    queryKey: ["subscription"],
+    queryKey: ["subscriptions"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("subscriptions")
         .select("*")
-        .order("created_at", { ascending: false })
-        .limit(1);
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      return data?.[0] ?? null;
+      return data ?? [];
     },
   });
+}
+
+/** Assinatura principal: a ativa, se houver; senão a mais recente. */
+export function useSubscription() {
+  const query = useSubscriptions();
+  const list = query.data ?? [];
+  const main = list.find((item) => item.status === "ativa") ?? list[0] ?? null;
+  return { ...query, data: main } as typeof query & { data: (typeof list)[number] | null };
 }
 
 export function useServiceRequests() {

@@ -76,30 +76,14 @@ export const acceptContract = createServerFn({ method: "POST" })
       contract_notes: `Contrato aceito eletronicamente (versão ${CONTRACT_VERSION}).`,
     };
 
-    const { data: existing } = await supabase
+    // Cada aceite gera uma assinatura própria: o cliente pode ter mais de um contrato.
+    const { data: created, error: createError } = await supabase
       .from("subscriptions")
+      .insert(subscriptionPayload)
       .select("id")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    let subscriptionId = existing?.id ?? null;
-    if (subscriptionId) {
-      const { error } = await supabase
-        .from("subscriptions")
-        .update(subscriptionPayload)
-        .eq("id", subscriptionId);
-      if (error) throw error;
-    } else {
-      const { data: created, error } = await supabase
-        .from("subscriptions")
-        .insert(subscriptionPayload)
-        .select("id")
-        .single();
-      if (error) throw error;
-      subscriptionId = created.id;
-    }
+      .single();
+    if (createError) throw createError;
+    const subscriptionId = created.id;
 
     const { data: acceptance, error } = await supabase
       .from("contract_acceptances")

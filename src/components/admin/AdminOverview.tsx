@@ -273,10 +273,10 @@ export function AdminOverview() {
           ) : (
             <ul className="mt-4 space-y-3">
               {profiles.map((profile) => {
-                const sub = subscriptions.find((s) => s.user_id === profile.id);
+                const clientSubs = subscriptions.filter((s) => s.user_id === profile.id);
                 const clientPayments = payments.filter((p) => p.user_id === profile.id);
                 const clientPaid = clientPayments.filter((p) => p.status === "pago");
-                const contract = contracts.find((c) => c.user_id === profile.id);
+                const clientContracts = contracts.filter((c) => c.user_id === profile.id);
                 const fullAddress = [
                   profile.address,
                   profile.address_number,
@@ -304,56 +304,90 @@ export function AdminOverview() {
                           Endereço: {fullAddress || "não informado"}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Cadastro em {formatDateTime(profile.created_at)}
-                          {contract?.contract_code ? ` · contrato ${contract.contract_code}` : ""}
+                          Cadastro em {formatDateTime(profile.created_at)} ·{" "}
+                          {clientSubs.length === 1
+                            ? "1 contrato"
+                            : `${clientSubs.length} contratos`}
                         </p>
                       </div>
                       <div className="text-right">
-                        {sub ? (
-                          <>
-                            <Badge variant={sub.status === "ativa" ? "default" : "secondary"}>
-                              {STATUS_LABELS[sub.status] ?? sub.status}
-                            </Badge>
-                            <p className="mt-2 text-sm font-medium">{sub.plan_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatBRL(sub.monthly_price_cents)}/mês
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Pago até hoje:{" "}
-                              {formatBRL(clientPaid.reduce((sum, p) => sum + (p.amount_cents ?? 0), 0))}
-                            </p>
-                          </>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">Sem plano</span>
-                        )}
+                        <Badge
+                          variant={
+                            clientSubs.some((s) => s.status === "ativa") ? "default" : "secondary"
+                          }
+                        >
+                          {clientSubs.some((s) => s.status === "ativa")
+                            ? "Cliente ativo"
+                            : clientSubs.length > 0
+                              ? "Aguardando ativação"
+                              : "Sem plano"}
+                        </Badge>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Pago até hoje:{" "}
+                          {formatBRL(clientPaid.reduce((sum, p) => sum + (p.amount_cents ?? 0), 0))}
+                        </p>
                       </div>
                     </div>
 
-                    {clientPayments.length > 0 ? (
-                      <div className="mt-3 rounded-lg bg-muted/50 p-3">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          Pagamentos
-                        </p>
-                        <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                          {clientPayments.map((payment) => (
-                            <li key={payment.id}>
-                              {formatBRL(payment.amount_cents)} · {payment.description} ·{" "}
-                              {STATUS_LABELS[payment.status] ?? payment.status} ·{" "}
-                              {payment.paid_at
-                                ? `pago em ${formatDateTime(payment.paid_at)}`
-                                : `vence em ${formatDate(payment.due_date)}`}
-                              {payment.method ? ` · ${payment.method}` : ""}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
+                    {clientSubs.length === 0 ? (
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        Nenhum contrato registrado para este cliente.
+                      </p>
+                    ) : (
+                      <ul className="mt-3 space-y-3">
+                        {clientSubs.map((sub) => {
+                          const subContract = clientContracts.find(
+                            (c) => c.subscription_id === sub.id,
+                          );
+                          const subPayments = clientPayments.filter(
+                            (p) => p.subscription_id === sub.id,
+                          );
+                          return (
+                            <li key={sub.id} className="rounded-lg border border-border/70 p-3">
+                              <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div>
+                                  <p className="text-sm font-semibold">{sub.plan_name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatBRL(sub.monthly_price_cents)}/mês · início{" "}
+                                    {formatDate(sub.started_at)} · próxima cobrança{" "}
+                                    {formatDate(sub.next_billing_date)}
+                                  </p>
+                                  <p className="text-xs text-primary">
+                                    {subContract?.contract_code
+                                      ? `Contrato nº ${subContract.contract_code}`
+                                      : sub.contract_number
+                                        ? `Contrato ${sub.contract_number}`
+                                        : "Contrato sem número"}
+                                  </p>
+                                </div>
+                                <Badge variant={sub.status === "ativa" ? "default" : "secondary"}>
+                                  {STATUS_LABELS[sub.status] ?? sub.status}
+                                </Badge>
+                              </div>
 
-                    {sub ? (
-                      <div className="mt-3">
-                        <SubscriptionRowActions sub={sub} />
-                      </div>
-                    ) : null}
+                              {subPayments.length > 0 ? (
+                                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                                  {subPayments.map((payment) => (
+                                    <li key={payment.id}>
+                                      {formatBRL(payment.amount_cents)} · {payment.description} ·{" "}
+                                      {STATUS_LABELS[payment.status] ?? payment.status} ·{" "}
+                                      {payment.paid_at
+                                        ? `pago em ${formatDateTime(payment.paid_at)}`
+                                        : `vence em ${formatDate(payment.due_date)}`}
+                                      {payment.method ? ` · ${payment.method}` : ""}
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : null}
+
+                              <div className="mt-3">
+                                <SubscriptionRowActions sub={sub} />
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </li>
                 );
               })}
