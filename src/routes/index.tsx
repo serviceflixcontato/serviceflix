@@ -215,7 +215,7 @@ function Home_() {
                 plano: "premium" as const,
               },
               {
-                img: residenciasImg,
+                img: residenciasAsset.url,
                 alt: "Profissional Service Flix fazendo reparo em uma cozinha residencial",
                 icon: Home,
                 eyebrow: "Residências e proprietários",
