@@ -174,6 +174,74 @@ export function AdminOverview() {
         <Stat icon={Gift} label="Indicações convertidas" value={`${convertedReferrals.length} de ${referrals.length}`} />
       </div>
 
+      {pendingActivation.length > 0 ? (
+        <Card>
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <BellRing className="h-5 w-5 text-primary" /> Contratos aguardando ativação
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Contratos assinados pelo cliente. Os destacados em amarelo piscante já têm pagamento
+            confirmado e estão esperando a sua ativação.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {pendingActivation.map(({ sub, contract, paidPayment, openPayment }) => (
+              <li
+                key={sub.id}
+                className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 ${
+                  paidPayment ? "blink-pending" : "border-border"
+                }`}
+              >
+                <div>
+                  <p className="font-semibold">
+                    {nameById.get(sub.user_id) ?? contract?.full_name ?? "Cliente"} · {sub.plan_name}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatBRL(sub.monthly_price_cents)}/mês ·{" "}
+                    {sub.payment_method ?? "forma de pagamento não escolhida"}
+                    {contract ? ` · contrato assinado em ${formatDateTime(contract.accepted_at)}` : ""}
+                  </p>
+                  <p className="mt-1 text-xs font-medium">
+                    {paidPayment
+                      ? "Pagamento confirmado — pronto para ativar"
+                      : openPayment
+                        ? `Pagamento pendente (${openPayment.method ?? "online"}) — ${formatBRL(openPayment.amount_cents)}`
+                        : "Sem fatura registrada"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {openPayment ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={paymentMutation.isPending}
+                      onClick={() =>
+                        paymentMutation.mutate({
+                          payment_id: openPayment.id,
+                          status: "pago",
+                          method: openPayment.method ?? "dinheiro",
+                        })
+                      }
+                    >
+                      Confirmar pagamento
+                    </Button>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    disabled={activationMutation.isPending}
+                    onClick={() => activationMutation.mutate(sub.id)}
+                  >
+                    {activationMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Ativar conta
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
       <nav className="flex gap-2 overflow-x-auto rounded-xl border border-border bg-card p-2 shadow-card">
         {TABS.map((item) => (
           <button
