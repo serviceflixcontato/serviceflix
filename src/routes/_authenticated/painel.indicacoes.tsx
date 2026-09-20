@@ -224,6 +224,9 @@ type ReferralRow = {
   reward_method: string | null;
   reward_pix_key: string | null;
   reward_bank_details: string | null;
+  reward_receipt_path?: string | null;
+  reward_receipt_note?: string | null;
+  reward_paid_at?: string | null;
 };
 
 /** Escolha do resgate da recompensa: dinheiro (Pix/transferência) ou voucher de abatimento. */
