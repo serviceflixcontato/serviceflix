@@ -185,3 +185,20 @@
 @utility shadow-elevated {
   box-shadow: var(--shadow-elevated);
 }
+
+/* Aviso suave para contratos pagos aguardando ativação da equipe. */
+@keyframes pending-blink {
+  0%,
+  100% {
+    background-color: color-mix(in oklch, var(--warning) 8%, transparent);
+    border-color: color-mix(in oklch, var(--warning) 35%, transparent);
+  }
+  50% {
+    background-color: color-mix(in oklch, var(--warning) 22%, transparent);
+    border-color: color-mix(in oklch, var(--warning) 70%, transparent);
+  }
+}
+
+@utility blink-pending {
+  animation: pending-blink 1.8s ease-in-out infinite;
+}
