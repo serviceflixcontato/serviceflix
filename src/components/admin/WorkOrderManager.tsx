@@ -176,8 +176,25 @@ export function WorkOrderManager({
         <p className="text-sm font-semibold">Nova ordem de serviço</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
+            <Label className="text-xs">Código da solicitação (ex.: OS123456SF)</Label>
+            <Select value={requestId} onValueChange={handlePickRequest}>
+              <SelectTrigger>
+                <SelectValue placeholder="Escolha o código" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem vínculo (OS criada por nós)</SelectItem>
+                {openRequests.map((request) => (
+                  <SelectItem key={request.id} value={request.id}>
+                    {request.request_code ?? "sem código"} · {request.title} ·{" "}
+                    {nameById.get(request.user_id) ?? "Cliente"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <Label className="text-xs">Cliente</Label>
-            <Select value={clientId} onValueChange={(v) => { setClientId(v); setRequestId("none"); }}>
+            <Select value={clientId} onValueChange={setClientId}>
               <SelectTrigger>
                 <SelectValue placeholder="Escolha o cliente" />
               </SelectTrigger>
@@ -185,22 +202,6 @@ export function WorkOrderManager({
                 {clients.map((client) => (
                   <SelectItem key={client.id} value={client.id}>
                     {client.full_name ?? client.email ?? "Cliente"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs">Vincular a uma solicitação (opcional)</Label>
-            <Select value={requestId} onValueChange={setRequestId} disabled={!clientId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sem vínculo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Sem vínculo</SelectItem>
-                {clientRequests.map((request) => (
-                  <SelectItem key={request.id} value={request.id}>
-                    {request.title}
                   </SelectItem>
                 ))}
               </SelectContent>
