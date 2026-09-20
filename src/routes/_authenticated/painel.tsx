@@ -3,8 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   ClipboardList,
   CreditCard,
-  Gift,
   FileText,
+  Gift,
+  Headset,
   LayoutDashboard,
   LogOut,
   Wrench,
@@ -26,6 +27,7 @@ const NAV = [
   { to: "/painel/contrato", label: "Contrato", icon: FileText, exact: false },
   { to: "/painel/pagamentos", label: "Pagamentos", icon: CreditCard, exact: false },
   { to: "/painel/indicacoes", label: "Indique e ganhe", icon: Gift, exact: false },
+  { to: "/painel/contato", label: "Contato", icon: Headset, exact: false },
 ] as const;
 
 function PainelLayout() {
