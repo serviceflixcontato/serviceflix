@@ -16,7 +16,7 @@ import {
 import logo from "@/assets/serviceflix-logo-amarelo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useProfile } from "@/hooks/use-panel-data";
+import { useProfile, useSubscriptions } from "@/hooks/use-panel-data";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   component: PainelLayout,
