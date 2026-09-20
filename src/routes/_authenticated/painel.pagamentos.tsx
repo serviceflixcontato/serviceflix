@@ -150,6 +150,29 @@ function Pagamentos() {
     onError: () => toast.error("Não foi possível gerar o pagamento. Tente novamente."),
   });
 
+  const upcomingInvoice = useServerFn(createUpcomingInvoice);
+  const advanceMutation = useMutation({
+    mutationFn: (input: { subscription_id: string; due_date: string }) =>
+      upcomingInvoice({ data: input }),
+    onSuccess: async (result) => {
+      if (!result.ok) {
+        toast.info("Seu plano ainda não tem valor definido. Fale com nosso time.");
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["payments"] });
+      toast.success(
+        "Mensalidade liberada para pagamento. Aplique seu voucher e pague pelo meio que preferir.",
+      );
+      window.setTimeout(() => {
+        document.getElementById("faturas-em-aberto")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    },
+    onError: () => toast.error("Não foi possível liberar a mensalidade."),
+  });
+
   const startSubscription = useMutation({
     mutationFn: () => subscriptionCheckout(),
     onSuccess: (result) => {
