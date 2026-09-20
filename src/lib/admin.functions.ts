@@ -76,18 +76,20 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       await Promise.all([
         supabaseAdmin
           .from("profiles")
-          .select("id, full_name, email, phone, address, client_type, created_at")
+          .select(
+            "id, full_name, email, phone, address, address_number, complement, neighborhood, city_uf, cpf_cnpj, client_type, created_at, updated_at",
+          )
           .order("created_at", { ascending: false }),
         supabaseAdmin
           .from("subscriptions")
           .select(
-            "id, user_id, plan_slug, plan_name, status, monthly_price_cents, started_at, next_billing_date, contract_number, payment_method, payment_choice, activation_requested_at",
+            "id, user_id, plan_slug, plan_name, status, monthly_price_cents, started_at, next_billing_date, contract_number, contract_notes, payment_method, payment_choice, activation_requested_at, created_at",
           )
           .order("created_at", { ascending: false }),
         supabaseAdmin
           .from("payments")
           .select(
-            "id, user_id, subscription_id, description, amount_cents, due_date, paid_at, status, method",
+            "id, user_id, subscription_id, description, amount_cents, due_date, paid_at, status, method, reference, provider, created_at",
           )
           .order("due_date", { ascending: false }),
         supabaseAdmin
@@ -109,17 +111,15 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("contract_acceptances")
           .select(
-            "id, user_id, full_name, cpf_cnpj, email, phone, plan_name, plan_slug, monthly_price_cents, periodicity, payment_method, service_address, contract_version, accepted_at, accept_ip, fields",
+            "id, user_id, contract_code, full_name, cpf_cnpj, email, phone, plan_name, plan_slug, monthly_price_cents, periodicity, payment_method, service_address, contract_version, accepted_at, accept_ip, fields",
           )
           .order("accepted_at", { ascending: false }),
       ]);
 
-    const { data: adminRoles } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin");
-    const adminIds = new Set((adminRoles ?? []).map((row) => row.user_id));
-    const clientProfiles = (profiles.data ?? []).filter((profile) => !adminIds.has(profile.id));
+    // Só a conta técnica de acesso administrativo fica fora da relação de clientes.
+    const clientProfiles = (profiles.data ?? []).filter(
+      (profile) => !(profile.email ?? "").toLowerCase().endsWith("@admin.serviceflix.local"),
+    );
 
     return {
       ok: true as const,
