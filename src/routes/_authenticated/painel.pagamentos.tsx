@@ -329,25 +329,30 @@ function Pagamentos() {
                         {chosen === "pix" || chosen === "cartao" ? (
                           <div className="rounded-xl border border-primary/40 bg-accent p-4">
                             <p className="text-sm font-semibold text-accent-foreground">
-                              Resumo antes do pagamento online
+                              Resumo do seu pagamento
                             </p>
-                            <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-                              <div>
-                                <span className="block text-xs text-muted-foreground">Valor do plano</span>
-                                <strong className="text-lg">{formatBRL(planValue)}</strong>
-                              </div>
-                              <div>
-                                <span className="block text-xs text-muted-foreground">Vouchers disponíveis</span>
-                                <strong className="text-lg text-primary">{formatBRL(availableVoucherTotal)}</strong>
-                              </div>
-                              <div>
-                                <span className="block text-xs text-muted-foreground">Diferença estimada</span>
-                                <strong className="text-lg">{formatBRL(estimatedDifference)}</strong>
-                              </div>
+                            <div className="mt-3 space-y-2 text-sm">
+                              <p className="flex items-center justify-between gap-4">
+                                <span className="text-muted-foreground">Valor do plano</span>
+                                <strong>{formatBRL(planValue)}</strong>
+                              </p>
+                              <p className="flex items-center justify-between gap-4">
+                                <span className="text-muted-foreground">
+                                  Desconto voucher por indicação
+                                </span>
+                                <strong className="text-primary">
+                                  -{formatBRL(Math.min(availableVoucherTotal, planValue))}
+                                </strong>
+                              </p>
+                              <p className="flex items-center justify-between gap-4 border-t border-primary/30 pt-2">
+                                <span className="font-semibold">Saldo a pagar</span>
+                                <strong className="text-xl">{formatBRL(estimatedDifference)}</strong>
+                              </p>
                             </div>
                             <p className="mt-3 text-xs text-muted-foreground">
-                              Na próxima etapa, aplique o voucher. O pagamento online será criado
-                              somente com o saldo restante.
+                              {availableVoucherTotal > 0
+                                ? "Ao continuar, aplique o voucher na fatura: o pagamento online será cobrado somente pelo saldo a pagar."
+                                : "Você não tem vouchers disponíveis. O pagamento online será pelo valor cheio do plano."}
                             </p>
                           </div>
                         ) : null}
@@ -505,7 +510,7 @@ function Pagamentos() {
                       <div className="mt-2 grid gap-1 text-xs">
                         <p>Valor do plano: <strong>{formatBRL(payment.amount_cents)}</strong></p>
                         <p className="text-primary">
-                          Crédito utilizado: <strong>-{formatBRL(discount)}</strong>
+                          Desconto voucher por indicação: <strong>-{formatBRL(discount)}</strong>
                         </p>
                         <p>Saldo a pagar: <strong>{formatBRL(due)}</strong></p>
                       </div>

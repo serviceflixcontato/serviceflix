@@ -680,7 +680,22 @@ export function AdminOverview() {
                           {nameById.get(payment.user_id) ?? "Cliente"}
                         </td>
                         <td className="py-3 pr-4 text-muted-foreground">{payment.description}</td>
-                        <td className="py-3 pr-4">{formatBRL(payment.amount_cents)}</td>
+                        <td className="py-3 pr-4">
+                          <span className="block font-medium">
+                            {formatBRL(
+                              Math.max(
+                                payment.amount_cents - (payment.voucher_discount_cents ?? 0),
+                                0,
+                              ),
+                            )}
+                          </span>
+                          {(payment.voucher_discount_cents ?? 0) > 0 ? (
+                            <span className="block text-xs text-muted-foreground">
+                              plano {formatBRL(payment.amount_cents)} · voucher -
+                              {formatBRL(payment.voucher_discount_cents ?? 0)}
+                            </span>
+                          ) : null}
+                        </td>
                         <td className="py-3 pr-4 text-muted-foreground">
                           {formatDate(payment.due_date)}
                         </td>
