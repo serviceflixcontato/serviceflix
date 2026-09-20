@@ -76,18 +76,20 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       await Promise.all([
         supabaseAdmin
           .from("profiles")
-          .select("id, full_name, email, phone, address, client_type, created_at")
+          .select(
+            "id, full_name, email, phone, address, address_number, complement, neighborhood, city_uf, cpf_cnpj, client_type, created_at, updated_at",
+          )
           .order("created_at", { ascending: false }),
         supabaseAdmin
           .from("subscriptions")
           .select(
-            "id, user_id, plan_slug, plan_name, status, monthly_price_cents, started_at, next_billing_date, contract_number, payment_method, payment_choice, activation_requested_at",
+            "id, user_id, plan_slug, plan_name, status, monthly_price_cents, started_at, next_billing_date, contract_number, contract_notes, payment_method, payment_choice, activation_requested_at, created_at",
           )
           .order("created_at", { ascending: false }),
         supabaseAdmin
           .from("payments")
           .select(
-            "id, user_id, subscription_id, description, amount_cents, due_date, paid_at, status, method",
+            "id, user_id, subscription_id, description, amount_cents, due_date, paid_at, status, method, reference, provider, created_at",
           )
           .order("due_date", { ascending: false }),
         supabaseAdmin
@@ -109,17 +111,15 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("contract_acceptances")
           .select(
-            "id, user_id, full_name, cpf_cnpj, email, phone, plan_name, plan_slug, monthly_price_cents, periodicity, payment_method, service_address, contract_version, accepted_at, accept_ip, fields",
+            "id, user_id, contract_code, full_name, cpf_cnpj, email, phone, plan_name, plan_slug, monthly_price_cents, periodicity, payment_method, service_address, contract_version, accepted_at, accept_ip, fields",
           )
           .order("accepted_at", { ascending: false }),
       ]);
 
-    const { data: adminRoles } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin");
-    const adminIds = new Set((adminRoles ?? []).map((row) => row.user_id));
-    const clientProfiles = (profiles.data ?? []).filter((profile) => !adminIds.has(profile.id));
+    // Só a conta técnica de acesso administrativo fica fora da relação de clientes.
+    const clientProfiles = (profiles.data ?? []).filter(
+      (profile) => !(profile.email ?? "").toLowerCase().endsWith("@admin.serviceflix.local"),
+    );
 
     return {
       ok: true as const,
@@ -260,6 +260,144 @@ export const setPaymentStatusManually = createServerFn({ method: "POST" })
         paid_at: data.status === "pago" ? new Date().toISOString() : null,
       })
       .eq("id", data.payment_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+const subscriptionStatusSchema = z.object({
+  subscription_id: z.string().uuid(),
+  status: z.enum(["ativa", "pendente", "suspensa", "cancelada"]),
+});
+
+async function assertAdmin(context: { supabase: any; userId: string }) {
+  const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (!isAdmin) throw new Error("Apenas administradores podem fazer esta alteração.");
+}
+
+/** Ativa ou desativa (suspende/cancela) a assinatura de um cliente manualmente. */
+export const setSubscriptionStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => subscriptionStatusSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const today = new Date();
+    const next = new Date(today);
+    next.setMonth(next.getMonth() + 1);
+
+    const patch =
+      data.status === "ativa"
+        ? {
+            status: data.status,
+            started_at: today.toISOString().slice(0, 10),
+            next_billing_date: next.toISOString().slice(0, 10),
+          }
+        : { status: data.status };
+
+    const { error } = await supabaseAdmin
+      .from("subscriptions")
+      .update(patch)
+      .eq("id", data.subscription_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+const subscriptionEditSchema = z.object({
+  subscription_id: z.string().uuid(),
+  plan_slug: z.enum(["basico", "master", "premium", "personalizado"]),
+  plan_name: z.string().trim().min(1).max(80),
+  monthly_price_cents: z.number().int().min(0).max(100_000_000),
+  status: z.enum(["ativa", "pendente", "suspensa", "cancelada"]),
+  started_at: z.string().min(8).max(10).nullable().optional(),
+  next_billing_date: z.string().min(8).max(10).nullable().optional(),
+  contract_number: z.string().trim().max(60).nullable().optional(),
+  contract_notes: z.string().trim().max(500).nullable().optional(),
+});
+
+/** Edita os dados da assinatura/contrato de um cliente. */
+export const updateSubscriptionDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => subscriptionEditSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { subscription_id, ...rest } = data;
+    const { error } = await supabaseAdmin
+      .from("subscriptions")
+      .update({
+        ...rest,
+        started_at: rest.started_at || null,
+        next_billing_date: rest.next_billing_date || null,
+        contract_number: rest.contract_number || null,
+        contract_notes: rest.contract_notes || null,
+      })
+      .eq("id", subscription_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+/** Exclui a assinatura de um cliente (e as faturas ligadas a ela). */
+export const deleteSubscription = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ subscription_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("payments").delete().eq("subscription_id", data.subscription_id);
+    await supabaseAdmin
+      .from("contract_acceptances")
+      .update({ subscription_id: null })
+      .eq("subscription_id", data.subscription_id);
+    const { error } = await supabaseAdmin
+      .from("subscriptions")
+      .delete()
+      .eq("id", data.subscription_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+/** Exclui um contrato assinado do histórico. */
+export const deleteContractAcceptance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ contract_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("contract_acceptances")
+      .delete()
+      .eq("id", data.contract_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+const contractEditSchema = z.object({
+  contract_id: z.string().uuid(),
+  plan_name: z.string().trim().min(1).max(80),
+  monthly_price_cents: z.number().int().min(0).max(100_000_000),
+  periodicity: z.string().trim().min(1).max(40),
+  payment_method: z.string().trim().min(1).max(60),
+  service_address: z.string().trim().min(1).max(300),
+});
+
+/** Corrige dados de um contrato assinado (plano, valor, periodicidade, pagamento, endereço). */
+export const updateContractAcceptance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => contractEditSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { contract_id, ...rest } = data;
+    const { error } = await supabaseAdmin
+      .from("contract_acceptances")
+      .update(rest)
+      .eq("id", contract_id);
     if (error) throw error;
     return { ok: true as const };
   });
