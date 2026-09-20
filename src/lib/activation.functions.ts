@@ -25,10 +25,13 @@ export const chooseSubscriptionPayment = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const selected = PAYMENT_CHOICES[data.option];
 
-    const { data: subscription, error: subError } = await supabase
+    let subQuery = supabase
       .from("subscriptions")
       .select("id, plan_name, monthly_price_cents, status")
-      .eq("user_id", userId)
+      .eq("user_id", userId);
+    if (data.subscription_id) subQuery = subQuery.eq("id", data.subscription_id);
+
+    const { data: subscription, error: subError } = await subQuery
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -51,6 +54,7 @@ export const chooseSubscriptionPayment = createServerFn({ method: "POST" })
       .from("payments")
       .select("id")
       .eq("user_id", userId)
+      .eq("subscription_id", subscription.id)
       .neq("status", "pago")
       .order("due_date", { ascending: true })
       .limit(1)
