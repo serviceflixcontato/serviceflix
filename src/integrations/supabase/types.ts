@@ -393,12 +393,18 @@ export type Database = {
       service_requests: {
         Row: {
           category: string
+          client_responded_at: string | null
+          client_response_note: string | null
           created_at: string
           description: string | null
           id: string
           location: string | null
+          materials_needed: string | null
           preferred_date: string | null
+          schedule_status: string
+          scheduled_at: string | null
           status: string
+          team_message: string | null
           title: string
           updated_at: string
           urgency: string
@@ -406,12 +412,18 @@ export type Database = {
         }
         Insert: {
           category?: string
+          client_responded_at?: string | null
+          client_response_note?: string | null
           created_at?: string
           description?: string | null
           id?: string
           location?: string | null
+          materials_needed?: string | null
           preferred_date?: string | null
+          schedule_status?: string
+          scheduled_at?: string | null
           status?: string
+          team_message?: string | null
           title: string
           updated_at?: string
           urgency?: string
@@ -419,12 +431,18 @@ export type Database = {
         }
         Update: {
           category?: string
+          client_responded_at?: string | null
+          client_response_note?: string | null
           created_at?: string
           description?: string | null
           id?: string
           location?: string | null
+          materials_needed?: string | null
           preferred_date?: string | null
+          schedule_status?: string
+          scheduled_at?: string | null
           status?: string
+          team_message?: string | null
           title?: string
           updated_at?: string
           urgency?: string
