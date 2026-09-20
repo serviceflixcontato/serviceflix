@@ -114,9 +114,16 @@ export const getAdminOverview = createServerFn({ method: "GET" })
           .order("accepted_at", { ascending: false }),
       ]);
 
+    const { data: adminRoles } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    const adminIds = new Set((adminRoles ?? []).map((row) => row.user_id));
+    const clientProfiles = (profiles.data ?? []).filter((profile) => !adminIds.has(profile.id));
+
     return {
       ok: true as const,
-      profiles: profiles.data ?? [],
+      profiles: clientProfiles,
       subscriptions: subscriptions.data ?? [],
       payments: payments.data ?? [],
       requests: requests.data ?? [],
