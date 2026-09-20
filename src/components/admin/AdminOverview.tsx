@@ -654,8 +654,9 @@ export function AdminOverview() {
                     />
                     <FinishedPhotoUpload requestId={request.id} clientId={request.user_id} />
                   </li>
-                ))}
-              </ul>
+                  ))}
+                </ul>
+              </>
             )}
           </Card>
 
