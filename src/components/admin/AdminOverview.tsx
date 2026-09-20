@@ -71,6 +71,7 @@ export function AdminOverview() {
   const fetchOverview = useServerFn(getAdminOverview);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabId>("clientes");
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-overview"],
@@ -147,6 +148,31 @@ export function AdminOverview() {
   const activeSubs = subscriptions.filter((s) => s.status === "ativa");
   const convertedReferrals = referrals.filter((r) => r.status === "contratado");
   const newRequestsCount = requests.filter((r) => r.status === "aberta").length;
+
+  /** Solicitações agrupadas por cliente; clientes com solicitação nova vêm primeiro. */
+  const clientGroups = (() => {
+    const map = new Map<
+      string,
+      { clientId: string; clientName: string; requests: typeof requests; newCount: number }
+    >();
+    for (const request of requests) {
+      let group = map.get(request.user_id);
+      if (!group) {
+        group = {
+          clientId: request.user_id,
+          clientName: nameById.get(request.user_id) ?? "Cliente",
+          requests: [],
+          newCount: 0,
+        };
+        map.set(request.user_id, group);
+      }
+      group.requests.push(request);
+      if (request.status === "aberta") group.newCount += 1;
+    }
+    return [...map.values()].sort((a, b) => b.newCount - a.newCount);
+  })();
+  const selectedGroup =
+    clientGroups.find((group) => group.clientId === selectedClientId) ?? clientGroups[0] ?? null;
 
   const pendingActivation = subscriptions
     .filter((sub) => sub.status !== "ativa" && sub.status !== "cancelada")
