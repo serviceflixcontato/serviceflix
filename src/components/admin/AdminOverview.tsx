@@ -710,67 +710,13 @@ export function AdminOverview() {
                 </div>
                 <ul className="mt-4 space-y-3">
                   {(selectedGroup?.requests ?? []).map((request) => (
-                  <li key={request.id} className="rounded-xl border border-border p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <p className="font-semibold">
-                        {request.request_code ? `${request.request_code} · ` : ""}
-                        {request.title}
-                      </p>
-                      <Badge variant="secondary">
-                        {STATUS_LABELS[request.status] ?? request.status}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {nameById.get(request.user_id) ?? "Cliente"} · {request.category} · urgência{" "}
-                      {request.urgency} · {formatDateTime(request.created_at)}
-                    </p>
-                    {request.location ? (
-                      <p className="mt-1 text-sm text-muted-foreground">Local: {request.location}</p>
-                    ) : null}
-                    {request.description ? (
-                      <p className="mt-2 text-sm">{request.description}</p>
-                    ) : null}
-                    {request.scheduled_at ? (
-                      <div className="mt-3 rounded-xl border border-border bg-background p-3 text-sm">
-                        <p>
-                          <strong>Visita agendada:</strong> {formatDateTime(request.scheduled_at)}
-                        </p>
-                        {request.materials_needed ? (
-                          <p className="mt-1 text-muted-foreground">
-                            Material: {request.materials_needed}
-                          </p>
-                        ) : null}
-                        <div className="mt-1">
-                          {request.schedule_status === "confirmado" ? (
-                            <Badge>Cliente confirmou</Badge>
-                          ) : request.schedule_status === "reagendamento_solicitado" ? (
-                            <Badge variant="destructive">Cliente pediu reagendamento</Badge>
-                          ) : (
-                            <Badge variant="outline">Aguardando confirmação do cliente</Badge>
-                          )}
-                        </div>
-                        {request.client_response_note ? (
-                          <p className="mt-2 text-muted-foreground">
-                            Motivo informado pelo cliente: {request.client_response_note}
-                          </p>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    <ServiceRequestActions request={request} />
-                    <PhotoGrid
-                      photos={(photosByRequest.get(request.id) ?? []).filter(
-                        (photo) => photo.kind === "cliente",
-                      )}
-                      title="Fotos enviadas pelo cliente"
+                    <RequestListItem
+                      key={request.id}
+                      request={request}
+                      clientName={nameById.get(request.user_id) ?? "Cliente"}
+                      clientPhotos={photosByRequest.get(request.id) ?? []}
+                      conclusionPhotos={photosByRequest.get(request.id) ?? []}
                     />
-                    <PhotoGrid
-                      photos={(photosByRequest.get(request.id) ?? []).filter(
-                        (photo) => photo.kind === "conclusao",
-                      )}
-                      title="Fotos do serviço finalizado"
-                    />
-                    <FinishedPhotoUpload requestId={request.id} clientId={request.user_id} />
-                  </li>
                   ))}
                 </ul>
               </>
