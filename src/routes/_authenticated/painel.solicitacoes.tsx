@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -19,7 +19,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { PhotoGrid } from "@/components/site/PhotoGrid";
 import { supabase } from "@/integrations/supabase/client";
-import { STATUS_LABELS, formatDateTime, useServiceRequests } from "@/hooks/use-panel-data";
+import {
+  STATUS_LABELS,
+  formatDateTime,
+  useServiceRequests,
+  useSubscription,
+} from "@/hooks/use-panel-data";
 import { groupPhotos, useServicePhotos } from "@/hooks/use-service-photos";
 import { uploadServicePhotos } from "@/lib/service-photos";
 
@@ -55,6 +60,8 @@ const PRIORITIES = [
 function Solicitacoes() {
   const queryClient = useQueryClient();
   const { data: requests = [], isLoading } = useServiceRequests();
+  const { data: subscription } = useSubscription();
+  const isActive = subscription?.status === "ativa";
   const { data: photos = [] } = useServicePhotos();
   const [submitting, setSubmitting] = useState(false);
   const [category, setCategory] = useState("");
@@ -133,6 +140,33 @@ function Solicitacoes() {
     setFiles([]);
     void queryClient.invalidateQueries({ queryKey: ["service_requests"] });
     void queryClient.invalidateQueries({ queryKey: ["service_photos"] });
+  }
+
+  if (!isActive) {
+    return (
+      <div className="space-y-6">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+          <h1 className="flex items-center gap-2 text-xl font-bold">
+            <Lock className="h-5 w-5 text-primary" /> Conta ainda não ativada
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {subscription
+              ? "Seu contrato foi registrado. Assim que o pagamento for confirmado e nossa equipe ativar sua conta, você poderá abrir solicitações de manutenção por aqui."
+              : "Para abrir solicitações de manutenção, escolha um plano, assine o contrato e realize o pagamento. A ativação é feita pela nossa equipe."}
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Button asChild>
+              <Link to={subscription ? "/painel/pagamentos" : "/painel/contratar"}>
+                {subscription ? "Ir para pagamentos" : "Escolher plano"}
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/painel/contrato">Ver meu contrato</Link>
+            </Button>
+          </div>
+        </section>
+      </div>
+    );
   }
 
   return (
