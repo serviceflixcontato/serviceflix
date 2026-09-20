@@ -156,8 +156,8 @@ function Contratar() {
         fields,
         accepted_all: true,
       });
-      toast.success("Contrato assinado! Sua contratação foi registrada.");
-      void navigate({ to: "/painel/contrato" });
+      toast.success("Contrato assinado! Agora escolha como pagar.");
+      void navigate({ to: "/painel/pagamentos" });
     } catch {
       toast.error("Não foi possível registrar o aceite. Tente novamente.");
     }
