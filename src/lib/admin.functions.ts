@@ -101,7 +101,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("work_orders")
           .select(
-            "id, user_id, os_number, title, technician, scheduled_for, completed_at, hours_spent, status",
+            "id, user_id, request_id, os_number, title, description, technician, scheduled_for, completed_at, hours_spent, status",
           )
           .order("scheduled_for", { ascending: false }),
         supabaseAdmin.from("referrals").select("*").order("created_at", { ascending: false }),
@@ -417,6 +417,108 @@ export const scheduleServiceRequest = createServerFn({ method: "POST" })
         client_responded_at: null,
       })
       .eq("id", data.request_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+function generateOsNumber() {
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `OS-${rand}`;
+}
+
+const workOrderCreateSchema = z.object({
+  user_id: z.string().uuid(),
+  request_id: z.string().uuid().nullable().optional(),
+  title: z.string().trim().min(2).max(140),
+  description: z.string().trim().max(1500).optional(),
+  technician: z.string().trim().max(80).optional(),
+  scheduled_for: z.string().min(10).max(40).nullable().optional(),
+});
+
+/** Cria uma ordem de serviço para um cliente (com ou sem solicitação vinculada). */
+export const createWorkOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => workOrderCreateSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("work_orders").insert({
+      user_id: data.user_id,
+      request_id: data.request_id ?? null,
+      os_number: generateOsNumber(),
+      title: data.title,
+      description: data.description || null,
+      technician: data.technician || null,
+      scheduled_for: data.scheduled_for ? new Date(data.scheduled_for).toISOString() : null,
+      status: "agendada",
+    });
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+const workOrderEditSchema = z.object({
+  order_id: z.string().uuid(),
+  title: z.string().trim().min(2).max(140),
+  description: z.string().trim().max(1500).optional(),
+  technician: z.string().trim().max(80).optional(),
+  scheduled_for: z.string().min(10).max(40).nullable().optional(),
+});
+
+/** Edita os dados de uma OS (serviço, técnico, data e hora da visita). */
+export const updateWorkOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => workOrderEditSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { order_id, ...rest } = data;
+    const { error } = await supabaseAdmin
+      .from("work_orders")
+      .update({
+        title: rest.title,
+        description: rest.description || null,
+        technician: rest.technician || null,
+        scheduled_for: rest.scheduled_for ? new Date(rest.scheduled_for).toISOString() : null,
+      })
+      .eq("id", order_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+const workOrderStatusSchema = z.object({
+  order_id: z.string().uuid(),
+  status: z.enum(["agendada", "em_andamento", "concluida", "cancelada"]),
+  hours_spent: z.number().min(0).max(1000).nullable().optional(),
+});
+
+/** Muda a situação da OS; ao concluir, registra data/hora e horas trabalhadas. */
+export const setWorkOrderStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => workOrderStatusSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("work_orders")
+      .update({
+        status: data.status,
+        completed_at: data.status === "concluida" ? new Date().toISOString() : null,
+        hours_spent:
+          data.status === "concluida" ? (data.hours_spent ?? null) : null,
+      })
+      .eq("id", data.order_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+/** Exclui uma OS registrada por engano. */
+export const deleteWorkOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ order_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("work_orders").delete().eq("id", data.order_id);
     if (error) throw error;
     return { ok: true as const };
   });
