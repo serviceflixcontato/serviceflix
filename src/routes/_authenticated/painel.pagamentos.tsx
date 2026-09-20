@@ -12,6 +12,7 @@ import {
   QrCode,
   Repeat,
   Ticket,
+  CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 
