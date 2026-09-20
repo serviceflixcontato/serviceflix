@@ -77,7 +77,7 @@ export const PLANS: Plan[] = [
 export const CONTACT = {
   whatsapp: "5511977300204",
   whatsappLabel: "(11) 97730-0204",
-  email: "contato@serviceflix.com.br",
+  email: "service.flix.contato@gmail.com",
 };
 
 export function whatsappLink(message: string) {

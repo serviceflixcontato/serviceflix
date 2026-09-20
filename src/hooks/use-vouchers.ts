@@ -2,7 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { supabase } from "@/integrations/supabase/client";
-import { applyVoucherToPayment, chooseReferralReward } from "@/lib/rewards.functions";
+import {
+  applyAvailableVouchersToPayment,
+  applyVoucherToPayment,
+  chooseReferralReward,
+} from "@/lib/rewards.functions";
 
 export function useMyVouchers() {
   return useQuery({
@@ -40,6 +44,18 @@ export function useApplyVoucher() {
   const apply = useServerFn(applyVoucherToPayment);
   return useMutation({
     mutationFn: (input: { payment_id: string; code: string }) => apply({ data: input }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["payments"] });
+      await queryClient.invalidateQueries({ queryKey: ["vouchers"] });
+    },
+  });
+}
+
+export function useApplyAvailableVouchers() {
+  const queryClient = useQueryClient();
+  const apply = useServerFn(applyAvailableVouchersToPayment);
+  return useMutation({
+    mutationFn: (input: { payment_id: string }) => apply({ data: input }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["payments"] });
       await queryClient.invalidateQueries({ queryKey: ["vouchers"] });
