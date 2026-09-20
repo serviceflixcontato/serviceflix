@@ -258,50 +258,158 @@ function Solicitacoes() {
         </form>
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-        <h2 className="text-xl font-bold">Minhas solicitações</h2>
-        {isLoading ? (
-          <p className="mt-4 text-sm text-muted-foreground">Carregando...</p>
-        ) : requests.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Nenhuma solicitação registrada ainda.
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {requests.map((request) => (
-              <li key={request.id} className="rounded-xl border border-border p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="font-semibold">
-                    {request.request_code ? `${request.request_code} · ` : ""}
-                    {request.title}
-                  </p>
-                  <Badge variant="secondary">
-                    {STATUS_LABELS[request.status] ?? request.status}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {request.category} · {request.location ?? "Local não informado"} ·{" "}
-                  {formatDateTime(request.created_at)}
+      <div className="space-y-6">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+          <h2 className="text-xl font-bold">Minhas solicitações</h2>
+          {isLoading ? (
+            <p className="mt-4 text-sm text-muted-foreground">Carregando...</p>
+          ) : requests.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Nenhuma solicitação registrada ainda.
+            </p>
+          ) : (
+            <>
+              <div className="mt-4 flex flex-wrap gap-2 rounded-xl border border-border bg-muted/40 p-2">
+                {REQUEST_VIEWS.map((view) => {
+                  const count = requests.filter((request) => view.match(request.status)).length;
+                  return (
+                    <button
+                      key={view.id}
+                      type="button"
+                      onClick={() => setRequestView(view.id)}
+                      className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                        requestView === view.id
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      {view.label} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {visibleRequests.length === 0 ? (
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Nenhuma solicitação nesta situação.
                 </p>
-                <p className="mt-2 text-sm text-muted-foreground">{request.description}</p>
-                <ScheduleResponse request={request} />
-                <PhotoGrid
-                  photos={(photosByRequest.get(request.id) ?? []).filter(
-                    (photo) => photo.kind === "cliente",
-                  )}
-                  title="Fotos enviadas por você"
-                />
-                <PhotoGrid
-                  photos={(photosByRequest.get(request.id) ?? []).filter(
-                    (photo) => photo.kind === "conclusao",
-                  )}
-                  title="Serviço finalizado pela equipe"
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              ) : (
+                <ul className="mt-4 space-y-3">
+                  {visibleRequests.map((request) => (
+                    <RequestItem
+                      key={request.id}
+                      request={request}
+                      photos={photosByRequest.get(request.id) ?? []}
+                      startOpen={request.status === "aberta"}
+                    />
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+          <h2 className="text-xl font-bold">Minhas ordens de serviço</h2>
+          {orders.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              As ordens de serviço da nossa equipe aparecerão aqui.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {orders.map((order) => (
+                <li key={order.id} className="rounded-xl border border-border p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="font-semibold">
+                      {order.os_number} · {order.title}
+                    </p>
+                    <Badge variant="secondary">
+                      {STATUS_LABELS[order.status] ?? order.status}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {order.completed_at
+                      ? `Concluída em ${formatDateTime(order.completed_at)}`
+                      : `Agendada para ${formatDateTime(order.scheduled_for)}`}{" "}
+                    · {order.technician ?? "Profissional a definir"}
+                    {order.hours_spent ? ` · ${order.hours_spent}h` : ""}
+                  </p>
+                  {order.description ? (
+                    <p className="mt-2 text-sm text-muted-foreground">{order.description}</p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
+  );
+}
+
+const REQUEST_VIEWS = [
+  { id: "novas", label: "Solicitadas", match: (status: string) => status === "aberta" },
+  {
+    id: "agendadas",
+    label: "Agendadas",
+    match: (status: string) => status === "agendada" || status === "em_analise",
+  },
+  { id: "andamento", label: "Em andamento", match: (status: string) => status === "em_andamento" },
+  { id: "concluidas", label: "Concluídas", match: (status: string) => status === "concluida" },
+  { id: "canceladas", label: "Canceladas", match: (status: string) => status === "cancelada" },
+] as const;
+
+type RequestViewId = (typeof REQUEST_VIEWS)[number]["id"];
+
+function RequestItem({
+  request,
+  photos,
+  startOpen,
+}: {
+  request: NonNullable<ReturnType<typeof useServiceRequests>["data"]>[number];
+  photos: ReturnType<typeof groupPhotos>["byRequest"] extends Map<string, infer P> ? P : never;
+  startOpen: boolean;
+}) {
+  const [open, setOpen] = useState(startOpen);
+
+  return (
+    <li className="rounded-xl border border-border">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full flex-wrap items-start justify-between gap-2 p-4 text-left"
+      >
+        <span>
+          <span className="block font-semibold">
+            {request.request_code ? `${request.request_code} · ` : ""}
+            {request.title}
+          </span>
+          <span className="mt-1 block text-xs text-muted-foreground">
+            {request.category} · {request.location ?? "Local não informado"} ·{" "}
+            {formatDateTime(request.created_at)}
+          </span>
+        </span>
+        <span className="flex items-center gap-2">
+          <Badge variant="secondary">{STATUS_LABELS[request.status] ?? request.status}</Badge>
+          <ChevronDown
+            className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </span>
+      </button>
+      {open ? (
+        <div className="border-t border-border p-4">
+          <p className="text-sm text-muted-foreground">{request.description}</p>
+          <ScheduleResponse request={request} />
+          <PhotoGrid
+            photos={photos.filter((photo) => photo.kind === "cliente")}
+            title="Fotos enviadas por você"
+          />
+          <PhotoGrid
+            photos={photos.filter((photo) => photo.kind === "conclusao")}
+            title="Serviço finalizado pela equipe"
+          />
+        </div>
+      ) : null}
+    </li>
   );
 }
