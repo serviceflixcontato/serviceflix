@@ -71,30 +71,6 @@ function Card({ children }: { children: React.ReactNode }) {
 /** Solicitações nesses estados já terminaram: aparecem minimizadas por padrão. */
 const FINISHED_REQUEST_STATUSES = new Set(["concluida", "cancelada"]);
 
-interface RequestListItemProps {
-  request: {
-    id: string;
-    user_id: string;
-    request_code?: string | null;
-    title: string;
-    category: string;
-    urgency: string;
-    status: string;
-    description?: string | null;
-    location?: string | null;
-    created_at: string;
-    scheduled_at?: string | null;
-    materials_needed?: string | null;
-    schedule_status?: string | null;
-    client_response_note?: string | null;
-  };
-  clientName: string;
-  clientPhotos: ReturnType<typeof groupPhotos>["byRequest"] extends Map<string, infer P>
-    ? P[]
-    : never;
-  conclusionPhotos: never extends never ? unknown[] : never;
-}
-
 /**
  * Cartão de uma solicitação no painel. Finalizadas/canceladas iniciam
  * minimizadas — clicar no cabeçalho abre as fotos e as ações novamente.
