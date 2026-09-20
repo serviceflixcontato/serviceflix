@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, Lock } from "lucide-react";
+import { ChevronDown, Loader2, Lock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -25,8 +25,9 @@ import {
   formatDateTime,
   useServiceRequests,
   useSubscription,
+  useWorkOrders,
 } from "@/hooks/use-panel-data";
-import { groupPhotos, useServicePhotos } from "@/hooks/use-service-photos";
+import { groupPhotos, useServicePhotos, type ServicePhoto } from "@/hooks/use-service-photos";
 import { uploadServicePhotos } from "@/lib/service-photos";
 
 export const Route = createFileRoute("/_authenticated/painel/solicitacoes")({
@@ -64,12 +65,16 @@ function Solicitacoes() {
   const { data: subscription } = useSubscription();
   const isActive = subscription?.status === "ativa";
   const { data: photos = [] } = useServicePhotos();
+  const { data: orders = [] } = useWorkOrders();
+  const [requestView, setRequestView] = useState<RequestViewId>("novas");
   const [submitting, setSubmitting] = useState(false);
   const [category, setCategory] = useState("");
   const [priority, setPriority] = useState("media");
   const [files, setFiles] = useState<File[]>([]);
 
   const photosByRequest = groupPhotos(photos).byRequest;
+  const activeView = REQUEST_VIEWS.find((view) => view.id === requestView) ?? REQUEST_VIEWS[0];
+  const visibleRequests = requests.filter((request) => activeView.match(request.status));
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -367,7 +372,7 @@ function RequestItem({
   startOpen,
 }: {
   request: NonNullable<ReturnType<typeof useServiceRequests>["data"]>[number];
-  photos: ReturnType<typeof groupPhotos>["byRequest"] extends Map<string, infer P> ? P : never;
+  photos: ServicePhoto[];
   startOpen: boolean;
 }) {
   const [open, setOpen] = useState(startOpen);
