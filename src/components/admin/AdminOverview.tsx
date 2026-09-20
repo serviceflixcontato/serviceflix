@@ -75,6 +75,7 @@ export function AdminOverview() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-overview"],
     queryFn: () => fetchOverview(),
+    refetchInterval: 15000,
   });
 
   const { data: photos = [] } = useServicePhotos();

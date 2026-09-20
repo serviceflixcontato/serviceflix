@@ -202,3 +202,20 @@
 @utility blink-pending {
   animation: pending-blink 1.8s ease-in-out infinite;
 }
+
+/* Alerta forte: nova solicitação de cliente aguardando análise. */
+@keyframes alert-blink {
+  0%,
+  100% {
+    background-color: color-mix(in oklch, var(--warning) 15%, transparent);
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    background-color: color-mix(in oklch, var(--warning) 65%, transparent);
+    box-shadow: 0 0 14px 2px color-mix(in oklch, var(--warning) 50%, transparent);
+  }
+}
+
+@utility blink-alert {
+  animation: alert-blink 1s ease-in-out infinite;
+}
