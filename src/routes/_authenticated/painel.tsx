@@ -9,6 +9,7 @@ import {
   Headset,
   LayoutDashboard,
   LogOut,
+  UserCog,
   Wrench,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/painel")({
 
 const NAV = [
   { to: "/painel", label: "Visão geral", icon: LayoutDashboard, exact: true },
+  { to: "/painel/cadastro", label: "Meus dados", icon: UserCog, exact: false },
   { to: "/painel/solicitacoes", label: "Solicitações", icon: ClipboardList, exact: false },
   { to: "/painel/ordens", label: "OS e histórico", icon: Wrench, exact: false },
   { to: "/painel/contrato", label: "Contrato", icon: FileText, exact: false },
