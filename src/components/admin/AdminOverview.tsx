@@ -676,8 +676,12 @@ export function AdminOverview() {
       {tab === "servicos" ? (
         <div className="space-y-6">
           <Card>
-            <h2 className="text-lg font-semibold">Solicitações recebidas</h2>
-            {requests.length === 0 ? (
+            <h2 className="text-lg font-semibold">Solicitações e histórico por cliente</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Escolha o cliente: primeiro aparecem as solicitações novas (piscando) e, nas abas ao
+              lado, o histórico dele — agendadas, em andamento e concluídas.
+            </p>
+            {clientGroups.length === 0 ? (
               <Empty text="Nenhuma solicitação enviada pelos clientes." />
             ) : (
               <>
@@ -686,7 +690,10 @@ export function AdminOverview() {
                     <button
                       key={group.clientId}
                       type="button"
-                      onClick={() => setSelectedClientId(group.clientId)}
+                      onClick={() => {
+                        setSelectedClientId(group.clientId);
+                        setRequestView("novas");
+                      }}
                       className={`flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                         selectedGroup?.clientId === group.clientId
                           ? "border-primary bg-accent text-accent-foreground"
@@ -706,44 +713,84 @@ export function AdminOverview() {
                     </button>
                   ))}
                 </div>
-                <ul className="mt-4 space-y-3">
-                  {(selectedGroup?.requests ?? [])
-                    .slice()
-                    .sort(
-                      (a, b) =>
-                        Number(FINISHED_REQUEST_STATUSES.has(a.status)) -
-                        Number(FINISHED_REQUEST_STATUSES.has(b.status)),
-                    )
-                    .map((request) => (
-                    <RequestListItem
-                      key={request.id}
-                      request={request}
-                      clientName={nameById.get(request.user_id) ?? "Cliente"}
-                      clientPhotos={photosByRequest.get(request.id) ?? []}
-                      conclusionPhotos={photosByRequest.get(request.id) ?? []}
-                    />
-                  ))}
-                </ul>
+
+                {selectedGroup ? (
+                  <div className="mt-6 rounded-xl border border-border p-4">
+                    <p className="text-sm font-semibold">{selectedGroup.clientName}</p>
+                    <div className="mt-3 flex flex-wrap gap-2 border-b border-border pb-3">
+                      {REQUEST_VIEWS.map((view) => {
+                        const count = selectedGroup.requests.filter((request) =>
+                          view.match(request.status),
+                        ).length;
+                        const blink = view.id === "novas" && count > 0;
+                        return (
+                          <button
+                            key={view.id}
+                            type="button"
+                            onClick={() => setRequestView(view.id)}
+                            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                              requestView === view.id
+                                ? "bg-primary text-primary-foreground"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            } ${blink && requestView !== view.id ? "blink-alert text-foreground" : ""}`}
+                          >
+                            {view.label} ({count})
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {(() => {
+                      const activeView =
+                        REQUEST_VIEWS.find((view) => view.id === requestView) ?? REQUEST_VIEWS[0];
+                      const visible = selectedGroup.requests.filter((request) =>
+                        activeView.match(request.status),
+                      );
+                      if (visible.length === 0) {
+                        return <Empty text={`Nenhuma solicitação em "${activeView.label}".`} />;
+                      }
+                      return (
+                        <ul className="mt-4 space-y-3">
+                          {visible.map((request) => (
+                            <RequestListItem
+                              key={request.id}
+                              request={request}
+                              clientName={selectedGroup.clientName}
+                              clientPhotos={photosByRequest.get(request.id) ?? []}
+                              conclusionPhotos={photosByRequest.get(request.id) ?? []}
+                            />
+                          ))}
+                        </ul>
+                      );
+                    })()}
+
+                    <div className="mt-6 border-t border-border pt-4">
+                      <h3 className="flex items-center gap-2 text-sm font-semibold">
+                        <Wrench className="h-4 w-4 text-primary" /> Ordens de serviço de{" "}
+                        {selectedGroup.clientName}
+                      </h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Crie a OS, mude a data, conclua com as horas trabalhadas ou exclua. Tudo
+                        aparece na área deste cliente na hora.
+                      </p>
+                      <div className="mt-4">
+                        <WorkOrderManager
+                          key={selectedGroup.clientId}
+                          orders={orders.filter(
+                            (order) => order.user_id === selectedGroup.clientId,
+                          )}
+                          clients={profiles.filter(
+                            (profile) => profile.id === selectedGroup.clientId,
+                          )}
+                          requests={selectedGroup.requests}
+                          nameById={nameById}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </>
             )}
-          </Card>
-
-          <Card>
-            <h2 className="flex items-center gap-2 text-lg font-semibold">
-              <Wrench className="h-4 w-4 text-primary" /> Ordens de serviço
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Crie a OS para o cliente, mude a data, conclua com as horas trabalhadas ou exclua.
-              Tudo aparece na área do cliente na hora.
-            </p>
-            <div className="mt-4">
-              <WorkOrderManager
-                orders={orders}
-                clients={profiles}
-                requests={requests}
-                nameById={nameById}
-              />
-            </div>
           </Card>
         </div>
       ) : null}
