@@ -7,10 +7,11 @@ const PAYMENT_CHOICES = {
   pix: { choice: "online", label: "Pix (Mercado Pago)" },
   cartao: { choice: "online", label: "Cartão de crédito (Mercado Pago)" },
   dinheiro: { choice: "dinheiro", label: "Dinheiro (presencial)" },
+  voucher: { choice: "voucher", label: "Voucher de indicação (crédito)" },
 } as const;
 
 const chooseSchema = z.object({
-  option: z.enum(["pix", "cartao", "dinheiro"]),
+  option: z.enum(["pix", "cartao", "dinheiro", "voucher"]),
   subscription_id: z.string().uuid().optional(),
 });
 
@@ -73,7 +74,7 @@ export const chooseSubscriptionPayment = createServerFn({ method: "POST" })
           amount_cents: amount,
           due_date: new Date().toISOString().slice(0, 10),
           status: "pendente",
-          method: selected.choice === "dinheiro" ? "dinheiro" : null,
+          method: selected.choice === "online" ? null : selected.choice,
         })
         .select("id")
         .single();
@@ -82,7 +83,7 @@ export const chooseSubscriptionPayment = createServerFn({ method: "POST" })
     } else if (paymentId) {
       await supabaseAdmin
         .from("payments")
-        .update({ method: selected.choice === "dinheiro" ? "dinheiro" : null })
+        .update({ method: selected.choice === "online" ? null : selected.choice })
         .eq("id", paymentId);
     }
 
