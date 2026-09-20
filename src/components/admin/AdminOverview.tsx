@@ -558,7 +558,7 @@ export function AdminOverview() {
                             Material: {request.materials_needed}
                           </p>
                         ) : null}
-                        <p className="mt-1">
+                        <div className="mt-1">
                           {request.schedule_status === "confirmado" ? (
                             <Badge>Cliente confirmou</Badge>
                           ) : request.schedule_status === "reagendamento_solicitado" ? (
@@ -566,7 +566,7 @@ export function AdminOverview() {
                           ) : (
                             <Badge variant="outline">Aguardando confirmação do cliente</Badge>
                           )}
-                        </p>
+                        </div>
                         {request.client_response_note ? (
                           <p className="mt-2 text-muted-foreground">
                             Motivo informado pelo cliente: {request.client_response_note}
