@@ -1,6 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, CheckCircle2, Clock, Gift, Users, Wrench } from "lucide-react";
+import {
+  AlertTriangle,
+  BellRing,
+  CheckCircle2,
+  Clock,
+  Gift,
+  Loader2,
+  Users,
+  Wrench,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -20,6 +29,7 @@ import {
   updateReferralStatus,
 } from "@/lib/admin.functions";
 import { ManualPlanActivation } from "@/components/admin/ManualPlanActivation";
+import { activateSubscriptionFromContract } from "@/lib/activation.functions";
 import {
   REFERRAL_STATUS_LABELS,
   REFERRAL_STATUS_OPTIONS,
