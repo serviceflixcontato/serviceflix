@@ -99,7 +99,7 @@ function Pagamentos() {
 
       if (input.option === "dinheiro") {
         toast.success(
-          "Pagamento em dinheiro selecionado. Nossa equipe confirma o recebimento e ativa sua conta.",
+          "Pedido finalizado! Aguarde nossa equipe aprovar e ativar o seu contrato. Quando estiver ativo, aparecerá na sua área de cliente.",
         );
         return;
       }
