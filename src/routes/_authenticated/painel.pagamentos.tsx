@@ -88,6 +88,7 @@ function Pagamentos() {
   const [selectedOption, setSelectedOption] = useState<Record<string, OptionId>>({});
   const open = payments.filter((payment) => payment.status !== "pago");
   const paid = payments.filter((payment) => payment.status === "pago");
+  const dueSoon = open.filter((payment) => isDueSoon(payment));
 
   const { data: vouchers = [] } = useMyVouchers();
   const availableVouchers = vouchers.filter(
