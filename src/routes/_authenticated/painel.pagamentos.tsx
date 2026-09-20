@@ -64,8 +64,8 @@ const OPTIONS = [
 function Pagamentos() {
   const queryClient = useQueryClient();
   const { data: payments = [], isLoading } = usePayments();
-  const { data: subscription } = useSubscription();
-  const { data: contract } = useMyContract();
+  const { data: subscriptions = [] } = useSubscriptions();
+  const { data: contracts = [] } = useMyContracts();
   const { data: config } = usePaymentConfig();
   const open = payments.filter((payment) => payment.status !== "pago");
   const paid = payments.filter((payment) => payment.status === "pago");
@@ -74,11 +74,10 @@ function Pagamentos() {
   const subscriptionCheckout = useServerFn(createSubscriptionCheckout);
   const choosePayment = useServerFn(chooseSubscriptionPayment);
 
-  const isActive = subscription?.status === "ativa";
-
   const chooseMutation = useMutation({
-    mutationFn: (option: "pix" | "cartao" | "dinheiro") => choosePayment({ data: { option } }),
-    onSuccess: async (result, option) => {
+    mutationFn: (input: { option: "pix" | "cartao" | "dinheiro"; subscriptionId: string }) =>
+      choosePayment({ data: { option: input.option, subscription_id: input.subscriptionId } }),
+    onSuccess: async (result, input) => {
       if (!result.ok) {
         toast.info("Assine o contrato de um plano antes de escolher a forma de pagamento.");
         return;
@@ -86,7 +85,7 @@ function Pagamentos() {
       await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       await queryClient.invalidateQueries({ queryKey: ["payments"] });
 
-      if (option === "dinheiro") {
+      if (input.option === "dinheiro") {
         toast.success(
           "Pagamento em dinheiro selecionado. Nossa equipe confirma o recebimento e ativa sua conta.",
         );
