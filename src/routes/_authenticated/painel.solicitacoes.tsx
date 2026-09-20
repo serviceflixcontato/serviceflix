@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { PhotoGrid } from "@/components/site/PhotoGrid";
+import { ScheduleResponse } from "@/components/site/ScheduleResponse";
 import { supabase } from "@/integrations/supabase/client";
 import {
   STATUS_LABELS,
@@ -280,6 +281,7 @@ function Solicitacoes() {
                   {formatDateTime(request.created_at)}
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">{request.description}</p>
+                <ScheduleResponse request={request} />
                 <PhotoGrid
                   photos={(photosByRequest.get(request.id) ?? []).filter(
                     (photo) => photo.kind === "cliente",

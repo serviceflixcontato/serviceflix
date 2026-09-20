@@ -31,6 +31,7 @@ import {
 import { ManualPlanActivation } from "@/components/admin/ManualPlanActivation";
 import { SubscriptionRowActions } from "@/components/admin/SubscriptionRowActions";
 import { ContractRowActions } from "@/components/admin/ContractRowActions";
+import { ServiceRequestActions } from "@/components/admin/ServiceRequestActions";
 import { activateSubscriptionFromContract } from "@/lib/activation.functions";
 import {
   REFERRAL_STATUS_LABELS,
@@ -543,6 +544,36 @@ export function AdminOverview() {
                     {request.location ? (
                       <p className="mt-1 text-sm text-muted-foreground">Local: {request.location}</p>
                     ) : null}
+                    {request.description ? (
+                      <p className="mt-2 text-sm">{request.description}</p>
+                    ) : null}
+                    {request.scheduled_at ? (
+                      <div className="mt-3 rounded-xl border border-border bg-background p-3 text-sm">
+                        <p>
+                          <strong>Visita agendada:</strong> {formatDateTime(request.scheduled_at)}
+                        </p>
+                        {request.materials_needed ? (
+                          <p className="mt-1 text-muted-foreground">
+                            Material: {request.materials_needed}
+                          </p>
+                        ) : null}
+                        <p className="mt-1">
+                          {request.schedule_status === "confirmado" ? (
+                            <Badge>Cliente confirmou</Badge>
+                          ) : request.schedule_status === "reagendamento_solicitado" ? (
+                            <Badge variant="destructive">Cliente pediu reagendamento</Badge>
+                          ) : (
+                            <Badge variant="outline">Aguardando confirmação do cliente</Badge>
+                          )}
+                        </p>
+                        {request.client_response_note ? (
+                          <p className="mt-2 text-muted-foreground">
+                            Motivo informado pelo cliente: {request.client_response_note}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <ServiceRequestActions request={request} />
                     <PhotoGrid
                       photos={(photosByRequest.get(request.id) ?? []).filter(
                         (photo) => photo.kind === "cliente",
