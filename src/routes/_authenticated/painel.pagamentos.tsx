@@ -196,6 +196,27 @@ function Pagamentos() {
 
   return (
     <div className="space-y-6">
+      {dueSoon.length > 0 ? (
+        <section className="blink-alert rounded-2xl border p-5 shadow-card">
+          <p className="flex items-center gap-2 font-semibold">
+            <CalendarClock className="h-5 w-5" /> Mensalidade prestes a vencer
+          </p>
+          <ul className="mt-2 space-y-1 text-sm">
+            {dueSoon.map((payment) => (
+              <li key={payment.id}>
+                {monthLabel(payment.due_date) || payment.description} ·{" "}
+                {formatBRL(
+                  Math.max(payment.amount_cents - (payment.voucher_discount_cents ?? 0), 0),
+                )}{" "}
+                · {dueLabel(payment.due_date)}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs">
+            Pague adiantado por Pix, cartão ou dinheiro — e use seu voucher para abater o valor.
+          </p>
+        </section>
+      ) : null}
       <section className="rounded-2xl border border-primary/40 bg-accent p-5 shadow-card">
         <div className="flex items-center justify-between gap-4">
           <div>
