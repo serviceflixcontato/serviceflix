@@ -289,11 +289,14 @@ export const setSubscriptionStatus = createServerFn({ method: "POST" })
     const next = new Date(today);
     next.setMonth(next.getMonth() + 1);
 
-    const patch: Record<string, unknown> = { status: data.status };
-    if (data.status === "ativa") {
-      patch["started_at"] = today.toISOString().slice(0, 10);
-      patch["next_billing_date"] = next.toISOString().slice(0, 10);
-    }
+    const patch =
+      data.status === "ativa"
+        ? {
+            status: data.status,
+            started_at: today.toISOString().slice(0, 10),
+            next_billing_date: next.toISOString().slice(0, 10),
+          }
+        : { status: data.status };
 
     const { error } = await supabaseAdmin
       .from("subscriptions")
