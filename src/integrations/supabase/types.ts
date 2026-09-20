@@ -51,6 +51,7 @@ export type Database = {
         Row: {
           accept_ip: string | null
           accepted_at: string
+          contract_code: string | null
           contract_version: string
           cpf_cnpj: string
           created_at: string
@@ -73,6 +74,7 @@ export type Database = {
         Insert: {
           accept_ip?: string | null
           accepted_at?: string
+          contract_code?: string | null
           contract_version?: string
           cpf_cnpj: string
           created_at?: string
@@ -95,6 +97,7 @@ export type Database = {
         Update: {
           accept_ip?: string | null
           accepted_at?: string
+          contract_code?: string | null
           contract_version?: string
           cpf_cnpj?: string
           created_at?: string
@@ -574,6 +577,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_contract_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
