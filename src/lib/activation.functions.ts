@@ -74,7 +74,7 @@ export const chooseSubscriptionPayment = createServerFn({ method: "POST" })
           amount_cents: amount,
           due_date: new Date().toISOString().slice(0, 10),
           status: "pendente",
-          method: selected.choice === "dinheiro" ? "dinheiro" : null,
+          method: selected.choice === "online" ? null : selected.choice,
         })
         .select("id")
         .single();
@@ -83,7 +83,7 @@ export const chooseSubscriptionPayment = createServerFn({ method: "POST" })
     } else if (paymentId) {
       await supabaseAdmin
         .from("payments")
-        .update({ method: selected.choice === "dinheiro" ? "dinheiro" : null })
+        .update({ method: selected.choice === "online" ? null : selected.choice })
         .eq("id", paymentId);
     }
 
