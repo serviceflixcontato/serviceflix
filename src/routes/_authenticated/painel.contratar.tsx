@@ -21,7 +21,15 @@ import { planPriceLabel, usePlanPrices } from "@/hooks/use-plan-prices";
 import { useAcceptContract } from "@/hooks/use-contract";
 import { useProfile } from "@/hooks/use-panel-data";
 
+const PLAN_SLUGS = PLANS.map((plan) => plan.slug);
+
 export const Route = createFileRoute("/_authenticated/painel/contratar")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    plano:
+      typeof search.plano === "string" && PLAN_SLUGS.includes(search.plano)
+        ? search.plano
+        : undefined,
+  }),
   component: Contratar,
 });
 
@@ -44,12 +52,13 @@ const PAYMENT_METHODS = ["Mercado Pago (Pix, boleto ou cartão)", "Dinheiro", "A
 
 function Contratar() {
   const navigate = useNavigate();
+  const { plano } = Route.useSearch();
   const { data: profile } = useProfile();
   const { data: prices } = usePlanPrices();
   const acceptMutation = useAcceptContract();
 
   const [form, setForm] = useState<FormState>({
-    plan_slug: "master",
+    plan_slug: plano ?? "master",
     full_name: "",
     cpf_cnpj: "",
     email: "",
