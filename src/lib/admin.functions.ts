@@ -421,9 +421,10 @@ export const scheduleServiceRequest = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Código no padrão OS123456SF. */
 function generateOsNumber() {
-  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `OS-${rand}`;
+  const digits = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+  return `OS${digits}SF`;
 }
 
 const workOrderCreateSchema = z.object({
