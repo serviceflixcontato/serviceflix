@@ -166,6 +166,8 @@ export type Database = {
           subscription_id: string | null
           updated_at: string
           user_id: string
+          voucher_discount_cents: number
+          voucher_id: string | null
         }
         Insert: {
           amount_cents: number
@@ -184,6 +186,8 @@ export type Database = {
           subscription_id?: string | null
           updated_at?: string
           user_id: string
+          voucher_discount_cents?: number
+          voucher_id?: string | null
         }
         Update: {
           amount_cents?: number
@@ -202,6 +206,8 @@ export type Database = {
           subscription_id?: string | null
           updated_at?: string
           user_id?: string
+          voucher_discount_cents?: number
+          voucher_id?: string | null
         }
         Relationships: [
           {
@@ -209,6 +215,13 @@ export type Database = {
             columns: ["subscription_id"]
             isOneToOne: false
             referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
             referencedColumns: ["id"]
           },
         ]
@@ -298,7 +311,11 @@ export type Database = {
           property_name: string
           property_type: string
           referrer_id: string
+          reward_bank_details: string | null
           reward_cents: number
+          reward_chosen_at: string | null
+          reward_method: string | null
+          reward_pix_key: string | null
           reward_status: string
           status: string
           updated_at: string
@@ -315,7 +332,11 @@ export type Database = {
           property_name: string
           property_type?: string
           referrer_id: string
+          reward_bank_details?: string | null
           reward_cents?: number
+          reward_chosen_at?: string | null
+          reward_method?: string | null
+          reward_pix_key?: string | null
           reward_status?: string
           status?: string
           updated_at?: string
@@ -332,7 +353,11 @@ export type Database = {
           property_name?: string
           property_type?: string
           referrer_id?: string
+          reward_bank_details?: string | null
           reward_cents?: number
+          reward_chosen_at?: string | null
+          reward_method?: string | null
+          reward_pix_key?: string | null
           reward_status?: string
           status?: string
           updated_at?: string
@@ -540,6 +565,53 @@ export type Database = {
         }
         Relationships: []
       }
+      vouchers: {
+        Row: {
+          amount_cents: number
+          balance_cents: number
+          code: string
+          created_at: string
+          id: string
+          note: string | null
+          referral_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          balance_cents?: number
+          code?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          referral_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          balance_cents?: number
+          code?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          referral_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_orders: {
         Row: {
           completed_at: string | null
@@ -603,6 +675,7 @@ export type Database = {
     Functions: {
       generate_contract_code: { Args: never; Returns: string }
       generate_request_code: { Args: never; Returns: string }
+      generate_voucher_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
