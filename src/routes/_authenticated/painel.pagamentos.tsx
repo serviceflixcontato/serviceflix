@@ -510,7 +510,7 @@ function Pagamentos() {
                       <div className="mt-2 grid gap-1 text-xs">
                         <p>Valor do plano: <strong>{formatBRL(payment.amount_cents)}</strong></p>
                         <p className="text-primary">
-                          Crédito utilizado: <strong>-{formatBRL(discount)}</strong>
+                          Desconto voucher por indicação: <strong>-{formatBRL(discount)}</strong>
                         </p>
                         <p>Saldo a pagar: <strong>{formatBRL(due)}</strong></p>
                       </div>
