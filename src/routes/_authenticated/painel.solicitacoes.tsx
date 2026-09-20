@@ -271,7 +271,10 @@ function Solicitacoes() {
             {requests.map((request) => (
               <li key={request.id} className="rounded-xl border border-border p-4">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="font-semibold">{request.title}</p>
+                  <p className="font-semibold">
+                    {request.request_code ? `${request.request_code} · ` : ""}
+                    {request.title}
+                  </p>
                   <Badge variant="secondary">
                     {STATUS_LABELS[request.status] ?? request.status}
                   </Badge>
