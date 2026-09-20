@@ -313,6 +313,11 @@ export function AdminOverview() {
   const selectedGroup =
     clientGroups.find((group) => group.clientId === selectedClientId) ?? clientGroups[0] ?? null;
 
+  /** Mensalidades na última semana antes do vencimento (ou já vencidas). */
+  const dueSoonPayments = payments
+    .filter((payment) => isDueSoon(payment))
+    .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""));
+
   const pendingActivation = subscriptions
     .filter((sub) => sub.status !== "ativa" && sub.status !== "cancelada")
     .map((sub) => {
