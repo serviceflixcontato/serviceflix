@@ -62,22 +62,15 @@ const OPTIONS = [
     title: "Dinheiro (presencial)",
     description: "Combinamos a entrega do valor e a equipe confirma o recebimento no sistema.",
   },
-  {
-    id: "voucher" as const,
-    icon: Ticket,
-    title: "Voucher de indicação",
-    description: "Use o crédito das suas indicações na fatura e pague apenas a diferença.",
-  },
 ];
 
-type OptionId = "pix" | "cartao" | "dinheiro" | "voucher";
+type OptionId = "pix" | "cartao" | "dinheiro";
 
 function currentOption(method: string | null | undefined): OptionId | null {
   if (!method) return null;
   if (method.startsWith("Pix")) return "pix";
   if (method.startsWith("Cartão")) return "cartao";
   if (method.startsWith("Dinheiro")) return "dinheiro";
-  if (method.startsWith("Voucher")) return "voucher";
   return null;
 }
 
@@ -117,12 +110,6 @@ function Pagamentos() {
       await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       await queryClient.invalidateQueries({ queryKey: ["payments"] });
 
-      if (input.option === "voucher") {
-        toast.success(
-          "Voucher escolhido como meio de pagamento! Informe o código do seu crédito na fatura abaixo: o valor é abatido e você paga apenas a diferença.",
-        );
-        return;
-      }
       if (input.option === "dinheiro") {
         toast.success(
           "Pedido finalizado! Aguarde nossa equipe aprovar e ativar o seu contrato. Quando estiver ativo, aparecerá na sua área de cliente.",
@@ -133,12 +120,15 @@ function Pagamentos() {
         toast.info("Seu plano ainda não tem valor definido. Fale com nosso time.");
         return;
       }
-      const checkout = await invoiceCheckout({ data: { paymentId: result.paymentId } });
-      if (checkout.ok) {
-        window.location.href = checkout.checkoutUrl;
-        return;
-      }
-      notConfiguredToast();
+      toast.success(
+        "Pagamento preparado. Agora aplique seu voucher e confira a diferença antes de pagar online.",
+      );
+      window.setTimeout(() => {
+        document.getElementById("faturas-em-aberto")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
     },
     onError: () => toast.error("Não foi possível registrar a forma de pagamento."),
   });
@@ -247,7 +237,7 @@ function Pagamentos() {
                     Escolha uma opção e clique em finalizar. A liberação da conta é feita pela nossa
                     equipe depois da análise do contrato e da confirmação do pagamento.
                   </p>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {OPTIONS.map((option) => {
                       const selected = (selectedOption[subscription.id] ??
                         currentOption(subscription.payment_method)) === option.id;
@@ -281,8 +271,36 @@ function Pagamentos() {
                     const pending =
                       chooseMutation.isPending &&
                       chooseMutation.variables?.subscriptionId === subscription.id;
+                    const planValue = subscription.monthly_price_cents ?? 0;
+                    const estimatedDifference = Math.max(planValue - availableVoucherTotal, 0);
                     return (
-                      <div className="flex flex-wrap items-center gap-3">
+                      <div className="space-y-3">
+                        {chosen === "pix" || chosen === "cartao" ? (
+                          <div className="rounded-xl border border-primary/40 bg-accent p-4">
+                            <p className="text-sm font-semibold text-accent-foreground">
+                              Resumo antes do pagamento online
+                            </p>
+                            <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                              <div>
+                                <span className="block text-xs text-muted-foreground">Valor do plano</span>
+                                <strong className="text-lg">{formatBRL(planValue)}</strong>
+                              </div>
+                              <div>
+                                <span className="block text-xs text-muted-foreground">Vouchers disponíveis</span>
+                                <strong className="text-lg text-primary">{formatBRL(availableVoucherTotal)}</strong>
+                              </div>
+                              <div>
+                                <span className="block text-xs text-muted-foreground">Diferença estimada</span>
+                                <strong className="text-lg">{formatBRL(estimatedDifference)}</strong>
+                              </div>
+                            </div>
+                            <p className="mt-3 text-xs text-muted-foreground">
+                              Na próxima etapa, aplique o voucher. O pagamento online será criado
+                              somente com o saldo restante.
+                            </p>
+                          </div>
+                        ) : null}
+                        <div className="flex flex-wrap items-center gap-3">
                         <Button
                           disabled={!chosen || pending}
                           onClick={() =>
@@ -294,14 +312,12 @@ function Pagamentos() {
                           }
                         >
                           {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          {chosen === "voucher"
-                            ? "Finalizar com voucher"
-                            : chosen === "dinheiro"
+                          {chosen === "dinheiro"
                             ? "Finalizar e aguardar aprovação"
                             : chosen === "pix"
-                              ? "Finalizar e pagar com Pix"
+                              ? "Continuar com Pix"
                               : chosen === "cartao"
-                                ? "Finalizar e pagar com cartão"
+                                ? "Continuar com cartão"
                                 : "Finalizar pedido"}
                         </Button>
                         {!chosen ? (
@@ -309,6 +325,7 @@ function Pagamentos() {
                             Selecione uma forma de pagamento acima.
                           </span>
                         ) : null}
+                        </div>
                       </div>
                     );
                   })()}
@@ -352,7 +369,7 @@ function Pagamentos() {
         })
       )}
 
-      <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+      <section id="faturas-em-aberto" className="scroll-mt-6 rounded-2xl border border-border bg-card p-6 shadow-card">
         <h2 className="text-lg font-semibold">Faturas em aberto</h2>
         {isLoading ? (
           <p className="mt-4 text-sm text-muted-foreground">Carregando...</p>
@@ -383,8 +400,9 @@ function Pagamentos() {
                         <p>Saldo a pagar: <strong>{formatBRL(due)}</strong></p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg font-semibold">{formatBRL(due)}</span>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="text-xs text-muted-foreground">Total no pagamento online</span>
+                      <span className="text-2xl font-bold">{formatBRL(due)}</span>
                       {payment.method === "dinheiro" ? null : (
                         <Button
                           size="sm"
@@ -394,7 +412,9 @@ function Pagamentos() {
                           {payInvoice.isPending ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : null}
-                          {discount > 0 ? `Pagar diferença de ${formatBRL(due)}` : "Pagar"}
+                          {discount > 0
+                            ? `Pagar diferença de ${formatBRL(due)} online`
+                            : `Pagar ${formatBRL(due)} online`}
                         </Button>
                       )}
                     </div>

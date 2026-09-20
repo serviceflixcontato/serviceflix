@@ -7,11 +7,10 @@ const PAYMENT_CHOICES = {
   pix: { choice: "online", label: "Pix (Mercado Pago)" },
   cartao: { choice: "online", label: "Cartão de crédito (Mercado Pago)" },
   dinheiro: { choice: "dinheiro", label: "Dinheiro (presencial)" },
-  voucher: { choice: "voucher", label: "Voucher de indicação (crédito)" },
 } as const;
 
 const chooseSchema = z.object({
-  option: z.enum(["pix", "cartao", "dinheiro", "voucher"]),
+  option: z.enum(["pix", "cartao", "dinheiro"]),
   subscription_id: z.string().uuid().optional(),
 });
 
