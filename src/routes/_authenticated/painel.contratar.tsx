@@ -249,7 +249,7 @@ function Contratar() {
           {ACCEPT_ITEMS.map((item, index) => (
             <label key={index} className="flex gap-3 text-sm">
               <Checkbox
-                checked={checks[index]}
+                checked={checks[index] === true}
                 onCheckedChange={(value) =>
                   setChecks((current) =>
                     current.map((checked, i) => (i === index ? value === true : checked)),

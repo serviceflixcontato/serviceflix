@@ -576,7 +576,11 @@ export function AdminOverview() {
                     contract_version: contract.contract_version,
                   },
                 );
-                const merged = { ...contractFields, ...(contract.fields ?? {}) };
+                const extra =
+                  contract.fields && typeof contract.fields === "object" && !Array.isArray(contract.fields)
+                    ? (contract.fields as Record<string, string>)
+                    : {};
+                const merged = { ...contractFields, ...extra };
                 return (
                   <li key={contract.id} className="rounded-xl border border-border p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">

@@ -41,7 +41,7 @@ export type ContractFields = {
 };
 
 export type ContractSection = {
-  heading?: string;
+  heading?: string | undefined;
   paragraphs: string[];
 };
 
