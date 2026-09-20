@@ -101,7 +101,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("work_orders")
           .select(
-            "id, user_id, os_number, title, technician, scheduled_for, completed_at, hours_spent, status",
+            "id, user_id, request_id, os_number, title, description, technician, scheduled_for, completed_at, hours_spent, status",
           )
           .order("scheduled_for", { ascending: false }),
         supabaseAdmin.from("referrals").select("*").order("created_at", { ascending: false }),
