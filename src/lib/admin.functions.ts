@@ -89,7 +89,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("payments")
           .select(
-            "id, user_id, subscription_id, description, amount_cents, due_date, paid_at, status, method, reference, provider, created_at",
+            "id, user_id, subscription_id, description, amount_cents, voucher_discount_cents, due_date, paid_at, status, method, reference, provider, created_at",
           )
           .order("due_date", { ascending: false }),
         supabaseAdmin
