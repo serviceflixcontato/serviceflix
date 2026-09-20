@@ -95,7 +95,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("service_requests")
           .select(
-            "id, user_id, title, category, urgency, status, location, description, created_at, materials_needed, scheduled_at, team_message, schedule_status, client_response_note, client_responded_at",
+            "id, user_id, request_code, title, category, urgency, status, location, description, created_at, materials_needed, scheduled_at, team_message, schedule_status, client_response_note, client_responded_at",
           )
           .order("created_at", { ascending: false }),
         supabaseAdmin
@@ -421,9 +421,10 @@ export const scheduleServiceRequest = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Código no padrão OS123456SF. */
 function generateOsNumber() {
-  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `OS-${rand}`;
+  const digits = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+  return `OS${digits}SF`;
 }
 
 const workOrderCreateSchema = z.object({
@@ -442,10 +443,23 @@ export const createWorkOrder = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Quando a OS nasce de uma solicitação do cliente, ela herda o código
+    // gerado na solicitação (OS123456SF) para os dois lados ficarem ligados.
+    let osNumber = generateOsNumber();
+    if (data.request_id) {
+      const { data: request } = await supabaseAdmin
+        .from("service_requests")
+        .select("request_code")
+        .eq("id", data.request_id)
+        .maybeSingle();
+      if (request?.request_code) osNumber = request.request_code;
+    }
+
     const { error } = await supabaseAdmin.from("work_orders").insert({
       user_id: data.user_id,
       request_id: data.request_id ?? null,
-      os_number: generateOsNumber(),
+      os_number: osNumber,
       title: data.title,
       description: data.description || null,
       technician: data.technician || null,

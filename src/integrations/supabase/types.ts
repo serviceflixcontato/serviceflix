@@ -401,6 +401,7 @@ export type Database = {
           location: string | null
           materials_needed: string | null
           preferred_date: string | null
+          request_code: string | null
           schedule_status: string
           scheduled_at: string | null
           status: string
@@ -420,6 +421,7 @@ export type Database = {
           location?: string | null
           materials_needed?: string | null
           preferred_date?: string | null
+          request_code?: string | null
           schedule_status?: string
           scheduled_at?: string | null
           status?: string
@@ -439,6 +441,7 @@ export type Database = {
           location?: string | null
           materials_needed?: string | null
           preferred_date?: string | null
+          request_code?: string | null
           schedule_status?: string
           scheduled_at?: string | null
           status?: string
@@ -596,6 +599,7 @@ export type Database = {
     }
     Functions: {
       generate_contract_code: { Args: never; Returns: string }
+      generate_request_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

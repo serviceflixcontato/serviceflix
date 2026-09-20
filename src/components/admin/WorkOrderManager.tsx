@@ -25,7 +25,13 @@ import {
 } from "@/lib/admin.functions";
 
 type Client = { id: string; full_name: string | null; email: string | null };
-type RequestRow = { id: string; user_id: string; title: string; status: string };
+type RequestRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  status: string;
+  request_code?: string | null;
+};
 export type AdminWorkOrder = {
   id: string;
   user_id: string;
@@ -76,10 +82,20 @@ export function WorkOrderManager({
   const [technician, setTechnician] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
 
-  const clientRequests = useMemo(
-    () => requests.filter((r) => r.user_id === clientId && r.status !== "cancelada"),
-    [requests, clientId],
+  const openRequests = useMemo(
+    () => requests.filter((r) => r.status !== "cancelada"),
+    [requests],
   );
+
+  /** Ao escolher o código da solicitação, cliente e serviço entram sozinhos. */
+  function handlePickRequest(value: string) {
+    setRequestId(value);
+    if (value === "none") return;
+    const request = requests.find((r) => r.id === value);
+    if (!request) return;
+    setClientId(request.user_id);
+    if (!title.trim()) setTitle(request.title);
+  }
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -160,8 +176,25 @@ export function WorkOrderManager({
         <p className="text-sm font-semibold">Nova ordem de serviço</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
+            <Label className="text-xs">Código da solicitação (ex.: OS123456SF)</Label>
+            <Select value={requestId} onValueChange={handlePickRequest}>
+              <SelectTrigger>
+                <SelectValue placeholder="Escolha o código" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem vínculo (OS criada por nós)</SelectItem>
+                {openRequests.map((request) => (
+                  <SelectItem key={request.id} value={request.id}>
+                    {request.request_code ?? "sem código"} · {request.title} ·{" "}
+                    {nameById.get(request.user_id) ?? "Cliente"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <Label className="text-xs">Cliente</Label>
-            <Select value={clientId} onValueChange={(v) => { setClientId(v); setRequestId("none"); }}>
+            <Select value={clientId} onValueChange={setClientId}>
               <SelectTrigger>
                 <SelectValue placeholder="Escolha o cliente" />
               </SelectTrigger>
@@ -169,22 +202,6 @@ export function WorkOrderManager({
                 {clients.map((client) => (
                   <SelectItem key={client.id} value={client.id}>
                     {client.full_name ?? client.email ?? "Cliente"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs">Vincular a uma solicitação (opcional)</Label>
-            <Select value={requestId} onValueChange={setRequestId} disabled={!clientId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sem vínculo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Sem vínculo</SelectItem>
-                {clientRequests.map((request) => (
-                  <SelectItem key={request.id} value={request.id}>
-                    {request.title}
                   </SelectItem>
                 ))}
               </SelectContent>
