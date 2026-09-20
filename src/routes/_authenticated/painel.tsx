@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   LogOut,
   UserCog,
-  Wrench,
 } from "lucide-react";
 
 import logo from "@/assets/serviceflix-logo-amarelo.png.asset.json";
@@ -26,7 +25,6 @@ const NAV = [
   { to: "/painel", label: "Visão geral", icon: LayoutDashboard, exact: true },
   { to: "/painel/cadastro", label: "Meus dados", icon: UserCog, exact: false },
   { to: "/painel/solicitacoes", label: "Solicitações", icon: ClipboardList, exact: false },
-  { to: "/painel/ordens", label: "OS e histórico", icon: Wrench, exact: false },
   { to: "/painel/contrato", label: "Contrato", icon: FileText, exact: false },
   { to: "/painel/contratar", label: "Contratar plano", icon: FileSignature, exact: false },
   { to: "/painel/pagamentos", label: "Pagamentos", icon: CreditCard, exact: false },
@@ -34,7 +32,7 @@ const NAV = [
   { to: "/painel/contato", label: "Contato", icon: Headset, exact: false },
 ] as const;
 
-const ACTIVE_ONLY = ["/painel/solicitacoes", "/painel/ordens"];
+const ACTIVE_ONLY = ["/painel/solicitacoes"];
 
 function PainelLayout() {
   const navigate = useNavigate();

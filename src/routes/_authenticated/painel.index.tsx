@@ -133,13 +133,13 @@ function PainelHome() {
           icon={Wrench}
           label="OS registradas"
           value={String(orders.length)}
-          to="/painel/ordens"
+          to="/painel/solicitacoes"
         />
         <StatCard
           icon={CalendarCheck}
           label="Próximo atendimento"
           value={nextOrder ? formatDateTime(nextOrder.scheduled_for) : "—"}
-          to="/painel/ordens"
+          to="/painel/solicitacoes"
         />
         <StatCard
           icon={CreditCard}
@@ -209,7 +209,7 @@ function StatCard({
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
-  to: "/painel/solicitacoes" | "/painel/ordens" | "/painel/pagamentos";
+  to: "/painel/solicitacoes" | "/painel/pagamentos";
 }) {
   return (
     <Link

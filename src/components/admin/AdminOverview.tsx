@@ -71,11 +71,8 @@ const REQUEST_VIEWS = [
     match: (status: string) => status === "agendada" || status === "em_analise",
   },
   { id: "andamento", label: "Em andamento", match: (status: string) => status === "em_andamento" },
-  {
-    id: "concluidas",
-    label: "Concluídas",
-    match: (status: string) => status === "concluida" || status === "cancelada",
-  },
+  { id: "concluidas", label: "Concluídas", match: (status: string) => status === "concluida" },
+  { id: "canceladas", label: "Canceladas", match: (status: string) => status === "cancelada" },
 ] as const;
 
 type RequestViewId = (typeof REQUEST_VIEWS)[number]["id"];
