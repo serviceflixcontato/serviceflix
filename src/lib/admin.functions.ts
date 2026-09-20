@@ -387,3 +387,56 @@ export const updateContractAcceptance = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true as const };
   });
+
+const scheduleSchema = z.object({
+  request_id: z.string().uuid(),
+  scheduled_at: z.string().min(10).max(40),
+  materials_needed: z.string().trim().max(1500).optional(),
+  team_message: z.string().trim().max(1500).optional(),
+});
+
+/**
+ * Equipe responde a solicitação do cliente: descreve o material necessário,
+ * marca dia e hora da visita e envia a confirmação para a área do cliente.
+ */
+export const scheduleServiceRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => scheduleSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("service_requests")
+      .update({
+        scheduled_at: new Date(data.scheduled_at).toISOString(),
+        materials_needed: data.materials_needed || null,
+        team_message: data.team_message || null,
+        schedule_status: "aguardando_confirmacao",
+        status: "agendada",
+        client_response_note: null,
+        client_responded_at: null,
+      })
+      .eq("id", data.request_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+const requestStatusSchema = z.object({
+  request_id: z.string().uuid(),
+  status: z.enum(["aberta", "em_analise", "agendada", "em_andamento", "concluida", "cancelada"]),
+});
+
+/** Atualiza a situação de uma solicitação (em análise, em andamento, concluída...). */
+export const setServiceRequestStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => requestStatusSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("service_requests")
+      .update({ status: data.status })
+      .eq("id", data.request_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
