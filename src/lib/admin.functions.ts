@@ -583,3 +583,29 @@ export const setServiceRequestStatus = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true as const };
   });
+
+const referralReceiptSchema = z.object({
+  id: z.string().uuid(),
+  storage_path: z.string().trim().min(3).max(400),
+  note: z.string().trim().max(400).optional().default(""),
+});
+
+/** Registra o comprovante de pagamento da recompensa e marca a recompensa como paga. */
+export const saveReferralReceipt = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => referralReceiptSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("referrals")
+      .update({
+        reward_receipt_path: data.storage_path,
+        reward_receipt_note: data.note.trim() || null,
+        reward_paid_at: new Date().toISOString(),
+        reward_status: "paga",
+      })
+      .eq("id", data.id);
+    if (error) throw error;
+    return { ok: true as const };
+  });

@@ -64,3 +64,22 @@ export async function signPhotoUrls(paths: string[]) {
   }
   return map;
 }
+
+/** Envia a imagem do comprovante de pagamento da recompensa e devolve o caminho salvo. */
+export async function uploadRewardReceipt(input: { file: File; ownerId: string }) {
+  if (!input.file.type.startsWith("image/")) {
+    throw new Error("Envie uma imagem (JPG, PNG ou WEBP) do comprovante.");
+  }
+  if (input.file.size > MAX_PHOTO_BYTES) {
+    throw new Error("O comprovante deve ter no máximo 10 MB.");
+  }
+  const path = `${input.ownerId}/recompensa/${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}-${safeName(input.file.name || "comprovante.jpg")}`;
+
+  const { error } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, input.file, { contentType: input.file.type, upsert: false });
+  if (error) throw error;
+  return path;
+}
