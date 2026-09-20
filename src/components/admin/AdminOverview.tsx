@@ -205,6 +205,7 @@ export function AdminOverview() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabId>("clientes");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [requestView, setRequestView] = useState<RequestViewId>("novas");
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-overview"],
