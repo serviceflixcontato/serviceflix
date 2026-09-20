@@ -59,9 +59,14 @@ export function PlanCard({ plan }: { plan: Plan }) {
         Ideal para: {plan.bestFor}
       </p>
 
-      <Button asChild className="mt-4" variant={plan.highlight ? "default" : "secondary"}>
+      <Button asChild className="mt-4" variant={plan.highlight ? "default" : "default"}>
+        <Link to="/painel/contratar" search={{ plano: plan.slug }}>
+          Contratar plano
+        </Link>
+      </Button>
+      <Button asChild className="mt-2" variant="ghost" size="sm">
         <Link to="/contato" search={{ plano: plan.slug }}>
-          Solicitar proposta
+          Falar com um consultor
         </Link>
       </Button>
     </article>
