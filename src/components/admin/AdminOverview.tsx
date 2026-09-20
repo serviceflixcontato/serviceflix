@@ -31,6 +31,7 @@ import {
 import { ManualPlanActivation } from "@/components/admin/ManualPlanActivation";
 import { SubscriptionRowActions } from "@/components/admin/SubscriptionRowActions";
 import { ContractRowActions } from "@/components/admin/ContractRowActions";
+import { ServiceRequestActions } from "@/components/admin/ServiceRequestActions";
 import { activateSubscriptionFromContract } from "@/lib/activation.functions";
 import {
   REFERRAL_STATUS_LABELS,
