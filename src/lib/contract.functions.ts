@@ -21,7 +21,10 @@ const acceptSchema = z.object({
   complement: z.string().trim().max(60).optional().default(""),
   neighborhood: z.string().trim().min(2).max(80),
   city_uf: z.string().trim().min(2).max(80),
-  client_type: z.enum(["condominio", "residencia"]),
+  client_type: z.preprocess(
+    (value) => (value === "condominio" ? "condominio" : "residencia"),
+    z.enum(["condominio", "residencia"]),
+  ),
   fields: z.record(z.string(), z.string()),
   accepted_all: z.literal(true),
 });
