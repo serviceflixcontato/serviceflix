@@ -709,7 +709,14 @@ export function AdminOverview() {
                   ))}
                 </div>
                 <ul className="mt-4 space-y-3">
-                  {(selectedGroup?.requests ?? []).map((request) => (
+                  {(selectedGroup?.requests ?? [])
+                    .slice()
+                    .sort(
+                      (a, b) =>
+                        Number(FINISHED_REQUEST_STATUSES.has(a.status)) -
+                        Number(FINISHED_REQUEST_STATUSES.has(b.status)),
+                    )
+                    .map((request) => (
                     <RequestListItem
                       key={request.id}
                       request={request}
