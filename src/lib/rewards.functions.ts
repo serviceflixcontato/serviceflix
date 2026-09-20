@@ -189,12 +189,12 @@ export const applyAvailableVouchersToPayment = createServerFn({ method: "POST" }
     }
 
     let remaining = initialRemaining;
-    const uses: Array<{ id: string; balance: number; applied: number }> = [];
+    const uses: Array<{ id: string; applied: number }> = [];
     for (const voucher of vouchers) {
       if (remaining === 0) break;
       const applied = Math.min(voucher.balance_cents, remaining);
       if (applied > 0) {
-        uses.push({ id: voucher.id, balance: voucher.balance_cents, applied });
+        uses.push({ id: voucher.id, applied });
         remaining -= applied;
       }
     }
