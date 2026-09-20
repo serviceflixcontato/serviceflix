@@ -47,6 +47,83 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_acceptances: {
+        Row: {
+          accept_ip: string | null
+          accepted_at: string
+          contract_version: string
+          cpf_cnpj: string
+          created_at: string
+          email: string | null
+          fields: Json
+          full_name: string
+          id: string
+          monthly_price_cents: number | null
+          payment_method: string
+          periodicity: string
+          phone: string | null
+          plan_name: string
+          plan_slug: string
+          service_address: string
+          subscription_id: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accept_ip?: string | null
+          accepted_at?: string
+          contract_version?: string
+          cpf_cnpj: string
+          created_at?: string
+          email?: string | null
+          fields?: Json
+          full_name: string
+          id?: string
+          monthly_price_cents?: number | null
+          payment_method?: string
+          periodicity?: string
+          phone?: string | null
+          plan_name: string
+          plan_slug: string
+          service_address: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accept_ip?: string | null
+          accepted_at?: string
+          contract_version?: string
+          cpf_cnpj?: string
+          created_at?: string
+          email?: string | null
+          fields?: Json
+          full_name?: string
+          id?: string
+          monthly_price_cents?: number | null
+          payment_method?: string
+          periodicity?: string
+          phone?: string | null
+          plan_name?: string
+          plan_slug?: string
+          service_address?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_acceptances_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_settings: {
         Row: {
           id: string
@@ -160,31 +237,46 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          address_number: string | null
+          city_uf: string | null
           client_type: string
+          complement: string | null
+          cpf_cnpj: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          neighborhood: string | null
           phone: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          address_number?: string | null
+          city_uf?: string | null
           client_type?: string
+          complement?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
+          neighborhood?: string | null
           phone?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          address_number?: string | null
+          city_uf?: string | null
           client_type?: string
+          complement?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          neighborhood?: string | null
           phone?: string | null
           updated_at?: string
         }
