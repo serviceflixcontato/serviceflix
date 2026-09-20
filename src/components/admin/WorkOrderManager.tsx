@@ -82,10 +82,20 @@ export function WorkOrderManager({
   const [technician, setTechnician] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
 
-  const clientRequests = useMemo(
-    () => requests.filter((r) => r.user_id === clientId && r.status !== "cancelada"),
-    [requests, clientId],
+  const openRequests = useMemo(
+    () => requests.filter((r) => r.status !== "cancelada"),
+    [requests],
   );
+
+  /** Ao escolher o código da solicitação, cliente e serviço entram sozinhos. */
+  function handlePickRequest(value: string) {
+    setRequestId(value);
+    if (value === "none") return;
+    const request = requests.find((r) => r.id === value);
+    if (!request) return;
+    setClientId(request.user_id);
+    if (!title.trim()) setTitle(request.title);
+  }
 
   const createMutation = useMutation({
     mutationFn: () =>
