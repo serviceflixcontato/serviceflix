@@ -62,6 +62,24 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+/** Abas de histórico dentro do cliente selecionado. */
+const REQUEST_VIEWS = [
+  { id: "novas", label: "Novas", match: (status: string) => status === "aberta" },
+  {
+    id: "agendadas",
+    label: "Agendadas",
+    match: (status: string) => status === "agendada" || status === "em_analise",
+  },
+  { id: "andamento", label: "Em andamento", match: (status: string) => status === "em_andamento" },
+  {
+    id: "concluidas",
+    label: "Concluídas",
+    match: (status: string) => status === "concluida" || status === "cancelada",
+  },
+] as const;
+
+type RequestViewId = (typeof REQUEST_VIEWS)[number]["id"];
+
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <section className="rounded-2xl border border-border bg-card p-6 shadow-card">{children}</section>
