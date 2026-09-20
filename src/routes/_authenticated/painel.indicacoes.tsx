@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Gift, Loader2 } from "lucide-react";
+import { Banknote, Gift, Loader2, Ticket } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -18,6 +18,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { formatBRL, formatDateTime } from "@/hooks/use-panel-data";
 import { useCreateReferral, useMyReferrals } from "@/hooks/use-referrals";
+import {
+  REWARD_METHOD_LABELS,
+  useChooseReferralReward,
+} from "@/hooks/use-vouchers";
 import {
   REFERRAL_REWARD_CENTS,
   REFERRAL_STATUS_LABELS,
@@ -202,11 +206,157 @@ function Indicacoes() {
                     </span>
                   </div>
                 </div>
+                <RewardChoice referral={referral} />
               </li>
             ))}
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+type ReferralRow = {
+  id: string;
+  status: string;
+  reward_cents: number;
+  reward_status: string;
+  reward_method: string | null;
+  reward_pix_key: string | null;
+  reward_bank_details: string | null;
+};
+
+/** Escolha do resgate da recompensa: dinheiro (Pix/transferência) ou voucher de abatimento. */
+function RewardChoice({ referral }: { referral: ReferralRow }) {
+  const choose = useChooseReferralReward();
+  const [method, setMethod] = useState<"dinheiro" | "voucher" | null>(null);
+  const [pixKey, setPixKey] = useState("");
+  const [bankDetails, setBankDetails] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+
+  if (referral.reward_method) {
+    const chosenMoney = referral.reward_method === "dinheiro";
+    return (
+      <div className="mt-4 rounded-xl border border-primary/40 bg-accent p-3 text-sm text-accent-foreground">
+        <p className="font-semibold">
+          {REWARD_METHOD_LABELS[referral.reward_method] ?? referral.reward_method}
+        </p>
+        <p className="mt-1 text-xs">
+          {chosenMoney
+            ? "Aguarde a transferência: nossa equipe envia o valor para os dados informados assim que a recompensa for liberada."
+            : "Você tem um crédito para abatimento: o valor ficará disponível para abatimento no seu contrato, na aba Pagamentos."}
+        </p>
+        {chosenMoney && (referral.reward_pix_key || referral.reward_bank_details) ? (
+          <p className="mt-1 text-xs">
+            Dados informados: {referral.reward_pix_key ?? referral.reward_bank_details}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (referral.status !== "contratado") {
+    return (
+      <p className="mt-4 text-xs text-muted-foreground">
+        Quando o indicado fechar contrato, você escolhe aqui como quer resgatar a recompensa.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/50 p-4">
+      <p className="text-sm font-semibold">Como você quer resgatar {formatBRL(referral.reward_cents)}?</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => setMethod("dinheiro")}
+          className={`rounded-xl border p-3 text-left transition-colors hover:border-primary ${
+            method === "dinheiro" ? "border-primary bg-accent" : "border-border bg-card"
+          }`}
+        >
+          <Banknote className="h-5 w-5 text-primary" />
+          <p className="mt-2 text-sm font-semibold">Receber em dinheiro</p>
+          <p className="mt-1 text-xs text-muted-foreground">Via Pix ou transferência bancária.</p>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMethod("voucher")}
+          className={`rounded-xl border p-3 text-left transition-colors hover:border-primary ${
+            method === "voucher" ? "border-primary bg-accent" : "border-border bg-card"
+          }`}
+        >
+          <Ticket className="h-5 w-5 text-primary" />
+          <p className="mt-2 text-sm font-semibold">Voucher de abatimento</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Crédito para descontar na mensalidade do contrato.
+          </p>
+        </button>
+      </div>
+
+      {method === "dinheiro" ? (
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor={`pix-${referral.id}`}>Chave Pix</Label>
+            <Input
+              id={`pix-${referral.id}`}
+              value={pixKey}
+              onChange={(event) => setPixKey(event.target.value)}
+              maxLength={160}
+              placeholder="CPF, e-mail, telefone ou chave aleatória"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`banco-${referral.id}`}>Dados para transferência bancária</Label>
+            <Textarea
+              id={`banco-${referral.id}`}
+              rows={3}
+              maxLength={400}
+              value={bankDetails}
+              onChange={(event) => setBankDetails(event.target.value)}
+              placeholder="Banco, agência, conta e nome do titular"
+            />
+          </div>
+        </div>
+      ) : null}
+
+      <Button
+        className="mt-4"
+        disabled={!method || choose.isPending}
+        onClick={() => {
+          if (!method) return;
+          if (method === "dinheiro" && !pixKey.trim() && !bankDetails.trim()) {
+            toast.error("Informe a chave Pix ou os dados bancários.");
+            return;
+          }
+          choose.mutate(
+            { referral_id: referral.id, method, pix_key: pixKey, bank_details: bankDetails },
+            {
+              onSuccess: (result) => {
+                if (!result.ok) {
+                  toast.info("Esta recompensa já tem forma de resgate escolhida.");
+                  return;
+                }
+                setMessage(
+                  method === "dinheiro"
+                    ? "Aguarde a transferência: nossa equipe vai enviar o valor para os dados informados."
+                    : "Você tem um crédito para abatimento: o valor ficará disponível para abatimento no seu contrato.",
+                );
+                toast.success("Forma de resgate registrada!");
+              },
+              onError: () => toast.error("Não foi possível registrar o resgate. Tente novamente."),
+            },
+          );
+        }}
+      >
+        {choose.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        Finalizar resgate
+      </Button>
+
+      {message ? (
+        <p className="mt-3 rounded-xl border border-primary/40 bg-accent p-3 text-sm text-accent-foreground">
+          {message}
+        </p>
+      ) : null}
     </div>
   );
 }
