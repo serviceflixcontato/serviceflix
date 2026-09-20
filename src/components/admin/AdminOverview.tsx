@@ -442,7 +442,7 @@ export function AdminOverview() {
                           </Badge>
                         </td>
                         <td className="py-3 pr-4 text-muted-foreground">
-                          {formatDate(payment.paid_at)}
+                          {payment.paid_at ? formatDateTime(payment.paid_at) : "—"}
                           {payment.method ? ` · ${payment.method}` : ""}
                         </td>
                         <td className="py-3">
