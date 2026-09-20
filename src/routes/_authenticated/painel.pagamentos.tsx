@@ -19,14 +19,14 @@ import { CONTACT } from "@/lib/plans";
 import { chooseSubscriptionPayment } from "@/lib/activation.functions";
 import { createInvoiceCheckout, createSubscriptionCheckout } from "@/lib/payments.functions";
 import { usePaymentConfig } from "@/hooks/use-payment-config";
-import { useMyContract } from "@/hooks/use-contract";
+import { useMyContracts } from "@/hooks/use-contract";
 import {
   STATUS_LABELS,
   formatBRL,
   formatDate,
   formatDateTime,
   usePayments,
-  useSubscription,
+  useSubscriptions,
 } from "@/hooks/use-panel-data";
 
 export const Route = createFileRoute("/_authenticated/painel/pagamentos")({
