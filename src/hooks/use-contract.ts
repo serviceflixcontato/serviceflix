@@ -46,7 +46,7 @@ export function useAcceptContract() {
     mutationFn: (input: Record<string, unknown>) => accept({ data: input as never }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["contract-acceptance"] });
-      void queryClient.invalidateQueries({ queryKey: ["subscription"] });
+      void queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       void queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
   });

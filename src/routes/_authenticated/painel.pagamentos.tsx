@@ -83,7 +83,7 @@ function Pagamentos() {
         toast.info("Assine o contrato de um plano antes de escolher a forma de pagamento.");
         return;
       }
-      await queryClient.invalidateQueries({ queryKey: ["subscription"] });
+      await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       await queryClient.invalidateQueries({ queryKey: ["payments"] });
 
       if (option === "dinheiro") {
