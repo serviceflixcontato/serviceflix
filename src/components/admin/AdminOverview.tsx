@@ -747,6 +747,9 @@ export function AdminOverview() {
                         <p className="font-semibold">
                           {contract.full_name ?? nameById.get(contract.user_id) ?? "Cliente"}
                         </p>
+                        <p className="text-sm font-semibold text-primary">
+                          Contrato nº {contract.contract_code ?? "—"}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {contract.plan_name} · {formatBRL(contract.monthly_price_cents)} ·{" "}
                           {contract.periodicity} · {contract.payment_method}
