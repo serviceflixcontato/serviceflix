@@ -192,28 +192,22 @@ function Pagamentos() {
                 <div className="mt-6 space-y-4">
                   <h2 className="text-lg font-semibold">Como você quer pagar?</h2>
                   <p className="text-sm text-muted-foreground">
-                    Escolha uma opção abaixo. A liberação da conta é feita pela nossa equipe depois
-                    da análise do contrato e da confirmação do pagamento.
+                    Escolha uma opção e clique em finalizar. A liberação da conta é feita pela nossa
+                    equipe depois da análise do contrato e da confirmação do pagamento.
                   </p>
                   <div className="grid gap-3 sm:grid-cols-3">
                     {OPTIONS.map((option) => {
-                      const selected = subscription.payment_method?.startsWith(
-                        option.id === "pix"
-                          ? "Pix"
-                          : option.id === "cartao"
-                            ? "Cartão"
-                            : "Dinheiro",
-                      );
+                      const selected = (selectedOption[subscription.id] ??
+                        currentOption(subscription.payment_method)) === option.id;
                       return (
                         <button
                           key={option.id}
                           type="button"
-                          disabled={chooseMutation.isPending}
                           onClick={() =>
-                            chooseMutation.mutate({
-                              option: option.id,
-                              subscriptionId: subscription.id,
-                            })
+                            setSelectedOption((prev) => ({
+                              ...prev,
+                              [subscription.id]: option.id,
+                            }))
                           }
                           className={`rounded-xl border p-4 text-left transition-colors hover:border-primary ${
                             selected ? "border-primary bg-accent" : "border-border"
@@ -228,12 +222,50 @@ function Pagamentos() {
                       );
                     })}
                   </div>
+
+                  {(() => {
+                    const chosen =
+                      selectedOption[subscription.id] ?? currentOption(subscription.payment_method);
+                    const pending =
+                      chooseMutation.isPending &&
+                      chooseMutation.variables?.subscriptionId === subscription.id;
+                    return (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Button
+                          disabled={!chosen || pending}
+                          onClick={() =>
+                            chosen &&
+                            chooseMutation.mutate({
+                              option: chosen,
+                              subscriptionId: subscription.id,
+                            })
+                          }
+                        >
+                          {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          {chosen === "dinheiro"
+                            ? "Finalizar e aguardar aprovação"
+                            : chosen === "pix"
+                              ? "Finalizar e pagar com Pix"
+                              : chosen === "cartao"
+                                ? "Finalizar e pagar com cartão"
+                                : "Finalizar pedido"}
+                        </Button>
+                        {!chosen ? (
+                          <span className="text-xs text-muted-foreground">
+                            Selecione uma forma de pagamento acima.
+                          </span>
+                        ) : null}
+                      </div>
+                    );
+                  })()}
+
                   {subscription.activation_requested_at ? (
                     <p className="rounded-xl border border-primary/40 bg-accent p-3 text-sm text-accent-foreground">
-                      Forma escolhida: <strong>{subscription.payment_method}</strong>. Recebemos seu
-                      pedido em {formatDateTime(subscription.activation_requested_at)} e sua conta
-                      será ativada pela nossa equipe após a conferência do pagamento. Você poderá
-                      abrir solicitações de serviço assim que a conta estiver ativa.
+                      Pedido finalizado em {formatDateTime(subscription.activation_requested_at)} ·
+                      forma escolhida: <strong>{subscription.payment_method}</strong>.
+                      {subscription.payment_method?.startsWith("Dinheiro")
+                        ? " Aguarde: nossa equipe vai conferir o pagamento e ativar o seu contrato. Quando estiver ativo, sua área de cliente já mostra as solicitações e ordens de serviço."
+                        : " Assim que o pagamento for confirmado, nossa equipe ativa o seu contrato e as solicitações de serviço aparecem na sua área de cliente."}
                     </p>
                   ) : null}
                 </div>
