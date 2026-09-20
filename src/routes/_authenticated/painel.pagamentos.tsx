@@ -61,12 +61,23 @@ const OPTIONS = [
   },
 ];
 
+type OptionId = "pix" | "cartao" | "dinheiro";
+
+function currentOption(method: string | null | undefined): OptionId | null {
+  if (!method) return null;
+  if (method.startsWith("Pix")) return "pix";
+  if (method.startsWith("Cartão")) return "cartao";
+  if (method.startsWith("Dinheiro")) return "dinheiro";
+  return null;
+}
+
 function Pagamentos() {
   const queryClient = useQueryClient();
   const { data: payments = [], isLoading } = usePayments();
   const { data: subscriptions = [] } = useSubscriptions();
   const { data: contracts = [] } = useMyContracts();
   const { data: config } = usePaymentConfig();
+  const [selectedOption, setSelectedOption] = useState<Record<string, OptionId>>({});
   const open = payments.filter((payment) => payment.status !== "pago");
   const paid = payments.filter((payment) => payment.status === "pago");
 
