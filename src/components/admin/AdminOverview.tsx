@@ -32,12 +32,15 @@ import { PhotoGrid } from "@/components/site/PhotoGrid";
 import { groupPhotos, useServicePhotos } from "@/hooks/use-service-photos";
 import { uploadServicePhotos } from "@/lib/service-photos";
 import { supabase } from "@/integrations/supabase/client";
+import { buildContractFields } from "@/lib/contract-fields";
+import { downloadContractPdf } from "@/lib/contract-pdf";
 
 
 const TABS = [
   { id: "clientes", label: "Clientes" },
   { id: "assinaturas", label: "Assinaturas e pagamentos" },
   { id: "servicos", label: "Solicitações e OS" },
+  { id: "contratos", label: "Contratos assinados" },
   { id: "indicacoes", label: "Indicações" },
   { id: "leads", label: "Contatos do site" },
 ] as const;
