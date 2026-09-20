@@ -538,6 +538,83 @@ export function AdminOverview() {
           )}
         </Card>
       ) : null}
+
+      {tab === "contratos" ? (
+        <Card>
+          <h2 className="text-lg font-semibold">Contratos assinados pelos clientes</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Cada aceite guarda data, hora, IP e a versão do contrato, além dos dados informados pelo
+            cliente.
+          </p>
+          {contracts.length === 0 ? (
+            <Empty text="Nenhum contrato assinado ainda." />
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {contracts.map((contract) => {
+                const contractFields = buildContractFields(
+                  {
+                    full_name: contract.full_name,
+                    cpf_cnpj: contract.cpf_cnpj,
+                    email: contract.email,
+                    phone: contract.phone,
+                    address: contract.service_address,
+                  },
+                  {
+                    plan_slug: contract.plan_slug,
+                    plan_name: contract.plan_name,
+                    monthly_price_label: formatBRL(contract.monthly_price_cents),
+                    periodicity: contract.periodicity,
+                    payment_method: contract.payment_method,
+                  },
+                  {
+                    accepted_at: contract.accepted_at,
+                    accept_ip: contract.accept_ip,
+                    id: contract.id,
+                    contract_version: contract.contract_version,
+                  },
+                );
+                const merged = { ...contractFields, ...(contract.fields ?? {}) };
+                return (
+                  <li key={contract.id} className="rounded-xl border border-border p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">
+                          {contract.full_name ?? nameById.get(contract.user_id) ?? "Cliente"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {contract.plan_name} · {formatBRL(contract.monthly_price_cents)} ·{" "}
+                          {contract.periodicity} · {contract.payment_method}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          CPF/CNPJ {contract.cpf_cnpj ?? "—"} · {contract.email ?? "—"} ·{" "}
+                          {contract.phone ?? "—"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Endereço de atendimento: {contract.service_address ?? "—"}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Aceite em {formatDateTime(contract.accepted_at)} · versão{" "}
+                          {contract.contract_version}
+                          {contract.accept_ip ? ` · IP ${contract.accept_ip}` : ""}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          downloadContractPdf(merged, `contrato-serviceflix-${contract.id}.pdf`)
+                        }
+                      >
+                        Baixar PDF
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
+      ) : null}
     </div>
   );
 }
