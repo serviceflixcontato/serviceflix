@@ -72,7 +72,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [profiles, subscriptions, payments, requests, orders, referrals, leads] =
+    const [profiles, subscriptions, payments, requests, orders, referrals, leads, contracts] =
       await Promise.all([
         supabaseAdmin
           .from("profiles")
@@ -104,6 +104,12 @@ export const getAdminOverview = createServerFn({ method: "GET" })
           .select("id, name, email, phone, property_type, plan_interest, created_at")
           .order("created_at", { ascending: false })
           .limit(50),
+        supabaseAdmin
+          .from("contract_acceptances")
+          .select(
+            "id, user_id, full_name, cpf_cnpj, email, phone, plan_name, plan_slug, monthly_price_cents, periodicity, payment_method, service_address, contract_version, accepted_at, accept_ip, fields",
+          )
+          .order("accepted_at", { ascending: false }),
       ]);
 
     return {
@@ -115,6 +121,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       orders: orders.data ?? [],
       referrals: referrals.data ?? [],
       leads: leads.data ?? [],
+      contracts: contracts.data ?? [],
     };
   });
 

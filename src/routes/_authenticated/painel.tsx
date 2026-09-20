@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   ClipboardList,
   CreditCard,
+  FileSignature,
   FileText,
   Gift,
   Headset,
@@ -25,6 +26,7 @@ const NAV = [
   { to: "/painel/solicitacoes", label: "Solicitações", icon: ClipboardList, exact: false },
   { to: "/painel/ordens", label: "OS e histórico", icon: Wrench, exact: false },
   { to: "/painel/contrato", label: "Contrato", icon: FileText, exact: false },
+  { to: "/painel/contratar", label: "Contratar plano", icon: FileSignature, exact: false },
   { to: "/painel/pagamentos", label: "Pagamentos", icon: CreditCard, exact: false },
   { to: "/painel/indicacoes", label: "Indique e ganhe", icon: Gift, exact: false },
   { to: "/painel/contato", label: "Contato", icon: Headset, exact: false },
