@@ -670,7 +670,12 @@ export function AdminOverview() {
                   />
                   <tbody>
                     {payments.map((payment) => (
-                      <tr key={payment.id} className="border-b border-border/60">
+                      <tr
+                        key={payment.id}
+                        className={`border-b border-border/60 ${
+                          isDueSoon(payment) ? "blink-alert" : ""
+                        }`}
+                      >
                         <td className="py-3 pr-4 font-medium">
                           {nameById.get(payment.user_id) ?? "Cliente"}
                         </td>
