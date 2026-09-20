@@ -87,6 +87,17 @@ export function AdminOverview() {
     onError: () => toast.error("Não foi possível atualizar o pagamento."),
   });
 
+  const activateSubscription = useServerFn(activateSubscriptionFromContract);
+  const activationMutation = useMutation({
+    mutationFn: (subscriptionId: string) =>
+      activateSubscription({ data: { subscription_id: subscriptionId } }),
+    onSuccess: () => {
+      toast.success("Conta ativada! O cliente já pode abrir solicitações.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+    onError: () => toast.error("Não foi possível ativar a conta."),
+  });
+
   const updateReferral = useServerFn(updateReferralStatus);
   const referralMutation = useMutation({
     mutationFn: (input: { id: string; status: string; reward_status: string }) =>
