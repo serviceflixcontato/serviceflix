@@ -145,10 +145,35 @@ export const updateReferralStatus = createServerFn({ method: "POST" })
       .from("referrals")
       .update({ status: data.status, reward_status: data.reward_status })
       .eq("id", data.id)
-      .select("id")
+      .select("id, referrer_id, reward_cents, reward_method")
       .maybeSingle();
     if (error) throw error;
     if (!updated) throw new Error("Apenas administradores podem atualizar indicações.");
+
+    // Recompensa liberada + cliente escolheu voucher => gera o crédito automaticamente.
+    if (
+      updated.reward_method === "voucher" &&
+      (data.reward_status === "liberada" || data.reward_status === "paga") &&
+      (updated.reward_cents ?? 0) > 0
+    ) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: existing } = await supabaseAdmin
+        .from("vouchers")
+        .select("id")
+        .eq("referral_id", updated.id)
+        .maybeSingle();
+      if (!existing) {
+        await supabaseAdmin.from("vouchers").insert({
+          user_id: updated.referrer_id,
+          referral_id: updated.id,
+          amount_cents: updated.reward_cents,
+          balance_cents: updated.reward_cents,
+          status: "disponivel",
+          note: "Crédito de indicação Service Flix",
+        });
+      }
+    }
+
     return { ok: true as const };
   });
 
