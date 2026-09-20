@@ -370,33 +370,34 @@ export function AdminOverview() {
             {subscriptions.length === 0 ? (
               <Empty text="Nenhuma assinatura registrada." />
             ) : (
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[760px] text-sm">
-                  <Head
-                    cells={["Cliente", "Plano", "Mensalidade", "Situação", "Próx. cobrança", "Contrato"]}
-                  />
-                  <tbody>
-                    {subscriptions.map((sub) => (
-                      <tr key={sub.id} className="border-b border-border/60">
-                        <td className="py-3 pr-4 font-medium">
-                          {nameById.get(sub.user_id) ?? "Cliente"}
-                        </td>
-                        <td className="py-3 pr-4">{sub.plan_name}</td>
-                        <td className="py-3 pr-4">{formatBRL(sub.monthly_price_cents)}</td>
-                        <td className="py-3 pr-4">
-                          <Badge variant={sub.status === "ativa" ? "default" : "secondary"}>
-                            {STATUS_LABELS[sub.status] ?? sub.status}
-                          </Badge>
-                        </td>
-                        <td className="py-3 pr-4 text-muted-foreground">
-                          {formatDate(sub.next_billing_date)}
-                        </td>
-                        <td className="py-3 text-muted-foreground">{sub.contract_number ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ul className="mt-4 space-y-3">
+                {subscriptions.map((sub) => (
+                  <li key={sub.id} className="rounded-xl border border-border p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">
+                          {nameById.get(sub.user_id) ?? "Cliente"} · {sub.plan_name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatBRL(sub.monthly_price_cents)}/mês ·{" "}
+                          {sub.payment_method ?? "forma de pagamento não escolhida"}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Início {formatDate(sub.started_at)} · próxima cobrança{" "}
+                          {formatDate(sub.next_billing_date)} · contrato{" "}
+                          {sub.contract_number ?? "—"}
+                        </p>
+                      </div>
+                      <Badge variant={sub.status === "ativa" ? "default" : "secondary"}>
+                        {STATUS_LABELS[sub.status] ?? sub.status}
+                      </Badge>
+                    </div>
+                    <div className="mt-3">
+                      <SubscriptionRowActions sub={sub} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
           </Card>
 
