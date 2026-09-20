@@ -488,8 +488,12 @@ function Pagamentos() {
             {open.map((payment) => {
               const discount = payment.voucher_discount_cents ?? 0;
               const due = Math.max(payment.amount_cents - discount, 0);
+              const soon = isDueSoon(payment);
               return (
-                <li key={payment.id} className="rounded-xl border border-border p-4">
+                <li
+                  key={payment.id}
+                  className={`rounded-xl border p-4 ${soon ? "blink-alert" : "border-border"}`}
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold">{payment.description}</p>
