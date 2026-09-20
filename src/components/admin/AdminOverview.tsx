@@ -261,46 +261,101 @@ export function AdminOverview() {
 
       {tab === "clientes" ? (
         <Card>
-          <h2 className="text-lg font-semibold">Clientes</h2>
+          <h2 className="text-lg font-semibold">Clientes cadastrados no site</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Todos os cadastros feitos pela área do cliente, com os dados completos usados no
+            contrato.
+          </p>
           {profiles.length === 0 ? (
             <Empty text="Nenhum cliente cadastrado ainda." />
           ) : (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
-                <Head cells={["Cliente", "Contato", "Tipo", "Plano", "Cadastro"]} />
-                <tbody>
-                  {profiles.map((profile) => {
-                    const sub = subscriptions.find((s) => s.user_id === profile.id);
-                    return (
-                      <tr key={profile.id} className="border-b border-border/60">
-                        <td className="py-3 pr-4 font-medium">{profile.full_name ?? "—"}</td>
-                        <td className="py-3 pr-4 text-muted-foreground">
-                          {profile.email ?? "—"}
-                          <br />
-                          {profile.phone ?? "—"}
-                        </td>
-                        <td className="py-3 pr-4 text-muted-foreground">
+            <ul className="mt-4 space-y-3">
+              {profiles.map((profile) => {
+                const sub = subscriptions.find((s) => s.user_id === profile.id);
+                const clientPayments = payments.filter((p) => p.user_id === profile.id);
+                const clientPaid = clientPayments.filter((p) => p.status === "pago");
+                const contract = contracts.find((c) => c.user_id === profile.id);
+                const fullAddress = [
+                  profile.address,
+                  profile.address_number,
+                  profile.complement,
+                  profile.neighborhood,
+                  profile.city_uf,
+                ]
+                  .filter(Boolean)
+                  .join(", ");
+                return (
+                  <li key={profile.id} className="rounded-xl border border-border p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">
+                          {profile.full_name ?? profile.email ?? "Cliente"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {profile.email ?? "—"} · {profile.phone ?? "sem telefone"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          CPF/CNPJ: {profile.cpf_cnpj ?? "não informado"} ·{" "}
                           {profile.client_type === "condominio" ? "Condomínio" : "Residência"}
-                        </td>
-                        <td className="py-3 pr-4">
-                          {sub ? (
-                            <span>
-                              {sub.plan_name}
-                              <Badge variant="secondary" className="ml-2">
-                                {STATUS_LABELS[sub.status] ?? sub.status}
-                              </Badge>
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">Sem plano</span>
-                          )}
-                        </td>
-                        <td className="py-3 text-muted-foreground">{formatDate(profile.created_at)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Endereço: {fullAddress || "não informado"}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Cadastro em {formatDateTime(profile.created_at)}
+                          {contract?.contract_code ? ` · contrato ${contract.contract_code}` : ""}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        {sub ? (
+                          <>
+                            <Badge variant={sub.status === "ativa" ? "default" : "secondary"}>
+                              {STATUS_LABELS[sub.status] ?? sub.status}
+                            </Badge>
+                            <p className="mt-2 text-sm font-medium">{sub.plan_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatBRL(sub.monthly_price_cents)}/mês
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Pago até hoje:{" "}
+                              {formatBRL(clientPaid.reduce((sum, p) => sum + (p.amount_cents ?? 0), 0))}
+                            </p>
+                          </>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Sem plano</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {clientPayments.length > 0 ? (
+                      <div className="mt-3 rounded-lg bg-muted/50 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Pagamentos
+                        </p>
+                        <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                          {clientPayments.map((payment) => (
+                            <li key={payment.id}>
+                              {formatBRL(payment.amount_cents)} · {payment.description} ·{" "}
+                              {STATUS_LABELS[payment.status] ?? payment.status} ·{" "}
+                              {payment.paid_at
+                                ? `pago em ${formatDateTime(payment.paid_at)}`
+                                : `vence em ${formatDate(payment.due_date)}`}
+                              {payment.method ? ` · ${payment.method}` : ""}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {sub ? (
+                      <div className="mt-3">
+                        <SubscriptionRowActions sub={sub} />
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </Card>
       ) : null}
