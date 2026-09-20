@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 type RequestRow = {
   id: string;
   scheduled_at?: string | null;
+  scheduled_technician?: string | null;
   materials_needed?: string | null;
   team_message?: string | null;
   schedule_status?: string | null;
@@ -66,6 +67,11 @@ export function ScheduleResponse({ request }: { request: RequestRow }) {
       <p className="mt-2">
         <strong>Data e hora da visita:</strong> {formatDateTime(request.scheduled_at)}
       </p>
+      {request.scheduled_technician ? (
+        <p className="mt-2">
+          <strong>Profissional responsável:</strong> {request.scheduled_technician}
+        </p>
+      ) : null}
       {request.materials_needed ? (
         <p className="mt-2">
           <strong>Material que você deve adquirir:</strong> {request.materials_needed}
