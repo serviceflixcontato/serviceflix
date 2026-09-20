@@ -1,11 +1,11 @@
 {
-  "version": 1,
   "asset_id": "939b7d4a-3a33-4b6c-9b4f-d6a74da17ad0",
-  "project_id": "31b65897-ca44-4ea1-b98f-8839220e557e",
-  "url": "/__l5e/assets-v1/939b7d4a-3a33-4b6c-9b4f-d6a74da17ad0/mascote-serviceflix.png",
-  "r2_key": "a/v1/31b65897-ca44-4ea1-b98f-8839220e557e/939b7d4a-3a33-4b6c-9b4f-d6a74da17ad0/mascote-serviceflix.png",
-  "original_filename": "mascote-serviceflix.png",
-  "size": 1343482,
   "content_type": "image/png",
-  "created_at": "2026-09-05T02:31:54Z"
+  "created_at": "2026-09-05T02:31:54Z",
+  "original_filename": "mascote-serviceflix.png",
+  "project_id": "f8f4a34b-8a91-4bef-aeb2-d47e93311ffd",
+  "r2_key": "a/v1/f8f4a34b-8a91-4bef-aeb2-d47e93311ffd/939b7d4a-3a33-4b6c-9b4f-d6a74da17ad0/mascote-serviceflix.png",
+  "size": 1343482,
+  "url": "/__l5e/assets-v1/939b7d4a-3a33-4b6c-9b4f-d6a74da17ad0/mascote-serviceflix.png",
+  "version": 1
 }
