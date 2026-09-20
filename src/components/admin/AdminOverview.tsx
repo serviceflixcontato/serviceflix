@@ -32,6 +32,7 @@ import { ManualPlanActivation } from "@/components/admin/ManualPlanActivation";
 import { SubscriptionRowActions } from "@/components/admin/SubscriptionRowActions";
 import { ContractRowActions } from "@/components/admin/ContractRowActions";
 import { ServiceRequestActions } from "@/components/admin/ServiceRequestActions";
+import { WorkOrderManager } from "@/components/admin/WorkOrderManager";
 import { activateSubscriptionFromContract } from "@/lib/activation.functions";
 import {
   REFERRAL_STATUS_LABELS,
@@ -597,35 +598,18 @@ export function AdminOverview() {
             <h2 className="flex items-center gap-2 text-lg font-semibold">
               <Wrench className="h-4 w-4 text-primary" /> Ordens de serviço
             </h2>
-            {orders.length === 0 ? (
-              <Empty text="Nenhuma OS registrada." />
-            ) : (
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[760px] text-sm">
-                  <Head cells={["OS", "Cliente", "Serviço", "Técnico", "Agendada", "Situação"]} />
-                  <tbody>
-                    {orders.map((order) => (
-                      <tr key={order.id} className="border-b border-border/60">
-                        <td className="py-3 pr-4 font-medium">{order.os_number}</td>
-                        <td className="py-3 pr-4">{nameById.get(order.user_id) ?? "Cliente"}</td>
-                        <td className="py-3 pr-4 text-muted-foreground">{order.title}</td>
-                        <td className="py-3 pr-4 text-muted-foreground">
-                          {order.technician ?? "—"}
-                        </td>
-                        <td className="py-3 pr-4 text-muted-foreground">
-                          {formatDateTime(order.scheduled_for)}
-                        </td>
-                        <td className="py-3">
-                          <Badge variant={order.completed_at ? "default" : "outline"}>
-                            {STATUS_LABELS[order.status] ?? order.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <p className="mt-1 text-sm text-muted-foreground">
+              Crie a OS para o cliente, mude a data, conclua com as horas trabalhadas ou exclua.
+              Tudo aparece na área do cliente na hora.
+            </p>
+            <div className="mt-4">
+              <WorkOrderManager
+                orders={orders}
+                clients={profiles}
+                requests={requests}
+                nameById={nameById}
+              />
+            </div>
           </Card>
         </div>
       ) : null}
