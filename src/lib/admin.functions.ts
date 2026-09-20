@@ -190,30 +190,14 @@ export const activatePlanManually = createServerFn({ method: "POST" })
       provider_mode: "manual",
     };
 
-    const { data: existing } = await supabaseAdmin
+    // Sempre cria um novo contrato: um cliente pode ter mais de um plano ativo.
+    const { data: created, error: createError } = await supabaseAdmin
       .from("subscriptions")
+      .insert(payload)
       .select("id")
-      .eq("user_id", data.user_id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    let subscriptionId = existing?.id ?? null;
-    if (subscriptionId) {
-      const { error } = await supabaseAdmin
-        .from("subscriptions")
-        .update(payload)
-        .eq("id", subscriptionId);
-      if (error) throw error;
-    } else {
-      const { data: created, error } = await supabaseAdmin
-        .from("subscriptions")
-        .insert(payload)
-        .select("id")
-        .single();
-      if (error) throw error;
-      subscriptionId = created.id;
-    }
+      .single();
+    if (createError) throw createError;
+    const subscriptionId = created.id;
 
     if (data.register_cash_payment && data.monthly_price_cents > 0) {
       const { error } = await supabaseAdmin.from("payments").insert({
