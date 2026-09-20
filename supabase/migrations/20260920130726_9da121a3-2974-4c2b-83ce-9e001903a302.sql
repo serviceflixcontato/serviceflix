@@ -1,1 +1,0 @@
-GRANT EXECUTE ON FUNCTION public.generate_contract_code() TO authenticated, service_role;
