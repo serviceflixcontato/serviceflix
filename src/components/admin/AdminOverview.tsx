@@ -344,6 +344,33 @@ export function AdminOverview() {
         <Stat icon={Gift} label="Indicações convertidas" value={`${convertedReferrals.length} de ${referrals.length}`} />
       </div>
 
+      {dueSoonPayments.length > 0 ? (
+        <Card>
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Clock className="h-5 w-5 text-primary" /> Mensalidades a vencer (até 7 dias)
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Faturas piscando em amarelo estão na última semana antes do vencimento ou já venceram.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {dueSoonPayments.map((payment) => (
+              <li key={payment.id} className="blink-alert rounded-xl border p-4">
+                <p className="font-semibold">
+                  {nameById.get(payment.user_id) ?? "Cliente"} ·{" "}
+                  {monthLabel(payment.due_date) || payment.description}
+                </p>
+                <p className="mt-1 text-xs">
+                  {formatBRL(
+                    Math.max(payment.amount_cents - (payment.voucher_discount_cents ?? 0), 0),
+                  )}{" "}
+                  · {dueLabel(payment.due_date)} · vencimento {formatDate(payment.due_date)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
       {pendingActivation.length > 0 ? (
         <Card>
           <h2 className="flex items-center gap-2 text-lg font-semibold">
