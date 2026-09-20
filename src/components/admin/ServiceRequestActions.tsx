@@ -40,6 +40,7 @@ export function ServiceRequestActions({
     id: string;
     status: string;
     scheduled_at?: string | null;
+    scheduled_technician?: string | null;
     materials_needed?: string | null;
     team_message?: string | null;
   };
@@ -49,6 +50,7 @@ export function ServiceRequestActions({
   const setStatus = useServerFn(setServiceRequestStatus);
 
   const [scheduledAt, setScheduledAt] = useState(toLocalInput(request.scheduled_at));
+  const [technician, setTechnician] = useState(request.scheduled_technician ?? "");
   const [materials, setMaterials] = useState(request.materials_needed ?? "");
   const [message, setMessage] = useState(request.team_message ?? "");
 
@@ -62,6 +64,7 @@ export function ServiceRequestActions({
         data: {
           request_id: request.id,
           scheduled_at: scheduledAt,
+          scheduled_technician: technician,
           materials_needed: materials,
           team_message: message,
         } as never,
@@ -118,6 +121,16 @@ export function ServiceRequestActions({
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="mt-3 space-y-1.5">
+        <Label htmlFor={`prof-${request.id}`}>Profissional que fará o serviço</Label>
+        <Input
+          id={`prof-${request.id}`}
+          value={technician}
+          onChange={(event) => setTechnician(event.target.value)}
+          placeholder="Ex.: Carlos Silva"
+        />
       </div>
 
       <div className="mt-3 space-y-1.5">

@@ -95,7 +95,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("service_requests")
           .select(
-            "id, user_id, request_code, title, category, urgency, status, location, description, created_at, materials_needed, scheduled_at, team_message, schedule_status, client_response_note, client_responded_at",
+            "id, user_id, request_code, title, category, urgency, status, location, description, created_at, materials_needed, scheduled_at, scheduled_technician, team_message, schedule_status, client_response_note, client_responded_at",
           )
           .order("created_at", { ascending: false }),
         supabaseAdmin
@@ -391,6 +391,7 @@ export const updateContractAcceptance = createServerFn({ method: "POST" })
 const scheduleSchema = z.object({
   request_id: z.string().uuid(),
   scheduled_at: z.string().min(10).max(40),
+  scheduled_technician: z.string().trim().max(120).optional(),
   materials_needed: z.string().trim().max(1500).optional(),
   team_message: z.string().trim().max(1500).optional(),
 });
@@ -409,6 +410,7 @@ export const scheduleServiceRequest = createServerFn({ method: "POST" })
       .from("service_requests")
       .update({
         scheduled_at: new Date(data.scheduled_at).toISOString(),
+        scheduled_technician: data.scheduled_technician || null,
         materials_needed: data.materials_needed || null,
         team_message: data.team_message || null,
         schedule_status: "aguardando_confirmacao",

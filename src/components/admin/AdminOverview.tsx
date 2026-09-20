@@ -111,6 +111,7 @@ function RequestListItem({
     location?: string | null;
     created_at: string;
     scheduled_at?: string | null;
+    scheduled_technician?: string | null;
     materials_needed?: string | null;
     schedule_status?: string | null;
     client_response_note?: string | null;
@@ -163,6 +164,11 @@ function RequestListItem({
               <p>
                 <strong>Visita agendada:</strong> {formatDateTime(request.scheduled_at)}
               </p>
+              {request.scheduled_technician ? (
+                <p className="mt-1 text-muted-foreground">
+                  Profissional: {request.scheduled_technician}
+                </p>
+              ) : null}
               {request.materials_needed ? (
                 <p className="mt-1 text-muted-foreground">
                   Material: {request.materials_needed}
