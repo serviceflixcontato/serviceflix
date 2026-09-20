@@ -25,7 +25,13 @@ import {
 } from "@/lib/admin.functions";
 
 type Client = { id: string; full_name: string | null; email: string | null };
-type RequestRow = { id: string; user_id: string; title: string; status: string };
+type RequestRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  status: string;
+  request_code?: string | null;
+};
 export type AdminWorkOrder = {
   id: string;
   user_id: string;
