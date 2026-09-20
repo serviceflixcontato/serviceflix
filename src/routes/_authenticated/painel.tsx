@@ -3,8 +3,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   ClipboardList,
   CreditCard,
-  Gift,
   FileText,
+  Gift,
+  Headset,
   LayoutDashboard,
   LogOut,
   Wrench,
