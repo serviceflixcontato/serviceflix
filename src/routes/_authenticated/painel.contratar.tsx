@@ -23,13 +23,13 @@ import { useProfile } from "@/hooks/use-panel-data";
 
 const PLAN_SLUGS = PLANS.map((plan) => plan.slug);
 
+type ContratarSearch = { plano?: string };
+
 export const Route = createFileRoute("/_authenticated/painel/contratar")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    plano:
-      typeof search.plano === "string" && PLAN_SLUGS.includes(search.plano)
-        ? search.plano
-        : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): ContratarSearch => {
+    const value = search["plano"];
+    return typeof value === "string" && PLAN_SLUGS.includes(value) ? { plano: value } : {};
+  },
   component: Contratar,
 });
 
