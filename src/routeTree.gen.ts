@@ -25,7 +25,6 @@ import { Route as AuthenticatedPainelContatoRouteImport } from './routes/_authen
 import { Route as AuthenticatedPainelContratarRouteImport } from './routes/_authenticated/painel.contratar'
 import { Route as AuthenticatedPainelContratoRouteImport } from './routes/_authenticated/painel.contrato'
 import { Route as AuthenticatedPainelIndicacoesRouteImport } from './routes/_authenticated/painel.indicacoes'
-import { Route as AuthenticatedPainelOrdensRouteImport } from './routes/_authenticated/painel.ordens'
 import { Route as AuthenticatedPainelPagamentosRouteImport } from './routes/_authenticated/painel.pagamentos'
 import { Route as AuthenticatedPainelSolicitacoesRouteImport } from './routes/_authenticated/painel.solicitacoes'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago-webhook'
@@ -115,12 +114,6 @@ const AuthenticatedPainelIndicacoesRoute =
     path: '/indicacoes',
     getParentRoute: () => AuthenticatedPainelRoute,
   } as any)
-const AuthenticatedPainelOrdensRoute =
-  AuthenticatedPainelOrdensRouteImport.update({
-    id: '/ordens',
-    path: '/ordens',
-    getParentRoute: () => AuthenticatedPainelRoute,
-  } as any)
 const AuthenticatedPainelPagamentosRoute =
   AuthenticatedPainelPagamentosRouteImport.update({
     id: '/pagamentos',
@@ -155,7 +148,6 @@ export interface FileRoutesByFullPath {
   '/painel/contratar': typeof AuthenticatedPainelContratarRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/painel/indicacoes': typeof AuthenticatedPainelIndicacoesRoute
-  '/painel/ordens': typeof AuthenticatedPainelOrdensRoute
   '/painel/pagamentos': typeof AuthenticatedPainelPagamentosRoute
   '/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -175,7 +167,6 @@ export interface FileRoutesByTo {
   '/painel/contratar': typeof AuthenticatedPainelContratarRoute
   '/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/painel/indicacoes': typeof AuthenticatedPainelIndicacoesRoute
-  '/painel/ordens': typeof AuthenticatedPainelOrdensRoute
   '/painel/pagamentos': typeof AuthenticatedPainelPagamentosRoute
   '/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -198,7 +189,6 @@ export interface FileRoutesById {
   '/_authenticated/painel/contratar': typeof AuthenticatedPainelContratarRoute
   '/_authenticated/painel/contrato': typeof AuthenticatedPainelContratoRoute
   '/_authenticated/painel/indicacoes': typeof AuthenticatedPainelIndicacoesRoute
-  '/_authenticated/painel/ordens': typeof AuthenticatedPainelOrdensRoute
   '/_authenticated/painel/pagamentos': typeof AuthenticatedPainelPagamentosRoute
   '/_authenticated/painel/solicitacoes': typeof AuthenticatedPainelSolicitacoesRoute
   '/api/public/mercadopago-webhook': typeof ApiPublicMercadopagoWebhookRoute
@@ -221,7 +211,6 @@ export interface FileRouteTypes {
     | '/painel/contratar'
     | '/painel/contrato'
     | '/painel/indicacoes'
-    | '/painel/ordens'
     | '/painel/pagamentos'
     | '/painel/solicitacoes'
     | '/api/public/mercadopago-webhook'
@@ -241,7 +230,6 @@ export interface FileRouteTypes {
     | '/painel/contratar'
     | '/painel/contrato'
     | '/painel/indicacoes'
-    | '/painel/ordens'
     | '/painel/pagamentos'
     | '/painel/solicitacoes'
     | '/api/public/mercadopago-webhook'
@@ -263,7 +251,6 @@ export interface FileRouteTypes {
     | '/_authenticated/painel/contratar'
     | '/_authenticated/painel/contrato'
     | '/_authenticated/painel/indicacoes'
-    | '/_authenticated/painel/ordens'
     | '/_authenticated/painel/pagamentos'
     | '/_authenticated/painel/solicitacoes'
     | '/api/public/mercadopago-webhook'
@@ -397,13 +384,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPainelIndicacoesRouteImport
       parentRoute: typeof AuthenticatedPainelRoute
     }
-    '/_authenticated/painel/ordens': {
-      id: '/_authenticated/painel/ordens'
-      path: '/ordens'
-      fullPath: '/painel/ordens'
-      preLoaderRoute: typeof AuthenticatedPainelOrdensRouteImport
-      parentRoute: typeof AuthenticatedPainelRoute
-    }
     '/_authenticated/painel/pagamentos': {
       id: '/_authenticated/painel/pagamentos'
       path: '/pagamentos'
@@ -434,7 +414,6 @@ interface AuthenticatedPainelRouteChildren {
   AuthenticatedPainelContratarRoute: typeof AuthenticatedPainelContratarRoute
   AuthenticatedPainelContratoRoute: typeof AuthenticatedPainelContratoRoute
   AuthenticatedPainelIndicacoesRoute: typeof AuthenticatedPainelIndicacoesRoute
-  AuthenticatedPainelOrdensRoute: typeof AuthenticatedPainelOrdensRoute
   AuthenticatedPainelPagamentosRoute: typeof AuthenticatedPainelPagamentosRoute
   AuthenticatedPainelSolicitacoesRoute: typeof AuthenticatedPainelSolicitacoesRoute
   AuthenticatedPainelIndexRoute: typeof AuthenticatedPainelIndexRoute
@@ -446,7 +425,6 @@ const AuthenticatedPainelRouteChildren: AuthenticatedPainelRouteChildren = {
   AuthenticatedPainelContratarRoute: AuthenticatedPainelContratarRoute,
   AuthenticatedPainelContratoRoute: AuthenticatedPainelContratoRoute,
   AuthenticatedPainelIndicacoesRoute: AuthenticatedPainelIndicacoesRoute,
-  AuthenticatedPainelOrdensRoute: AuthenticatedPainelOrdensRoute,
   AuthenticatedPainelPagamentosRoute: AuthenticatedPainelPagamentosRoute,
   AuthenticatedPainelSolicitacoesRoute: AuthenticatedPainelSolicitacoesRoute,
   AuthenticatedPainelIndexRoute: AuthenticatedPainelIndexRoute,
