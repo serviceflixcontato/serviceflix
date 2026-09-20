@@ -180,3 +180,55 @@ export const createSubscriptionCheckout = createServerFn({ method: "POST" })
 
     return { ok: true as const, mode, checkoutUrl: result.checkoutUrl };
   });
+
+/**
+ * Gera (ou reaproveita) a fatura da mensalidade que está para vencer, para o
+ * cliente adiantar o pagamento e/ou abater com voucher.
+ */
+export const createUpcomingInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ subscription_id: z.string().uuid(), due_date: z.string().min(8) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: subscription, error } = await context.supabase
+      .from("subscriptions")
+      .select("id, plan_name, monthly_price_cents, status")
+      .eq("id", data.subscription_id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!subscription) throw new Error("Assinatura não encontrada.");
+    if (!subscription.monthly_price_cents) {
+      return { ok: false as const, reason: "no_price" as const };
+    }
+
+    const dueDate = data.due_date.slice(0, 10);
+
+    const { data: existing } = await context.supabase
+      .from("payments")
+      .select("id, status")
+      .eq("subscription_id", subscription.id)
+      .eq("due_date", dueDate)
+      .maybeSingle();
+    if (existing) {
+      return { ok: true as const, paymentId: existing.id, created: false, status: existing.status };
+    }
+
+    const month = dueDate.slice(0, 7).split("-").reverse().join("/");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: created, error: insertError } = await supabaseAdmin
+      .from("payments")
+      .insert({
+        user_id: context.userId,
+        subscription_id: subscription.id,
+        description: `Mensalidade ${month} · ${subscription.plan_name}`,
+        amount_cents: subscription.monthly_price_cents,
+        due_date: dueDate,
+        status: "pendente",
+      })
+      .select("id, status")
+      .single();
+    if (insertError) throw insertError;
+
+    return { ok: true as const, paymentId: created.id, created: true, status: created.status };
+  });
