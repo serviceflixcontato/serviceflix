@@ -11,6 +11,7 @@ const PAYMENT_CHOICES = {
 
 const chooseSchema = z.object({
   option: z.enum(["pix", "cartao", "dinheiro"]),
+  subscription_id: z.string().uuid().optional(),
 });
 
 /**
