@@ -146,6 +146,7 @@ export function AdminOverview() {
   const totalOpen = unpaid.reduce((sum, p) => sum + (p.amount_cents ?? 0), 0);
   const activeSubs = subscriptions.filter((s) => s.status === "ativa");
   const convertedReferrals = referrals.filter((r) => r.status === "contratado");
+  const newRequestsCount = requests.filter((r) => r.status === "aberta").length;
 
   const pendingActivation = subscriptions
     .filter((sub) => sub.status !== "ativa" && sub.status !== "cancelada")
@@ -248,20 +249,28 @@ export function AdminOverview() {
       ) : null}
 
       <nav className="flex gap-2 overflow-x-auto rounded-xl border border-border bg-card p-2 shadow-card">
-        {TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setTab(item.id)}
-            className={`shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              tab === item.id
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+        {TABS.map((item) => {
+          const alert = item.id === "servicos" && newRequestsCount > 0;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                tab === item.id
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              } ${alert ? "blink-alert text-foreground" : ""}`}
+            >
+              {item.label}
+              {alert ? (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">
+                  {newRequestsCount}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
       </nav>
 
       {tab === "clientes" ? (
