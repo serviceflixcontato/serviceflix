@@ -118,7 +118,6 @@ export const applyVoucherToPayment = createServerFn({ method: "POST" })
 
     const applied = Math.min(voucher.balance_cents, remaining);
     const newRemaining = remaining - applied;
-    const newBalance = voucher.balance_cents - applied;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -138,8 +137,8 @@ export const applyVoucherToPayment = createServerFn({ method: "POST" })
     const { error: balanceError } = await supabaseAdmin
       .from("vouchers")
       .update({
-        balance_cents: newBalance,
-        status: newBalance === 0 ? "usado" : "disponivel",
+        balance_cents: 0,
+        status: "usado",
       })
       .eq("id", voucher.id);
     if (balanceError) throw balanceError;
@@ -150,5 +149,90 @@ export const applyVoucherToPayment = createServerFn({ method: "POST" })
       remaining: newRemaining,
       code: voucher.code,
       paid: newRemaining === 0,
+    };
+  });
+
+const applyAvailableSchema = z.object({ payment_id: z.string().uuid() });
+
+/** Aplica os vouchers disponíveis, do mais antigo ao mais novo, até quitar a fatura. */
+export const applyAvailableVouchersToPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => applyAvailableSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: payment, error: paymentError } = await supabase
+      .from("payments")
+      .select("id, user_id, amount_cents, voucher_discount_cents, status")
+      .eq("id", data.payment_id)
+      .maybeSingle();
+    if (paymentError) throw paymentError;
+    if (!payment || payment.user_id !== userId) throw new Error("Fatura não encontrada.");
+    if (payment.status === "pago") return { ok: false as const, reason: "already_paid" as const };
+
+    const initialRemaining = Math.max(
+      payment.amount_cents - (payment.voucher_discount_cents ?? 0),
+      0,
+    );
+    if (initialRemaining === 0) {
+      return { ok: false as const, reason: "nothing_due" as const };
+    }
+
+    const { data: vouchers, error: voucherError } = await supabase
+      .from("vouchers")
+      .select("id, code, balance_cents")
+      .eq("status", "disponivel")
+      .gt("balance_cents", 0)
+      .order("created_at", { ascending: true });
+    if (voucherError) throw voucherError;
+    if (!vouchers?.length) {
+      return { ok: false as const, reason: "no_vouchers" as const };
+    }
+
+    let remaining = initialRemaining;
+    const uses: Array<{ id: string; applied: number }> = [];
+    for (const voucher of vouchers) {
+      if (remaining === 0) break;
+      const applied = Math.min(voucher.balance_cents, remaining);
+      if (applied > 0) {
+        uses.push({ id: voucher.id, applied });
+        remaining -= applied;
+      }
+    }
+
+    const appliedTotal = initialRemaining - remaining;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const lastVoucher = uses.at(-1);
+    if (!lastVoucher || appliedTotal <= 0) {
+      return { ok: false as const, reason: "no_vouchers" as const };
+    }
+
+    const { error: updatePaymentError } = await supabaseAdmin
+      .from("payments")
+      .update({
+        voucher_id: lastVoucher.id,
+        voucher_discount_cents: (payment.voucher_discount_cents ?? 0) + appliedTotal,
+        ...(remaining === 0
+          ? { status: "pago", method: "voucher", paid_at: new Date().toISOString() }
+          : {}),
+      })
+      .eq("id", payment.id)
+      .eq("user_id", userId);
+    if (updatePaymentError) throw updatePaymentError;
+
+    for (const use of uses) {
+      const { error: updateVoucherError } = await supabaseAdmin
+        .from("vouchers")
+        .update({ balance_cents: 0, status: "usado" })
+        .eq("id", use.id)
+        .eq("user_id", userId);
+      if (updateVoucherError) throw updateVoucherError;
+    }
+
+    return {
+      ok: true as const,
+      applied: appliedTotal,
+      remaining,
+      paid: remaining === 0,
+      vouchersUsed: uses.length,
     };
   });

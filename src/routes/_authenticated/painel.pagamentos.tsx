@@ -22,8 +22,7 @@ import { chooseSubscriptionPayment } from "@/lib/activation.functions";
 import { createInvoiceCheckout, createSubscriptionCheckout } from "@/lib/payments.functions";
 import { usePaymentConfig } from "@/hooks/use-payment-config";
 import { useMyContracts } from "@/hooks/use-contract";
-import { Input } from "@/components/ui/input";
-import { VOUCHER_STATUS_LABELS, useApplyVoucher, useMyVouchers } from "@/hooks/use-vouchers";
+import { useApplyAvailableVouchers, useApplyVoucher, useMyVouchers } from "@/hooks/use-vouchers";
 import {
   STATUS_LABELS,
   formatBRL,
@@ -96,8 +95,12 @@ function Pagamentos() {
   const availableVouchers = vouchers.filter(
     (voucher) => voucher.status === "disponivel" && voucher.balance_cents > 0,
   );
-  const [voucherCode, setVoucherCode] = useState<Record<string, string>>({});
   const applyVoucher = useApplyVoucher();
+  const applyAvailableVouchers = useApplyAvailableVouchers();
+  const availableVoucherTotal = availableVouchers.reduce(
+    (total, voucher) => total + voucher.balance_cents,
+    0,
+  );
 
   const invoiceCheckout = useServerFn(createInvoiceCheckout);
   const subscriptionCheckout = useServerFn(createSubscriptionCheckout);
@@ -174,6 +177,20 @@ function Pagamentos() {
 
   return (
     <div className="space-y-6">
+      <section className="rounded-2xl border border-primary/40 bg-accent p-5 shadow-card">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-semibold text-accent-foreground">
+              <Ticket className="h-4 w-4 text-primary" /> Saldo disponível em vouchers
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              O crédito é acumulativo e pode abater parte ou todo o valor das suas faturas.
+            </p>
+          </div>
+          <strong className="text-2xl text-primary">{formatBRL(availableVoucherTotal)}</strong>
+        </div>
+      </section>
+
       {config?.mode === "sandbox" ? (
         <p className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-muted/60 p-3 text-xs text-muted-foreground">
           <FlaskConical className="h-4 w-4 text-primary" />
@@ -358,12 +375,13 @@ function Pagamentos() {
                         {STATUS_LABELS[payment.status] ?? payment.status}
                         {payment.method === "dinheiro" ? " · aguardando confirmação da equipe" : ""}
                       </p>
-                      {discount > 0 ? (
-                        <p className="mt-1 text-xs font-medium text-primary">
-                          Voucher aplicado: -{formatBRL(discount)} (de{" "}
-                          {formatBRL(payment.amount_cents)})
+                      <div className="mt-2 grid gap-1 text-xs">
+                        <p>Valor do plano: <strong>{formatBRL(payment.amount_cents)}</strong></p>
+                        <p className="text-primary">
+                          Crédito utilizado: <strong>-{formatBRL(discount)}</strong>
                         </p>
-                      ) : null}
+                        <p>Saldo a pagar: <strong>{formatBRL(due)}</strong></p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-lg font-semibold">{formatBRL(due)}</span>
@@ -376,7 +394,7 @@ function Pagamentos() {
                           {payInvoice.isPending ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : null}
-                          Pagar
+                          {discount > 0 ? `Pagar diferença de ${formatBRL(due)}` : "Pagar"}
                         </Button>
                       )}
                     </div>
@@ -388,60 +406,70 @@ function Pagamentos() {
                         <Ticket className="h-3.5 w-3.5 text-primary" /> Usar voucher de indicação
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Créditos disponíveis:{" "}
-                        {availableVouchers
-                          .map((voucher) => `${voucher.code} (${formatBRL(voucher.balance_cents)})`)
-                          .join(" · ")}
+                        Clique em um voucher ou use o saldo acumulado. Depois do uso, ele não poderá
+                        ser utilizado novamente.
                       </p>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <Input
-                          className="max-w-[200px]"
-                          placeholder="Código do voucher"
-                          value={voucherCode[payment.id] ?? ""}
-                          onChange={(event) =>
-                            setVoucherCode((prev) => ({
-                              ...prev,
-                              [payment.id]: event.target.value.toUpperCase(),
-                            }))
-                          }
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={applyVoucher.isPending || !(voucherCode[payment.id] ?? "").trim()}
-                          onClick={() =>
-                            applyVoucher.mutate(
-                              {
-                                payment_id: payment.id,
-                                code: (voucherCode[payment.id] ?? "").trim(),
-                              },
-                              {
-                                onSuccess: (result) => {
-                                  if (!result.ok) {
-                                    toast.error(
-                                      result.reason === "invalid_voucher"
-                                        ? "Voucher inválido ou já utilizado."
-                                        : "Esta fatura não tem valor em aberto.",
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {availableVouchers.map((voucher) => (
+                          <Button
+                            key={voucher.id}
+                            variant="outline"
+                            size="sm"
+                            disabled={applyVoucher.isPending || applyAvailableVouchers.isPending}
+                            onClick={() =>
+                              applyVoucher.mutate(
+                                { payment_id: payment.id, code: voucher.code },
+                                {
+                                  onSuccess: (result) => {
+                                    if (!result.ok) {
+                                      toast.error("Voucher inválido, já utilizado ou sem saldo.");
+                                      return;
+                                    }
+                                    toast.success(
+                                      result.paid
+                                        ? `Crédito de ${formatBRL(result.applied)} aplicado. A fatura foi quitada!`
+                                        : `Crédito aplicado. Falta pagar ${formatBRL(result.remaining)}.`,
                                     );
-                                    return;
-                                  }
-                                  setVoucherCode((prev) => ({ ...prev, [payment.id]: "" }));
-                                  toast.success(
-                                    result.paid
-                                      ? `Crédito de ${formatBRL(result.applied)} aplicado. A fatura foi quitada pelo voucher!`
-                                      : `Crédito de ${formatBRL(result.applied)} aplicado. Falta pagar ${formatBRL(result.remaining)}.`,
-                                  );
+                                  },
+                                  onError: () => toast.error("Não foi possível aplicar o voucher."),
                                 },
-                                onError: () => toast.error("Não foi possível aplicar o voucher."),
-                              },
-                            )
-                          }
-                        >
-                          {applyVoucher.isPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : null}
-                          Aplicar crédito
-                        </Button>
+                              )
+                            }
+                          >
+                            <Ticket className="mr-2 h-4 w-4" />
+                            {voucher.code} · {formatBRL(voucher.balance_cents)}
+                          </Button>
+                        ))}
+                        {availableVouchers.length > 1 ? (
+                          <Button
+                            size="sm"
+                            disabled={applyVoucher.isPending || applyAvailableVouchers.isPending}
+                            onClick={() =>
+                              applyAvailableVouchers.mutate(
+                                { payment_id: payment.id },
+                                {
+                                  onSuccess: (result) => {
+                                    if (!result.ok) {
+                                      toast.error("Não há crédito disponível para esta fatura.");
+                                      return;
+                                    }
+                                    toast.success(
+                                      result.paid
+                                        ? `${formatBRL(result.applied)} em vouchers aplicados. Fatura quitada!`
+                                        : `${formatBRL(result.applied)} em vouchers aplicados. Falta pagar ${formatBRL(result.remaining)}.`,
+                                    );
+                                  },
+                                  onError: () => toast.error("Não foi possível aplicar os vouchers."),
+                                },
+                              )
+                            }
+                          >
+                            {applyAvailableVouchers.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : null}
+                            Usar saldo acumulado · {formatBRL(Math.min(availableVoucherTotal, due))}
+                          </Button>
+                        ) : null}
                       </div>
                     </div>
                   ) : null}
@@ -452,13 +480,13 @@ function Pagamentos() {
         )}
       </section>
 
-      {vouchers.length > 0 ? (
+      {availableVouchers.length > 0 ? (
         <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
             <Ticket className="h-5 w-5 text-primary" /> Meus vouchers de indicação
           </h2>
           <ul className="mt-4 space-y-3">
-            {vouchers.map((voucher) => (
+            {availableVouchers.map((voucher) => (
               <li
                 key={voucher.id}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4"
@@ -466,8 +494,7 @@ function Pagamentos() {
                 <div>
                   <p className="font-semibold">{voucher.code}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {VOUCHER_STATUS_LABELS[voucher.status] ?? voucher.status} · crédito original{" "}
-                    {formatBRL(voucher.amount_cents)}
+                    Disponível para abatimento · crédito original {formatBRL(voucher.amount_cents)}
                   </p>
                 </div>
                 <span className="text-lg font-semibold">{formatBRL(voucher.balance_cents)}</span>
