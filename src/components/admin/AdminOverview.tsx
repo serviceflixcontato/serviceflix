@@ -1,6 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, CheckCircle2, Clock, Gift, Users, Wrench } from "lucide-react";
+import {
+  AlertTriangle,
+  BellRing,
+  CheckCircle2,
+  Clock,
+  Gift,
+  Loader2,
+  Users,
+  Wrench,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -20,6 +29,7 @@ import {
   updateReferralStatus,
 } from "@/lib/admin.functions";
 import { ManualPlanActivation } from "@/components/admin/ManualPlanActivation";
+import { activateSubscriptionFromContract } from "@/lib/activation.functions";
 import {
   REFERRAL_STATUS_LABELS,
   REFERRAL_STATUS_OPTIONS,
@@ -77,6 +87,17 @@ export function AdminOverview() {
     onError: () => toast.error("Não foi possível atualizar o pagamento."),
   });
 
+  const activateSubscription = useServerFn(activateSubscriptionFromContract);
+  const activationMutation = useMutation({
+    mutationFn: (subscriptionId: string) =>
+      activateSubscription({ data: { subscription_id: subscriptionId } }),
+    onSuccess: () => {
+      toast.success("Conta ativada! O cliente já pode abrir solicitações.");
+      void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+    onError: () => toast.error("Não foi possível ativar a conta."),
+  });
+
   const updateReferral = useServerFn(updateReferralStatus);
   const referralMutation = useMutation({
     mutationFn: (input: { id: string; status: string; reward_status: string }) =>
@@ -121,6 +142,18 @@ export function AdminOverview() {
   const activeSubs = subscriptions.filter((s) => s.status === "ativa");
   const convertedReferrals = referrals.filter((r) => r.status === "contratado");
 
+  const pendingActivation = subscriptions
+    .filter((sub) => sub.status !== "ativa" && sub.status !== "cancelada")
+    .map((sub) => {
+      const contract = contracts.find((item) => item.user_id === sub.user_id);
+      const subPayments = payments.filter((p) => p.user_id === sub.user_id);
+      const paidPayment = subPayments.find((p) => p.status === "pago");
+      const openPayment = subPayments.find((p) => p.status !== "pago");
+      return { sub, contract, paidPayment, openPayment };
+    })
+    .filter((item) => Boolean(item.contract) || Boolean(item.sub.activation_requested_at))
+    .sort((a, b) => (a.paidPayment ? -1 : 0) - (b.paidPayment ? -1 : 0));
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-brand-gradient p-6 text-primary-foreground shadow-elevated">
@@ -140,6 +173,74 @@ export function AdminOverview() {
         <Stat icon={AlertTriangle} label="Em aberto" value={formatBRL(totalOpen)} hint={`${unpaid.length} fatura(s)`} />
         <Stat icon={Gift} label="Indicações convertidas" value={`${convertedReferrals.length} de ${referrals.length}`} />
       </div>
+
+      {pendingActivation.length > 0 ? (
+        <Card>
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <BellRing className="h-5 w-5 text-primary" /> Contratos aguardando ativação
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Contratos assinados pelo cliente. Os destacados em amarelo piscante já têm pagamento
+            confirmado e estão esperando a sua ativação.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {pendingActivation.map(({ sub, contract, paidPayment, openPayment }) => (
+              <li
+                key={sub.id}
+                className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 ${
+                  paidPayment ? "blink-pending" : "border-border"
+                }`}
+              >
+                <div>
+                  <p className="font-semibold">
+                    {nameById.get(sub.user_id) ?? contract?.full_name ?? "Cliente"} · {sub.plan_name}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatBRL(sub.monthly_price_cents)}/mês ·{" "}
+                    {sub.payment_method ?? "forma de pagamento não escolhida"}
+                    {contract ? ` · contrato assinado em ${formatDateTime(contract.accepted_at)}` : ""}
+                  </p>
+                  <p className="mt-1 text-xs font-medium">
+                    {paidPayment
+                      ? "Pagamento confirmado — pronto para ativar"
+                      : openPayment
+                        ? `Pagamento pendente (${openPayment.method ?? "online"}) — ${formatBRL(openPayment.amount_cents)}`
+                        : "Sem fatura registrada"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {openPayment ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={paymentMutation.isPending}
+                      onClick={() =>
+                        paymentMutation.mutate({
+                          payment_id: openPayment.id,
+                          status: "pago",
+                          method: openPayment.method ?? "dinheiro",
+                        })
+                      }
+                    >
+                      Confirmar pagamento
+                    </Button>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    disabled={activationMutation.isPending}
+                    onClick={() => activationMutation.mutate(sub.id)}
+                  >
+                    {activationMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Ativar conta
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
 
       <nav className="flex gap-2 overflow-x-auto rounded-xl border border-border bg-card p-2 shadow-card">
         {TABS.map((item) => (

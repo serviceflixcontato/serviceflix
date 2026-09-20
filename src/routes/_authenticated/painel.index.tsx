@@ -3,6 +3,7 @@ import { ArrowRight, CalendarCheck, ClipboardList, CreditCard, Wrench } from "lu
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { isProfileComplete } from "@/lib/profile";
 import {
   STATUS_LABELS,
   formatBRL,
@@ -34,8 +35,40 @@ function PainelHome() {
 
   const firstName = (profile?.full_name ?? "").split(" ")[0];
 
+  const profileComplete = isProfileComplete(profile ?? null);
+  const isActive = subscription?.status === "ativa";
+
   return (
     <div className="space-y-6">
+      {!profileComplete ? (
+        <section className="rounded-2xl border border-primary/50 bg-accent p-5 text-accent-foreground shadow-card">
+          <h2 className="font-semibold">Complete seu cadastro</h2>
+          <p className="mt-1 text-sm">
+            Faltam alguns dados (CPF/CNPJ e endereço completo). Ao preencher agora, o contrato já sai
+            pronto quando você escolher um plano.
+          </p>
+          <Button asChild size="sm" className="mt-3">
+            <Link to="/painel/cadastro">Completar cadastro</Link>
+          </Button>
+        </section>
+      ) : null}
+
+      {!isActive ? (
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          <h2 className="font-semibold">Ativação da conta</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {subscription
+              ? "Seu contrato está registrado. Escolha a forma de pagamento e aguarde a ativação pela nossa equipe para abrir solicitações."
+              : "Escolha um plano, assine o contrato e realize o pagamento. Após a ativação pela nossa equipe você poderá abrir solicitações."}
+          </p>
+          <Button asChild size="sm" variant="secondary" className="mt-3">
+            <Link to={subscription ? "/painel/pagamentos" : "/painel/contratar"}>
+              {subscription ? "Escolher forma de pagamento" : "Escolher plano"}
+            </Link>
+          </Button>
+        </section>
+      ) : null}
+
       <div className="rounded-2xl bg-brand-gradient p-6 text-primary-foreground shadow-elevated">
         <h1 className="text-2xl font-bold">
           Olá{firstName ? `, ${firstName}` : ""}! Bem-vindo à sua área exclusiva
