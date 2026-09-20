@@ -12,6 +12,7 @@ import {
   QrCode,
   Repeat,
   Ticket,
+  CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,7 +20,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CONTACT } from "@/lib/plans";
 import { chooseSubscriptionPayment } from "@/lib/activation.functions";
-import { createInvoiceCheckout, createSubscriptionCheckout } from "@/lib/payments.functions";
+import {
+  createInvoiceCheckout,
+  createSubscriptionCheckout,
+  createUpcomingInvoice,
+} from "@/lib/payments.functions";
+import { dueLabel, isDueSoon, monthLabel } from "@/lib/billing";
 import { usePaymentConfig } from "@/hooks/use-payment-config";
 import { useMyContracts } from "@/hooks/use-contract";
 import { useApplyAvailableVouchers, useApplyVoucher, useMyVouchers } from "@/hooks/use-vouchers";
@@ -83,6 +89,7 @@ function Pagamentos() {
   const [selectedOption, setSelectedOption] = useState<Record<string, OptionId>>({});
   const open = payments.filter((payment) => payment.status !== "pago");
   const paid = payments.filter((payment) => payment.status === "pago");
+  const dueSoon = open.filter((payment) => isDueSoon(payment));
 
   const { data: vouchers = [] } = useMyVouchers();
   const availableVouchers = vouchers.filter(
@@ -145,6 +152,29 @@ function Pagamentos() {
     onError: () => toast.error("Não foi possível gerar o pagamento. Tente novamente."),
   });
 
+  const upcomingInvoice = useServerFn(createUpcomingInvoice);
+  const advanceMutation = useMutation({
+    mutationFn: (input: { subscription_id: string; due_date: string }) =>
+      upcomingInvoice({ data: input }),
+    onSuccess: async (result) => {
+      if (!result.ok) {
+        toast.info("Seu plano ainda não tem valor definido. Fale com nosso time.");
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["payments"] });
+      toast.success(
+        "Mensalidade liberada para pagamento. Aplique seu voucher e pague pelo meio que preferir.",
+      );
+      window.setTimeout(() => {
+        document.getElementById("faturas-em-aberto")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    },
+    onError: () => toast.error("Não foi possível liberar a mensalidade."),
+  });
+
   const startSubscription = useMutation({
     mutationFn: () => subscriptionCheckout(),
     onSuccess: (result) => {
@@ -167,6 +197,27 @@ function Pagamentos() {
 
   return (
     <div className="space-y-6">
+      {dueSoon.length > 0 ? (
+        <section className="blink-alert rounded-2xl border p-5 shadow-card">
+          <p className="flex items-center gap-2 font-semibold">
+            <CalendarClock className="h-5 w-5" /> Mensalidade prestes a vencer
+          </p>
+          <ul className="mt-2 space-y-1 text-sm">
+            {dueSoon.map((payment) => (
+              <li key={payment.id}>
+                {monthLabel(payment.due_date) || payment.description} ·{" "}
+                {formatBRL(
+                  Math.max(payment.amount_cents - (payment.voucher_discount_cents ?? 0), 0),
+                )}{" "}
+                · {dueLabel(payment.due_date)}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs">
+            Pague adiantado por Pix, cartão ou dinheiro — e use seu voucher para abater o valor.
+          </p>
+        </section>
+      ) : null}
       <section className="rounded-2xl border border-primary/40 bg-accent p-5 shadow-card">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -341,28 +392,83 @@ function Pagamentos() {
                   ) : null}
                 </div>
               ) : (
-                <div className="mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-border p-4">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold">Débito automático mensal</p>
-                    <p className="text-xs text-muted-foreground">
-                      Autorize uma vez no cartão e a mensalidade é cobrada todo mês pelo Mercado
-                      Pago.
-                    </p>
+                <>
+                  {subscription.next_billing_date ? (
+                    (() => {
+                      const nextDue = subscription.next_billing_date;
+                      const existingInvoice = payments.find(
+                        (payment) =>
+                          payment.subscription_id === subscription.id &&
+                          payment.due_date?.slice(0, 10) === nextDue.slice(0, 10),
+                      );
+                      const soon = isDueSoon({ due_date: nextDue, status: "pendente" });
+                      return (
+                        <div
+                          className={`mt-6 rounded-xl border p-4 ${
+                            soon ? "blink-alert" : "border-border"
+                          }`}
+                        >
+                          <p className="flex items-center gap-2 text-sm font-semibold">
+                            <CalendarClock className="h-4 w-4 text-primary" /> Mensalidade de{" "}
+                            {monthLabel(nextDue)} · {dueLabel(nextDue)}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Valor {formatBRL(subscription.monthly_price_cents)} · vencimento em{" "}
+                            {formatDate(nextDue)}. Você pode adiantar o pagamento e usar seu voucher
+                            como abatimento.
+                          </p>
+                          <Button
+                            size="sm"
+                            className="mt-3"
+                            disabled={advanceMutation.isPending}
+                            onClick={() => {
+                              if (existingInvoice) {
+                                document
+                                  .getElementById("faturas-em-aberto")
+                                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                return;
+                              }
+                              advanceMutation.mutate({
+                                subscription_id: subscription.id,
+                                due_date: nextDue,
+                              });
+                            }}
+                          >
+                            {advanceMutation.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : null}
+                            {existingInvoice
+                              ? "Ver fatura desta mensalidade"
+                              : "Adiantar esta mensalidade"}
+                          </Button>
+                        </div>
+                      );
+                    })()
+                  ) : null}
+
+                  <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-border p-4">
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">Débito automático mensal</p>
+                      <p className="text-xs text-muted-foreground">
+                        Autorize uma vez no cartão e a mensalidade é cobrada todo mês pelo Mercado
+                        Pago.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={startSubscription.isPending}
+                      onClick={() => startSubscription.mutate()}
+                    >
+                      {startSubscription.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Repeat className="mr-2 h-4 w-4" />
+                      )}
+                      Ativar recorrência
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={startSubscription.isPending}
-                    onClick={() => startSubscription.mutate()}
-                  >
-                    {startSubscription.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Repeat className="mr-2 h-4 w-4" />
-                    )}
-                    Ativar recorrência
-                  </Button>
-                </div>
+                </>
               )}
             </section>
           );
@@ -382,8 +488,12 @@ function Pagamentos() {
             {open.map((payment) => {
               const discount = payment.voucher_discount_cents ?? 0;
               const due = Math.max(payment.amount_cents - discount, 0);
+              const soon = isDueSoon(payment);
               return (
-                <li key={payment.id} className="rounded-xl border border-border p-4">
+                <li
+                  key={payment.id}
+                  className={`rounded-xl border p-4 ${soon ? "blink-alert" : "border-border"}`}
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold">{payment.description}</p>
