@@ -68,6 +68,146 @@ function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Solicitações nesses estados já terminaram: aparecem minimizadas por padrão. */
+const FINISHED_REQUEST_STATUSES = new Set(["concluida", "cancelada"]);
+
+interface RequestListItemProps {
+  request: {
+    id: string;
+    user_id: string;
+    request_code?: string | null;
+    title: string;
+    category: string;
+    urgency: string;
+    status: string;
+    description?: string | null;
+    location?: string | null;
+    created_at: string;
+    scheduled_at?: string | null;
+    materials_needed?: string | null;
+    schedule_status?: string | null;
+    client_response_note?: string | null;
+  };
+  clientName: string;
+  clientPhotos: ReturnType<typeof groupPhotos>["byRequest"] extends Map<string, infer P>
+    ? P[]
+    : never;
+  conclusionPhotos: never extends never ? unknown[] : never;
+}
+
+/**
+ * Cartão de uma solicitação no painel. Finalizadas/canceladas iniciam
+ * minimizadas — clicar no cabeçalho abre as fotos e as ações novamente.
+ */
+function RequestListItem({
+  request,
+  clientName,
+  clientPhotos,
+  conclusionPhotos,
+}: {
+  request: {
+    id: string;
+    user_id: string;
+    request_code?: string | null;
+    title: string;
+    category: string;
+    urgency: string;
+    status: string;
+    description?: string | null;
+    location?: string | null;
+    created_at: string;
+    scheduled_at?: string | null;
+    materials_needed?: string | null;
+    schedule_status?: string | null;
+    client_response_note?: string | null;
+  };
+  clientName: string;
+  clientPhotos: unknown[];
+  conclusionPhotos: unknown[];
+}) {
+  const isFinished = FINISHED_REQUEST_STATUSES.has(request.status);
+  const [expanded, setExpanded] = useState(!isFinished);
+
+  return (
+    <li
+      className={`rounded-xl border p-4 ${
+        expanded ? "border-border" : "border-border/60 bg-muted/40"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={() => setExpanded((open) => !open)}
+        className="flex w-full flex-wrap items-center justify-between gap-2 text-left"
+        aria-expanded={expanded}
+      >
+        <span className="font-semibold">
+          {request.request_code ? `${request.request_code} · ` : ""}
+          {request.title}
+        </span>
+        <span className="flex items-center gap-2">
+          <Badge variant="secondary">{STATUS_LABELS[request.status] ?? request.status}</Badge>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+              expanded ? "" : "-rotate-90"
+            }`}
+          />
+        </span>
+      </button>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {clientName} · {request.category} · urgência {request.urgency} ·{" "}
+        {formatDateTime(request.created_at)}
+      </p>
+
+      {expanded ? (
+        <>
+          {request.location ? (
+            <p className="mt-1 text-sm text-muted-foreground">Local: {request.location}</p>
+          ) : null}
+          {request.description ? <p className="mt-2 text-sm">{request.description}</p> : null}
+          {request.scheduled_at ? (
+            <div className="mt-3 rounded-xl border border-border bg-background p-3 text-sm">
+              <p>
+                <strong>Visita agendada:</strong> {formatDateTime(request.scheduled_at)}
+              </p>
+              {request.materials_needed ? (
+                <p className="mt-1 text-muted-foreground">
+                  Material: {request.materials_needed}
+                </p>
+              ) : null}
+              <div className="mt-1">
+                {request.schedule_status === "confirmado" ? (
+                  <Badge>Cliente confirmou</Badge>
+                ) : request.schedule_status === "reagendamento_solicitado" ? (
+                  <Badge variant="destructive">Cliente pediu reagendamento</Badge>
+                ) : (
+                  <Badge variant="outline">Aguardando confirmação do cliente</Badge>
+                )}
+              </div>
+              {request.client_response_note ? (
+                <p className="mt-2 text-muted-foreground">
+                  Motivo informado pelo cliente: {request.client_response_note}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <ServiceRequestActions request={request} />
+          <PhotoGrid
+            photos={clientPhotos.filter((photo) => (photo as { kind: string }).kind === "cliente")}
+            title="Fotos enviadas pelo cliente"
+          />
+          <PhotoGrid
+            photos={conclusionPhotos.filter(
+              (photo) => (photo as { kind: string }).kind === "conclusao",
+            )}
+            title="Fotos do serviço finalizado"
+          />
+          <FinishedPhotoUpload requestId={request.id} clientId={request.user_id} />
+        </>
+      ) : null}
+    </li>
+  );
+}
+
 export function AdminOverview() {
   const fetchOverview = useServerFn(getAdminOverview);
   const queryClient = useQueryClient();
