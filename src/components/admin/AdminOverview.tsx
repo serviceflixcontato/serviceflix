@@ -142,6 +142,18 @@ export function AdminOverview() {
   const activeSubs = subscriptions.filter((s) => s.status === "ativa");
   const convertedReferrals = referrals.filter((r) => r.status === "contratado");
 
+  const pendingActivation = subscriptions
+    .filter((sub) => sub.status !== "ativa" && sub.status !== "cancelada")
+    .map((sub) => {
+      const contract = contracts.find((item) => item.user_id === sub.user_id);
+      const subPayments = payments.filter((p) => p.user_id === sub.user_id);
+      const paidPayment = subPayments.find((p) => p.status === "pago");
+      const openPayment = subPayments.find((p) => p.status !== "pago");
+      return { sub, contract, paidPayment, openPayment };
+    })
+    .filter((item) => Boolean(item.contract) || Boolean(item.sub.activation_requested_at))
+    .sort((a, b) => (a.paidPayment ? -1 : 0) - (b.paidPayment ? -1 : 0));
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-brand-gradient p-6 text-primary-foreground shadow-elevated">
