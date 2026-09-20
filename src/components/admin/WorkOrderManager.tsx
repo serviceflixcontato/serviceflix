@@ -310,8 +310,8 @@ function WorkOrderRow({
   onDelete: () => void;
   onSaveEdit: (patch: {
     title: string;
-    description?: string;
-    technician?: string;
+    description: string | undefined;
+    technician: string | undefined;
     scheduled_for: string | null;
   }) => Promise<unknown>;
 }) {
