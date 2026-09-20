@@ -34,11 +34,15 @@ const NAV = [
   { to: "/painel/contato", label: "Contato", icon: Headset, exact: false },
 ] as const;
 
+const ACTIVE_ONLY = ["/painel/solicitacoes", "/painel/ordens"];
+
 function PainelLayout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
-  const navItems = NAV;
+  const { data: subscriptions = [] } = useSubscriptions();
+  const hasActive = subscriptions.some((subscription) => subscription.status === "ativa");
+  const navItems = NAV.filter((item) => hasActive || !ACTIVE_ONLY.includes(item.to));
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
