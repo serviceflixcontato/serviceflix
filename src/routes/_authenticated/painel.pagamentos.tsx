@@ -11,6 +11,7 @@ import {
   Loader2,
   QrCode,
   Repeat,
+  Ticket,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +22,8 @@ import { chooseSubscriptionPayment } from "@/lib/activation.functions";
 import { createInvoiceCheckout, createSubscriptionCheckout } from "@/lib/payments.functions";
 import { usePaymentConfig } from "@/hooks/use-payment-config";
 import { useMyContracts } from "@/hooks/use-contract";
+import { Input } from "@/components/ui/input";
+import { VOUCHER_STATUS_LABELS, useApplyVoucher, useMyVouchers } from "@/hooks/use-vouchers";
 import {
   STATUS_LABELS,
   formatBRL,
@@ -60,15 +63,22 @@ const OPTIONS = [
     title: "Dinheiro (presencial)",
     description: "Combinamos a entrega do valor e a equipe confirma o recebimento no sistema.",
   },
+  {
+    id: "voucher" as const,
+    icon: Ticket,
+    title: "Voucher de indicação",
+    description: "Use o crédito das suas indicações na fatura e pague apenas a diferença.",
+  },
 ];
 
-type OptionId = "pix" | "cartao" | "dinheiro";
+type OptionId = "pix" | "cartao" | "dinheiro" | "voucher";
 
 function currentOption(method: string | null | undefined): OptionId | null {
   if (!method) return null;
   if (method.startsWith("Pix")) return "pix";
   if (method.startsWith("Cartão")) return "cartao";
   if (method.startsWith("Dinheiro")) return "dinheiro";
+  if (method.startsWith("Voucher")) return "voucher";
   return null;
 }
 
@@ -82,12 +92,19 @@ function Pagamentos() {
   const open = payments.filter((payment) => payment.status !== "pago");
   const paid = payments.filter((payment) => payment.status === "pago");
 
+  const { data: vouchers = [] } = useMyVouchers();
+  const availableVouchers = vouchers.filter(
+    (voucher) => voucher.status === "disponivel" && voucher.balance_cents > 0,
+  );
+  const [voucherCode, setVoucherCode] = useState<Record<string, string>>({});
+  const applyVoucher = useApplyVoucher();
+
   const invoiceCheckout = useServerFn(createInvoiceCheckout);
   const subscriptionCheckout = useServerFn(createSubscriptionCheckout);
   const choosePayment = useServerFn(chooseSubscriptionPayment);
 
   const chooseMutation = useMutation({
-    mutationFn: (input: { option: "pix" | "cartao" | "dinheiro"; subscriptionId: string }) =>
+    mutationFn: (input: { option: OptionId; subscriptionId: string }) =>
       choosePayment({ data: { option: input.option, subscription_id: input.subscriptionId } }),
     onSuccess: async (result, input) => {
       if (!result.ok) {
@@ -97,6 +114,12 @@ function Pagamentos() {
       await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       await queryClient.invalidateQueries({ queryKey: ["payments"] });
 
+      if (input.option === "voucher") {
+        toast.success(
+          "Voucher escolhido como meio de pagamento! Informe o código do seu crédito na fatura abaixo: o valor é abatido e você paga apenas a diferença.",
+        );
+        return;
+      }
       if (input.option === "dinheiro") {
         toast.success(
           "Pedido finalizado! Aguarde nossa equipe aprovar e ativar o seu contrato. Quando estiver ativo, aparecerá na sua área de cliente.",
@@ -207,7 +230,7 @@ function Pagamentos() {
                     Escolha uma opção e clique em finalizar. A liberação da conta é feita pela nossa
                     equipe depois da análise do contrato e da confirmação do pagamento.
                   </p>
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     {OPTIONS.map((option) => {
                       const selected = (selectedOption[subscription.id] ??
                         currentOption(subscription.payment_method)) === option.id;
@@ -254,7 +277,9 @@ function Pagamentos() {
                           }
                         >
                           {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          {chosen === "dinheiro"
+                          {chosen === "voucher"
+                            ? "Finalizar com voucher"
+                            : chosen === "dinheiro"
                             ? "Finalizar e aguardar aprovação"
                             : chosen === "pix"
                               ? "Finalizar e pagar com Pix"
@@ -320,39 +345,137 @@ function Pagamentos() {
           </p>
         ) : (
           <ul className="mt-4 space-y-3">
-            {open.map((payment) => (
-              <li
-                key={payment.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4"
-              >
-                <div>
-                  <p className="font-semibold">{payment.description}</p>
-                  <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" /> Vence em {formatDate(payment.due_date)} ·{" "}
-                    {STATUS_LABELS[payment.status] ?? payment.status}
-                    {payment.method === "dinheiro" ? " · aguardando confirmação da equipe" : ""}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-semibold">{formatBRL(payment.amount_cents)}</span>
-                  {payment.method === "dinheiro" ? null : (
-                    <Button
-                      size="sm"
-                      disabled={payInvoice.isPending}
-                      onClick={() => payInvoice.mutate(payment.id)}
-                    >
-                      {payInvoice.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {open.map((payment) => {
+              const discount = payment.voucher_discount_cents ?? 0;
+              const due = Math.max(payment.amount_cents - discount, 0);
+              return (
+                <li key={payment.id} className="rounded-xl border border-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">{payment.description}</p>
+                      <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" /> Vence em {formatDate(payment.due_date)} ·{" "}
+                        {STATUS_LABELS[payment.status] ?? payment.status}
+                        {payment.method === "dinheiro" ? " · aguardando confirmação da equipe" : ""}
+                      </p>
+                      {discount > 0 ? (
+                        <p className="mt-1 text-xs font-medium text-primary">
+                          Voucher aplicado: -{formatBRL(discount)} (de{" "}
+                          {formatBRL(payment.amount_cents)})
+                        </p>
                       ) : null}
-                      Pagar
-                    </Button>
-                  )}
-                </div>
-              </li>
-            ))}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-semibold">{formatBRL(due)}</span>
+                      {payment.method === "dinheiro" ? null : (
+                        <Button
+                          size="sm"
+                          disabled={payInvoice.isPending}
+                          onClick={() => payInvoice.mutate(payment.id)}
+                        >
+                          {payInvoice.isPending ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : null}
+                          Pagar
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {due > 0 && availableVouchers.length > 0 ? (
+                    <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/50 p-3">
+                      <p className="flex items-center gap-2 text-xs font-semibold">
+                        <Ticket className="h-3.5 w-3.5 text-primary" /> Usar voucher de indicação
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Créditos disponíveis:{" "}
+                        {availableVouchers
+                          .map((voucher) => `${voucher.code} (${formatBRL(voucher.balance_cents)})`)
+                          .join(" · ")}
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <Input
+                          className="max-w-[200px]"
+                          placeholder="Código do voucher"
+                          value={voucherCode[payment.id] ?? ""}
+                          onChange={(event) =>
+                            setVoucherCode((prev) => ({
+                              ...prev,
+                              [payment.id]: event.target.value.toUpperCase(),
+                            }))
+                          }
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={applyVoucher.isPending || !(voucherCode[payment.id] ?? "").trim()}
+                          onClick={() =>
+                            applyVoucher.mutate(
+                              {
+                                payment_id: payment.id,
+                                code: (voucherCode[payment.id] ?? "").trim(),
+                              },
+                              {
+                                onSuccess: (result) => {
+                                  if (!result.ok) {
+                                    toast.error(
+                                      result.reason === "invalid_voucher"
+                                        ? "Voucher inválido ou já utilizado."
+                                        : "Esta fatura não tem valor em aberto.",
+                                    );
+                                    return;
+                                  }
+                                  setVoucherCode((prev) => ({ ...prev, [payment.id]: "" }));
+                                  toast.success(
+                                    result.paid
+                                      ? `Crédito de ${formatBRL(result.applied)} aplicado. A fatura foi quitada pelo voucher!`
+                                      : `Crédito de ${formatBRL(result.applied)} aplicado. Falta pagar ${formatBRL(result.remaining)}.`,
+                                  );
+                                },
+                                onError: () => toast.error("Não foi possível aplicar o voucher."),
+                              },
+                            )
+                          }
+                        >
+                          {applyVoucher.isPending ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : null}
+                          Aplicar crédito
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
+
+      {vouchers.length > 0 ? (
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Ticket className="h-5 w-5 text-primary" /> Meus vouchers de indicação
+          </h2>
+          <ul className="mt-4 space-y-3">
+            {vouchers.map((voucher) => (
+              <li
+                key={voucher.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4"
+              >
+                <div>
+                  <p className="font-semibold">{voucher.code}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {VOUCHER_STATUS_LABELS[voucher.status] ?? voucher.status} · crédito original{" "}
+                    {formatBRL(voucher.amount_cents)}
+                  </p>
+                </div>
+                <span className="text-lg font-semibold">{formatBRL(voucher.balance_cents)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
         <h2 className="text-lg font-semibold">Histórico de pagamentos</h2>
