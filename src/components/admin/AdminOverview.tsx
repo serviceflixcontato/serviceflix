@@ -46,6 +46,7 @@ import { Label } from "@/components/ui/label";
 import { PhotoGrid } from "@/components/site/PhotoGrid";
 import { groupPhotos, useServicePhotos, type ServicePhoto } from "@/hooks/use-service-photos";
 import { uploadServicePhotos } from "@/lib/service-photos";
+import { RewardReceiptUpload } from "@/components/admin/RewardReceiptUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { buildContractFields } from "@/lib/contract-fields";
 import { downloadContractPdf } from "@/lib/contract-pdf";
@@ -920,8 +921,16 @@ export function AdminOverview() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                </li>
+                   </div>
+
+                  <RewardReceiptUpload
+                    referralId={referral.id}
+                    referrerId={referral.referrer_id}
+                    receiptPath={referral.reward_receipt_path ?? null}
+                    receiptNote={referral.reward_receipt_note ?? null}
+                    paidAt={referral.reward_paid_at ?? null}
+                  />
+                 </li>
               ))}
             </ul>
           )}

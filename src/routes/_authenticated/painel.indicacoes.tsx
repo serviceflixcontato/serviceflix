@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { RewardReceiptView } from "@/components/site/RewardReceiptView";
 import { formatBRL, formatDateTime } from "@/hooks/use-panel-data";
 import { useCreateReferral, useMyReferrals } from "@/hooks/use-referrals";
 import {
@@ -207,6 +208,13 @@ function Indicacoes() {
                   </div>
                 </div>
                 <RewardChoice referral={referral} />
+                {referral.reward_receipt_path ? (
+                  <RewardReceiptView
+                    receiptPath={referral.reward_receipt_path}
+                    receiptNote={referral.reward_receipt_note ?? null}
+                    paidAt={referral.reward_paid_at ?? null}
+                  />
+                ) : null}
               </li>
             ))}
           </ul>
@@ -224,6 +232,9 @@ type ReferralRow = {
   reward_method: string | null;
   reward_pix_key: string | null;
   reward_bank_details: string | null;
+  reward_receipt_path?: string | null;
+  reward_receipt_note?: string | null;
+  reward_paid_at?: string | null;
 };
 
 /** Escolha do resgate da recompensa: dinheiro (Pix/transferência) ou voucher de abatimento. */
