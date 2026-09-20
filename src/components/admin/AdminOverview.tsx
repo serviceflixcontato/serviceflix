@@ -44,7 +44,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PhotoGrid } from "@/components/site/PhotoGrid";
-import { groupPhotos, useServicePhotos } from "@/hooks/use-service-photos";
+import { groupPhotos, useServicePhotos, type ServicePhoto } from "@/hooks/use-service-photos";
 import { uploadServicePhotos } from "@/lib/service-photos";
 import { supabase } from "@/integrations/supabase/client";
 import { buildContractFields } from "@/lib/contract-fields";
@@ -98,8 +98,8 @@ function RequestListItem({
     client_response_note?: string | null;
   };
   clientName: string;
-  clientPhotos: unknown[];
-  conclusionPhotos: unknown[];
+  clientPhotos: ServicePhoto[];
+  conclusionPhotos: ServicePhoto[];
 }) {
   const isFinished = FINISHED_REQUEST_STATUSES.has(request.status);
   const [expanded, setExpanded] = useState(!isFinished);
@@ -168,13 +168,11 @@ function RequestListItem({
           ) : null}
           <ServiceRequestActions request={request} />
           <PhotoGrid
-            photos={clientPhotos.filter((photo) => (photo as { kind: string }).kind === "cliente")}
+            photos={clientPhotos.filter((photo) => photo.kind === "cliente")}
             title="Fotos enviadas pelo cliente"
           />
           <PhotoGrid
-            photos={conclusionPhotos.filter(
-              (photo) => (photo as { kind: string }).kind === "conclusao",
-            )}
+            photos={conclusionPhotos.filter((photo) => photo.kind === "conclusao")}
             title="Fotos do serviço finalizado"
           />
           <FinishedPhotoUpload requestId={request.id} clientId={request.user_id} />
