@@ -315,7 +315,10 @@ export type Database = {
           reward_cents: number
           reward_chosen_at: string | null
           reward_method: string | null
+          reward_paid_at: string | null
           reward_pix_key: string | null
+          reward_receipt_note: string | null
+          reward_receipt_path: string | null
           reward_status: string
           status: string
           updated_at: string
@@ -336,7 +339,10 @@ export type Database = {
           reward_cents?: number
           reward_chosen_at?: string | null
           reward_method?: string | null
+          reward_paid_at?: string | null
           reward_pix_key?: string | null
+          reward_receipt_note?: string | null
+          reward_receipt_path?: string | null
           reward_status?: string
           status?: string
           updated_at?: string
@@ -357,7 +363,10 @@ export type Database = {
           reward_cents?: number
           reward_chosen_at?: string | null
           reward_method?: string | null
+          reward_paid_at?: string | null
           reward_pix_key?: string | null
+          reward_receipt_note?: string | null
+          reward_receipt_path?: string | null
           reward_status?: string
           status?: string
           updated_at?: string
