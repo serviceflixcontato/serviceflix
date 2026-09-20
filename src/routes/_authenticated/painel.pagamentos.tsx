@@ -394,7 +394,7 @@ function Pagamentos() {
                           {payInvoice.isPending ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : null}
-                          Pagar
+                          {discount > 0 ? `Pagar diferença de ${formatBRL(due)}` : "Pagar"}
                         </Button>
                       )}
                     </div>

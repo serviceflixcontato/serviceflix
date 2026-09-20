@@ -118,7 +118,6 @@ export const applyVoucherToPayment = createServerFn({ method: "POST" })
 
     const applied = Math.min(voucher.balance_cents, remaining);
     const newRemaining = remaining - applied;
-    const newBalance = voucher.balance_cents - applied;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -138,8 +137,8 @@ export const applyVoucherToPayment = createServerFn({ method: "POST" })
     const { error: balanceError } = await supabaseAdmin
       .from("vouchers")
       .update({
-        balance_cents: newBalance,
-        status: newBalance === 0 ? "usado" : "disponivel",
+        balance_cents: 0,
+        status: "usado",
       })
       .eq("id", voucher.id);
     if (balanceError) throw balanceError;
@@ -221,10 +220,9 @@ export const applyAvailableVouchersToPayment = createServerFn({ method: "POST" }
     if (updatePaymentError) throw updatePaymentError;
 
     for (const use of uses) {
-      const balance = use.balance - use.applied;
       const { error: updateVoucherError } = await supabaseAdmin
         .from("vouchers")
-        .update({ balance_cents: balance, status: balance === 0 ? "usado" : "disponivel" })
+        .update({ balance_cents: 0, status: "usado" })
         .eq("id", use.id)
         .eq("user_id", userId);
       if (updateVoucherError) throw updateVoucherError;
