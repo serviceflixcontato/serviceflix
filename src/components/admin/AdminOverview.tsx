@@ -852,6 +852,17 @@ export function AdminOverview() {
                       {referral.notes ? (
                         <p className="mt-2 text-sm text-muted-foreground">{referral.notes}</p>
                       ) : null}
+                      {referral.reward_method ? (
+                        <p className="mt-2 text-sm font-medium">
+                          Resgate escolhido:{" "}
+                          {referral.reward_method === "voucher"
+                            ? "Voucher de abatimento no contrato"
+                            : "Dinheiro (Pix ou transferência)"}
+                          {referral.reward_method === "dinheiro"
+                            ? ` · ${referral.reward_pix_key ?? referral.reward_bank_details ?? "dados não informados"}`
+                            : ""}
+                        </p>
+                      ) : null}
                     </div>
                     <Badge variant="secondary" className="shrink-0">
                       Recompensa {formatBRL(referral.reward_cents)}
