@@ -29,6 +29,8 @@ import {
   updateReferralStatus,
 } from "@/lib/admin.functions";
 import { ManualPlanActivation } from "@/components/admin/ManualPlanActivation";
+import { SubscriptionRowActions } from "@/components/admin/SubscriptionRowActions";
+import { ContractRowActions } from "@/components/admin/ContractRowActions";
 import { activateSubscriptionFromContract } from "@/lib/activation.functions";
 import {
   REFERRAL_STATUS_LABELS,
