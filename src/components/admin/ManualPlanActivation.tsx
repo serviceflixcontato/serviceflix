@@ -244,7 +244,7 @@ export function ManualPlanActivation({ clients }: { clients: Client[] }) {
             checked={cash}
             onChange={(event) => setCash(event.target.checked)}
           />
-          Registrar já o pagamento em dinheiro deste mês como recebido
+          Registrar já a mensalidade deste mês como recebida (na forma de pagamento escolhida acima)
         </label>
 
         <div className="md:col-span-2">
