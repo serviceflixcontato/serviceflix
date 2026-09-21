@@ -328,6 +328,7 @@ function WorkOrderRow({
   order,
   nameById,
   busy,
+  providers,
   onStatus,
   onConclude,
   onDelete,
@@ -336,20 +337,21 @@ function WorkOrderRow({
   order: AdminWorkOrder;
   nameById: Map<string, string>;
   busy: boolean;
+  providers: { id: string; full_name: string; role: string }[];
   onStatus: (status: string) => void;
   onConclude: () => void;
   onDelete: () => void;
   onSaveEdit: (patch: {
     title: string;
     description: string | undefined;
-    technician: string | undefined;
+    provider_id: string | null;
     scheduled_for: string | null;
   }) => Promise<unknown>;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(order.title);
   const [description, setDescription] = useState(order.description ?? "");
-  const [technician, setTechnician] = useState(order.technician ?? "");
+  const [providerId, setProviderId] = useState(order.provider_id ?? "none");
   const [scheduledFor, setScheduledFor] = useState(toLocalInput(order.scheduled_for));
   const [saving, setSaving] = useState(false);
 
@@ -363,7 +365,7 @@ function WorkOrderRow({
       await onSaveEdit({
         title: title.trim(),
         description: description.trim() || undefined,
-        technician: technician.trim() || undefined,
+        provider_id: providerId === "none" ? null : providerId,
         scheduled_for: scheduledFor || null,
       });
       setEditing(false);
