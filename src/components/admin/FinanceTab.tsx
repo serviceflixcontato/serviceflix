@@ -67,6 +67,7 @@ type Subscription = {
 type Profile = { id: string; full_name: string | null; email: string | null };
 
 const VIEWS = [
+  { id: "baixa", label: "Dar baixa em pagamentos" },
   { id: "contratos", label: "Contratos" },
   { id: "recebidos", label: "Recebidos" },
   { id: "areceber", label: "A receber" },
@@ -74,6 +75,7 @@ const VIEWS = [
   { id: "adicionais", label: "Serviços adicionais" },
   { id: "cancelados", label: "Cancelados" },
 ] as const;
+
 
 type ViewId = (typeof VIEWS)[number]["id"];
 
