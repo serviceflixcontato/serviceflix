@@ -19,9 +19,7 @@ import { setPaymentStatusManually } from "@/lib/admin.functions";
 export const MANUAL_METHODS = [
   { value: "pix", label: "Pix" },
   { value: "dinheiro", label: "Dinheiro" },
-  { value: "cartao", label: "Cartão" },
-  { value: "transferencia", label: "Transferência bancária" },
-  { value: "voucher", label: "Voucher de indicação" },
+  { value: "online", label: "Pagamento online (Mercado Pago)" },
 ] as const;
 
 type SettlePayment = {

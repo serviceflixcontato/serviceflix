@@ -345,7 +345,7 @@ function Pagamentos() {
             ))}
           </ul>
           <p className="mt-2 text-xs">
-            Pague adiantado por Pix, cartão ou dinheiro — e use seu voucher para abater o valor.
+            Pague adiantado online e use seu voucher para abater o valor.
           </p>
         </section>
       ) : null}
