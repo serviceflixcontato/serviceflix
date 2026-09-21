@@ -477,6 +477,7 @@ const scheduleSchema = z.object({
   request_id: z.string().uuid(),
   scheduled_at: z.string().min(10).max(40),
   scheduled_technician: z.string().trim().max(120).optional(),
+  provider_id: z.string().uuid().nullable().optional(),
   materials_needed: z.string().trim().max(1500).optional(),
   team_message: z.string().trim().max(1500).optional(),
 });
