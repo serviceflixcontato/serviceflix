@@ -49,6 +49,10 @@ type Subscription = {
   monthly_price_cents: number | null;
   payment_method: string | null;
   contract_number: string | null;
+  pending_plan_slug: string | null;
+  pending_plan_name: string | null;
+  pending_price_cents: number | null;
+  pending_requested_at: string | null;
   created_at: string;
 };
 
@@ -162,6 +166,7 @@ export function FinanceTab({
               {waiting.map((sub) => {
                 const subPayments = payments.filter((p) => p.subscription_id === sub.id);
                 const subGroups = groupInvoices(subPayments);
+                const isPlanChange = Boolean(sub.pending_plan_slug);
                 return (
                   <li
                     key={sub.id}
@@ -171,14 +176,33 @@ export function FinanceTab({
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
+                        {isPlanChange ? (
+                          <Badge className="mb-2" variant="outline">
+                            Mudança de plano
+                          </Badge>
+                        ) : null}
                         <p className="font-semibold">
-                          {nameById.get(sub.user_id) ?? "Cliente"} · {sub.plan_name}
+                          {nameById.get(sub.user_id) ?? "Cliente"}
                         </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {formatBRL(sub.monthly_price_cents)}/mês · contrato{" "}
-                          {sub.contract_number ?? "sem número"} · aberto em{" "}
-                          {formatDateTime(sub.created_at)}
-                        </p>
+                        {isPlanChange ? (
+                          <div className="mt-2 grid gap-1 text-sm">
+                            <p>
+                              Plano atual: <strong>{sub.plan_name}</strong> · {formatBRL(sub.monthly_price_cents)}/mês
+                            </p>
+                            <p>
+                              Plano solicitado: <strong>{sub.pending_plan_name ?? sub.pending_plan_slug}</strong> · {formatBRL(sub.pending_price_cents)}/mês
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Solicitado em {formatDateTime(sub.pending_requested_at)}. O plano atual permanece ativo até a aprovação.
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {sub.plan_name} · {formatBRL(sub.monthly_price_cents)}/mês · contrato{" "}
+                            {sub.contract_number ?? "sem número"} · aberto em{" "}
+                            {formatDateTime(sub.created_at)}
+                          </p>
+                        )}
                         <p className="mt-1 text-xs text-muted-foreground">
                           Já recebido {formatBRL(sumDue(subGroups.paid))} · em aberto{" "}
                           {formatBRL(sumDue(subGroups.open))}
@@ -186,7 +210,12 @@ export function FinanceTab({
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <ApprovalBadge status={sub.approval_status} />
-                        <ContractApproval subscriptionId={sub.id} status={sub.approval_status} />
+                        <ContractApproval
+                          subscriptionId={sub.id}
+                          status={sub.approval_status}
+                          isPlanChange={isPlanChange}
+                          requestedPlanName={sub.pending_plan_name ?? sub.pending_plan_slug}
+                        />
                       </div>
                     </div>
                   </li>
