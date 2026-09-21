@@ -103,7 +103,7 @@ function Contrato() {
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
-      ) : subscriptions.length === 0 && orphanContracts.length === 0 ? (
+      ) : !currentSubscription && !currentContract ? (
         <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
           <p className="text-sm text-muted-foreground">
             Você ainda não possui um contrato. Escolha um plano, leia o contrato e assine aqui mesmo
@@ -114,19 +114,11 @@ function Contrato() {
           </Button>
         </section>
       ) : (
-        <div className="space-y-6">
-          {subscriptions.map((sub) => (
-            <ContractCard
-              key={sub.id}
-              subscription={sub}
-              contract={contracts.find((item) => item.subscription_id === sub.id) ?? null}
-              profile={profile ?? null}
-            />
-          ))}
-          {orphanContracts.map((contract) => (
-            <ContractCard key={contract.id} subscription={null} contract={contract} profile={profile ?? null} />
-          ))}
-        </div>
+        <ContractCard
+          subscription={currentSubscription}
+          contract={currentContract}
+          profile={profile ?? null}
+        />
       )}
     </div>
   );
