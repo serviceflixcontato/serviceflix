@@ -105,18 +105,15 @@ export function ContractApproval({
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Forma do pagamento</Label>
+              <Label>Meio de pagamento</Label>
               <Select value={method} onValueChange={setMethod}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
                   <SelectItem value="pix">Pix</SelectItem>
-                  <SelectItem value="dinheiro">Dinheiro (presencial)</SelectItem>
-                  <SelectItem value="cartao">Cartão de crédito</SelectItem>
-                  <SelectItem value="transferencia">Transferência bancária</SelectItem>
-                  <SelectItem value="online">Pagamento online (Mercado Pago)</SelectItem>
-                  <SelectItem value="voucher">Voucher de indicação</SelectItem>
+                  <SelectItem value="online">Online — Mercado Pago</SelectItem>
                 </SelectContent>
               </Select>
             </div>
