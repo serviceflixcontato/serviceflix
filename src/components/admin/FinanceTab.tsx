@@ -107,14 +107,22 @@ export function FinanceTab({
   const sum = (list: Payment[]) => list.reduce((total, item) => total + netAmount(item), 0);
   const month = new Date().toISOString().slice(0, 7);
   const paidThisMonth = paid.filter((p) => (p.paid_at ?? "").slice(0, 7) === month);
-  const voucherTotal = payments.reduce((t, p) => t + (p.voucher_discount_cents ?? 0), 0);
+  const voucherTotal = payments
+    .filter((p) => p.status !== "cancelada")
+    .reduce((t, p) => t + (p.voucher_discount_cents ?? 0), 0);
 
   const waitingAnalysis = subscriptions.filter(
     (sub) => (sub.approval_status ?? "aguardando_pagamento") === "em_analise",
   );
 
+  // Faturas em que o cliente avisou que já pagou (Pix/dinheiro) vêm primeiro na baixa.
+  const declared = (p: Payment) => (p.reference ?? "").startsWith("Cliente informou pagamento");
+  const toSettle = [...overdue, ...upcoming].sort(
+    (a, b) => Number(declared(b)) - Number(declared(a)),
+  );
+
   const listFor: Record<ViewId, Payment[]> = {
-    baixa: [...overdue, ...upcoming],
+    baixa: toSettle,
     contratos: [],
     recebidos: paid,
     areceber: upcoming,
@@ -266,6 +274,11 @@ export function FinanceTab({
                       </p>
                       {payment.reference ? (
                         <p className="mt-1 text-xs text-muted-foreground">{payment.reference}</p>
+                      ) : null}
+                      {declared(payment) && payment.status !== "pago" ? (
+                        <Badge variant="outline" className="mt-2 border-primary text-primary">
+                          Cliente avisou que pagou · confirmar e dar baixa
+                        </Badge>
                       ) : null}
                       {(payment.voucher_discount_cents ?? 0) > 0 ? (
                         <p className="mt-1 text-xs text-muted-foreground">

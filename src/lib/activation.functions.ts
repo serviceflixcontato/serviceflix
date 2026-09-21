@@ -155,7 +155,16 @@ export const activateSubscriptionFromContract = createServerFn({ method: "POST" 
         .eq("id", openInvoice.id);
     } else {
       // Sem fatura em aberto: registra a adesão (primeira mensalidade) já paga
-      // para aparecer nas faturas pagas do cliente e no caixa.
+      // para aparecer nas faturas pagas do cliente e no caixa — a menos que já
+      // exista um pagamento confirmado (evita lançar o valor duas vezes).
+      const { data: alreadyPaid } = await supabaseAdmin
+        .from("payments")
+        .select("id")
+        .eq("subscription_id", data.subscription_id)
+        .eq("status", "pago")
+        .limit(1)
+        .maybeSingle();
+      if (alreadyPaid) return { ok: true as const };
       const { data: sub } = await supabaseAdmin
         .from("subscriptions")
         .select("user_id, plan_name, monthly_price_cents")

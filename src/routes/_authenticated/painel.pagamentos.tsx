@@ -99,7 +99,10 @@ function Pagamentos() {
   const { data: config } = usePaymentConfig();
   const [selectedOption, setSelectedOption] = useState<Record<string, OptionId>>({});
   const [tab, setTab] = useState<TabId>("efetuar");
-  const open = payments.filter((payment) => payment.status !== "pago");
+  // Faturas canceladas não contam como em aberto (mesma regra do caixa administrativo).
+  const open = payments.filter(
+    (payment) => payment.status !== "pago" && payment.status !== "cancelada",
+  );
   const paid = payments.filter((payment) => payment.status === "pago");
   const dueSoon = open.filter((payment) => isDueSoon(payment));
   const late = open.filter((payment) => {
