@@ -300,6 +300,7 @@ export function AdminOverview() {
   }
 
   const { profiles, subscriptions, payments, requests, orders, referrals, leads, contracts } = data;
+  const events = data.events ?? [];
   const paid = payments.filter((p) => p.status === "pago");
   const unpaid = payments.filter((p) => p.status !== "pago");
   const totalPaid = paid.reduce((sum, p) => sum + (p.amount_cents ?? 0), 0);
