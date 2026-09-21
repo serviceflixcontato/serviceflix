@@ -219,7 +219,6 @@ function Pagamentos() {
               )}
               Vence em {formatDate(payment.due_date)} · {dueLabel(payment.due_date)} ·{" "}
               {STATUS_LABELS[payment.status] ?? payment.status}
-              {payment.method === "dinheiro" ? " · aguardando confirmação da equipe" : ""}
             </p>
             <div className="mt-2 grid gap-1 text-xs">
               <p>
@@ -236,47 +235,19 @@ function Pagamentos() {
           <div className="flex flex-col items-end gap-2">
             <span className="text-xs text-muted-foreground">Total no pagamento online</span>
             <span className="text-2xl font-bold">{formatBRL(due)}</span>
-            {payment.method === "dinheiro" ? null : (
-              <Button
-                size="sm"
-                disabled={payInvoice.isPending}
-                onClick={() => payInvoice.mutate(payment.id)}
-              >
-                {payInvoice.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {discount > 0
-                  ? `Pagar diferença de ${formatBRL(due)} online`
-                  : `Pagar ${formatBRL(due)} online`}
-              </Button>
-            )}
+            <Button
+              size="sm"
+              disabled={payInvoice.isPending}
+              onClick={() => payInvoice.mutate(payment.id)}
+            >
+              {payInvoice.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {discount > 0
+                ? `Pagar diferença de ${formatBRL(due)} online`
+                : `Pagar ${formatBRL(due)} online`}
+            </Button>
           </div>
         </div>
 
-        {due > 0 ? (
-          <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/40 p-3">
-            <p className="text-xs font-semibold">Pagou por Pix?</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Avise nossa equipe. Depois de conferir, damos baixa e a fatura passa para
-              &quot;Faturas pagas&quot;.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={declareMutation.isPending}
-                onClick={() =>
-                  declareMutation.mutate({ payment_id: payment.id, method: "pix" })
-                }
-              >
-                Já paguei por Pix
-              </Button>
-            </div>
-            {payment.reference ? (
-              <p className="mt-2 text-xs text-primary">
-                Aviso registrado · aguardando confirmação da equipe
-              </p>
-            ) : null}
-          </div>
-        ) : null}
 
         {due > 0 && availableVouchers.length > 0 ? (
           <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/50 p-3">
