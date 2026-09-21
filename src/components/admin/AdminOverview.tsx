@@ -33,6 +33,10 @@ import {
 import { ManualPlanActivation } from "@/components/admin/ManualPlanActivation";
 import { SubscriptionRowActions } from "@/components/admin/SubscriptionRowActions";
 import { ContractRowActions } from "@/components/admin/ContractRowActions";
+import { FinanceTab } from "@/components/admin/FinanceTab";
+import { ApprovalBadge, ContractApproval } from "@/components/admin/ContractApproval";
+import { setRegistrationStatus } from "@/lib/admin.functions";
+import { REGISTRATION_STATUS_LABELS, paymentMethodsLabel } from "@/lib/finance";
 import { ServiceRequestActions } from "@/components/admin/ServiceRequestActions";
 import { WorkOrderManager } from "@/components/admin/WorkOrderManager";
 import { activateSubscriptionFromContract } from "@/lib/activation.functions";
@@ -58,6 +62,7 @@ const TABS = [
   { id: "assinaturas", label: "Assinaturas e pagamentos" },
   { id: "servicos", label: "Solicitações e OS" },
   { id: "contratos", label: "Contratos assinados" },
+  { id: "financeiro", label: "Financeiro (caixa)" },
   { id: "indicacoes", label: "Indicações" },
   { id: "leads", label: "Contatos do site" },
 ] as const;
@@ -287,6 +292,10 @@ export function AdminOverview() {
   const activeSubs = subscriptions.filter((s) => s.status === "ativa");
   const convertedReferrals = referrals.filter((r) => r.status === "contratado");
   const newRequestsCount = requests.filter((r) => r.status === "aberta").length;
+  /** Contratos pagos/finalizados pelo cliente esperando a análise financeira da equipe. */
+  const contractsToAnalyze = subscriptions.filter(
+    (s) => (s.approval_status ?? "aguardando_pagamento") === "em_analise",
+  ).length;
 
   /** Solicitações agrupadas por cliente; clientes com solicitação nova vêm primeiro. */
   const clientGroups = (() => {
@@ -412,6 +421,7 @@ export function AdminOverview() {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                  <ContractApproval subscriptionId={sub.id} status={sub.approval_status} />
                   {openPayment ? (
                     <Button
                       variant="outline"
@@ -447,7 +457,9 @@ export function AdminOverview() {
 
       <nav className="flex gap-2 overflow-x-auto rounded-xl border border-border bg-card p-2 shadow-card">
         {TABS.map((item) => {
-          const alert = item.id === "servicos" && newRequestsCount > 0;
+          const alert =
+            (item.id === "servicos" && newRequestsCount > 0) ||
+            (item.id === "financeiro" && contractsToAnalyze > 0);
           return (
             <button
               key={item.id}
@@ -462,13 +474,21 @@ export function AdminOverview() {
               {item.label}
               {alert ? (
                 <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">
-                  {newRequestsCount}
+                  {item.id === "financeiro" ? contractsToAnalyze : newRequestsCount}
                 </span>
               ) : null}
             </button>
           );
         })}
       </nav>
+
+      {tab === "financeiro" ? (
+        <FinanceTab
+          profiles={profiles as never}
+          subscriptions={subscriptions as never}
+          payments={payments as never}
+        />
+      ) : null}
 
       {tab === "clientes" ? (
         <Card>

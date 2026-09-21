@@ -29,7 +29,6 @@ import {
 import { formatBRL, formatDate, formatDateTime } from "@/hooks/use-panel-data";
 import { createFinanceCharge, setPaymentStatusManually } from "@/lib/admin.functions";
 import {
-  APPROVAL_STATUS_LABELS,
   PAYMENT_CATEGORY_LABELS,
   isOverdue,
   methodLabel,
@@ -472,5 +471,3 @@ function NewCharge({
     </section>
   );
 }
-
-export { APPROVAL_STATUS_LABELS };
