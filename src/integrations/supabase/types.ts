@@ -433,6 +433,51 @@ export type Database = {
           },
         ]
       }
+      service_providers: {
+        Row: {
+          active: boolean
+          address: string | null
+          cpf: string | null
+          created_at: string
+          document_notes: string | null
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          photo_url: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          cpf?: string | null
+          created_at?: string
+          document_notes?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          photo_url?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          cpf?: string | null
+          created_at?: string
+          document_notes?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          photo_url?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_requests: {
         Row: {
           category: string
@@ -647,6 +692,10 @@ export type Database = {
           hours_spent: number | null
           id: string
           os_number: string
+          provider_id: string | null
+          provider_name: string | null
+          provider_photo_url: string | null
+          provider_role: string | null
           request_id: string | null
           scheduled_for: string | null
           status: string
@@ -662,6 +711,10 @@ export type Database = {
           hours_spent?: number | null
           id?: string
           os_number: string
+          provider_id?: string | null
+          provider_name?: string | null
+          provider_photo_url?: string | null
+          provider_role?: string | null
           request_id?: string | null
           scheduled_for?: string | null
           status?: string
@@ -677,6 +730,10 @@ export type Database = {
           hours_spent?: number | null
           id?: string
           os_number?: string
+          provider_id?: string | null
+          provider_name?: string | null
+          provider_photo_url?: string | null
+          provider_role?: string | null
           request_id?: string | null
           scheduled_for?: string | null
           status?: string
@@ -686,6 +743,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "work_orders_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "work_orders_request_id_fkey"
             columns: ["request_id"]

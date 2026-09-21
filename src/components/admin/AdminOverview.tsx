@@ -52,6 +52,7 @@ import { setRegistrationStatus } from "@/lib/admin.functions";
 import { REGISTRATION_STATUS_LABELS, paymentMethodsLabel } from "@/lib/finance";
 import { ServiceRequestActions } from "@/components/admin/ServiceRequestActions";
 import { WorkOrderManager } from "@/components/admin/WorkOrderManager";
+import { ProviderManager } from "@/components/admin/ProviderManager";
 import { activateSubscriptionFromContract } from "@/lib/activation.functions";
 import {
   REFERRAL_STATUS_LABELS,
@@ -74,6 +75,7 @@ const TABS = [
   { id: "clientes", label: "Clientes" },
   { id: "assinaturas", label: "Assinaturas e pagamentos" },
   { id: "servicos", label: "Solicitações e OS" },
+  { id: "prestadores", label: "Prestadores de serviço" },
   { id: "contratos", label: "Contratos assinados" },
   { id: "financeiro", label: "Financeiro (caixa)" },
   { id: "indicacoes", label: "Indicações" },
@@ -494,6 +496,17 @@ export function AdminOverview() {
           );
         })}
       </nav>
+
+      {tab === "prestadores" ? (
+        <Card>
+          <h2 className="text-lg font-semibold">Prestadores de serviço</h2>
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            Cadastre a equipe que executa os serviços. O cliente vê apenas a foto, o nome e a
+            função na ordem de serviço.
+          </p>
+          <ProviderManager />
+        </Card>
+      ) : null}
 
       {tab === "financeiro" ? (
         <FinanceTab

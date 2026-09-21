@@ -23,6 +23,8 @@ import {
   setWorkOrderStatus,
   updateWorkOrder,
 } from "@/lib/admin.functions";
+import { useProviders } from "@/components/admin/ProviderManager";
+import { providerRoleLabel } from "@/lib/providers";
 
 type Client = { id: string; full_name: string | null; email: string | null };
 type RequestRow = {
@@ -40,6 +42,10 @@ export type AdminWorkOrder = {
   title: string;
   description: string | null;
   technician: string | null;
+  provider_id?: string | null;
+  provider_name?: string | null;
+  provider_role?: string | null;
+  provider_photo_url?: string | null;
   scheduled_for: string | null;
   completed_at: string | null;
   hours_spent: number | null;
@@ -79,8 +85,9 @@ export function WorkOrderManager({
   const [requestId, setRequestId] = useState("none");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [technician, setTechnician] = useState("");
+  const [providerId, setProviderId] = useState("none");
   const [scheduledFor, setScheduledFor] = useState("");
+  const providers = (useProviders().data ?? []).filter((p) => p.active);
 
   const openRequests = useMemo(
     () => requests.filter((r) => r.status !== "cancelada"),
@@ -105,7 +112,7 @@ export function WorkOrderManager({
           request_id: requestId === "none" ? null : requestId,
           title: title.trim(),
           description: description.trim() || undefined,
-          technician: technician.trim() || undefined,
+          provider_id: providerId === "none" ? null : providerId,
           scheduled_for: scheduledFor || null,
         },
       }),
@@ -115,7 +122,7 @@ export function WorkOrderManager({
       setRequestId("none");
       setTitle("");
       setDescription("");
-      setTechnician("");
+      setProviderId("none");
       setScheduledFor("");
       invalidate();
     },
@@ -227,13 +234,20 @@ export function WorkOrderManager({
             />
           </div>
           <div>
-            <Label className="text-xs">Técnico responsável (opcional)</Label>
-            <Input
-              value={technician}
-              onChange={(e) => setTechnician(e.target.value)}
-              placeholder="Nome do técnico"
-              maxLength={80}
-            />
+            <Label className="text-xs">Prestador que vai executar</Label>
+            <Select value={providerId} onValueChange={setProviderId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Escolha o prestador" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">A definir</SelectItem>
+                {providers.map((provider) => (
+                  <SelectItem key={provider.id} value={provider.id}>
+                    {provider.full_name} · {providerRoleLabel(provider.role)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label className="text-xs">Data e hora agendada</Label>
@@ -265,6 +279,7 @@ export function WorkOrderManager({
                 order={order}
                 nameById={nameById}
                 busy={statusMutation.isPending}
+                providers={providers}
                 onStatus={(status) => statusMutation.mutate({ order_id: order.id, status })}
                 onConclude={() => handleConclude(order)}
                 onDelete={() => deleteMutation.mutate(order.id)}
@@ -288,6 +303,7 @@ export function WorkOrderManager({
                 order={order}
                 nameById={nameById}
                 busy={statusMutation.isPending}
+                providers={providers}
                 onStatus={(status) => statusMutation.mutate({ order_id: order.id, status })}
                 onConclude={() => handleConclude(order)}
                 onDelete={() => deleteMutation.mutate(order.id)}
@@ -314,6 +330,7 @@ function WorkOrderRow({
   order,
   nameById,
   busy,
+  providers,
   onStatus,
   onConclude,
   onDelete,
@@ -322,20 +339,21 @@ function WorkOrderRow({
   order: AdminWorkOrder;
   nameById: Map<string, string>;
   busy: boolean;
+  providers: { id: string; full_name: string; role: string }[];
   onStatus: (status: string) => void;
   onConclude: () => void;
   onDelete: () => void;
   onSaveEdit: (patch: {
     title: string;
     description: string | undefined;
-    technician: string | undefined;
+    provider_id: string | null;
     scheduled_for: string | null;
   }) => Promise<unknown>;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(order.title);
   const [description, setDescription] = useState(order.description ?? "");
-  const [technician, setTechnician] = useState(order.technician ?? "");
+  const [providerId, setProviderId] = useState(order.provider_id ?? "none");
   const [scheduledFor, setScheduledFor] = useState(toLocalInput(order.scheduled_for));
   const [saving, setSaving] = useState(false);
 
@@ -349,7 +367,7 @@ function WorkOrderRow({
       await onSaveEdit({
         title: title.trim(),
         description: description.trim() || undefined,
-        technician: technician.trim() || undefined,
+        provider_id: providerId === "none" ? null : providerId,
         scheduled_for: scheduledFor || null,
       });
       setEditing(false);
@@ -372,7 +390,10 @@ function WorkOrderRow({
             {order.scheduled_for
               ? `agendada para ${formatDateTime(order.scheduled_for)}`
               : "sem data marcada"}{" "}
-            · {order.technician ?? "técnico a definir"}
+            ·{" "}
+            {order.provider_name
+              ? `${order.provider_name} (${providerRoleLabel(order.provider_role)})`
+              : (order.technician ?? "profissional a definir")}
           </p>
           {order.completed_at ? (
             <p className="mt-1 text-xs text-muted-foreground">
@@ -405,8 +426,20 @@ function WorkOrderRow({
             />
           </div>
           <div>
-            <Label className="text-xs">Técnico</Label>
-            <Input value={technician} onChange={(e) => setTechnician(e.target.value)} maxLength={80} />
+            <Label className="text-xs">Prestador</Label>
+            <Select value={providerId} onValueChange={setProviderId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Escolha o prestador" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">A definir</SelectItem>
+                {providers.map((provider) => (
+                  <SelectItem key={provider.id} value={provider.id}>
+                    {provider.full_name} · {providerRoleLabel(provider.role)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label className="text-xs">Data e hora</Label>

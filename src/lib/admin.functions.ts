@@ -102,7 +102,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("work_orders")
           .select(
-            "id, user_id, request_id, os_number, title, description, technician, scheduled_for, completed_at, hours_spent, status",
+            "id, user_id, request_id, os_number, title, description, technician, provider_id, provider_name, provider_role, provider_photo_url, scheduled_for, completed_at, hours_spent, status",
           )
           .order("scheduled_for", { ascending: false }),
         supabaseAdmin.from("referrals").select("*").order("created_at", { ascending: false }),
@@ -520,8 +520,31 @@ const workOrderCreateSchema = z.object({
   title: z.string().trim().min(2).max(140),
   description: z.string().trim().max(1500).optional(),
   technician: z.string().trim().max(80).optional(),
+  provider_id: z.string().uuid().nullable().optional(),
   scheduled_for: z.string().min(10).max(40).nullable().optional(),
 });
+
+/** Dados públicos do prestador que ficam guardados na OS (o cliente vê isso). */
+async function providerSnapshot(providerId: string | null | undefined) {
+  if (!providerId) {
+    return { provider_id: null, provider_name: null, provider_role: null, provider_photo_url: null };
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("service_providers")
+    .select("id, full_name, role, photo_url")
+    .eq("id", providerId)
+    .maybeSingle();
+  if (!data) {
+    return { provider_id: null, provider_name: null, provider_role: null, provider_photo_url: null };
+  }
+  return {
+    provider_id: data.id,
+    provider_name: data.full_name,
+    provider_role: data.role,
+    provider_photo_url: data.photo_url,
+  };
+}
 
 /** Cria uma ordem de serviço para um cliente (com ou sem solicitação vinculada). */
 export const createWorkOrder = createServerFn({ method: "POST" })
@@ -543,13 +566,16 @@ export const createWorkOrder = createServerFn({ method: "POST" })
       if (request?.request_code) osNumber = request.request_code;
     }
 
+    const provider = await providerSnapshot(data.provider_id);
+
     const { error } = await supabaseAdmin.from("work_orders").insert({
       user_id: data.user_id,
       request_id: data.request_id ?? null,
       os_number: osNumber,
       title: data.title,
       description: data.description || null,
-      technician: data.technician || null,
+      technician: provider.provider_name ?? data.technician ?? null,
+      ...provider,
       scheduled_for: data.scheduled_for ? new Date(data.scheduled_for).toISOString() : null,
       status: "agendada",
     });
@@ -562,10 +588,11 @@ const workOrderEditSchema = z.object({
   title: z.string().trim().min(2).max(140),
   description: z.string().trim().max(1500).optional(),
   technician: z.string().trim().max(80).optional(),
+  provider_id: z.string().uuid().nullable().optional(),
   scheduled_for: z.string().min(10).max(40).nullable().optional(),
 });
 
-/** Edita os dados de uma OS (serviço, técnico, data e hora da visita). */
+/** Edita os dados de uma OS (serviço, profissional, data e hora da visita). */
 export const updateWorkOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => workOrderEditSchema.parse(input))
@@ -573,12 +600,14 @@ export const updateWorkOrder = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { order_id, ...rest } = data;
+    const provider = await providerSnapshot(rest.provider_id);
     const { error } = await supabaseAdmin
       .from("work_orders")
       .update({
         title: rest.title,
         description: rest.description || null,
-        technician: rest.technician || null,
+        technician: provider.provider_name ?? rest.technician ?? null,
+        ...provider,
         scheduled_for: rest.scheduled_for ? new Date(rest.scheduled_for).toISOString() : null,
       })
       .eq("id", order_id);
