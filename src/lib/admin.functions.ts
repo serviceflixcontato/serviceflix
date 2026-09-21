@@ -722,7 +722,16 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
         if (payError) throw payError;
       } else if (subscription?.user_id) {
         // Nenhuma fatura em aberto: registra a adesão (primeira mensalidade) já
-        // como paga para constar nas faturas pagas do cliente e no caixa.
+        // como paga — mas só se ainda não houver pagamento registrado (evita
+        // duplicar o valor quando o cliente já pagou online).
+        const { data: alreadyPaid } = await supabaseAdmin
+          .from("payments")
+          .select("id")
+          .eq("subscription_id", data.subscription_id)
+          .eq("status", "pago")
+          .limit(1)
+          .maybeSingle();
+        if (alreadyPaid) return { ok: true as const };
         const { data: plan } = await supabaseAdmin
           .from("subscriptions")
           .select("plan_name, monthly_price_cents")
