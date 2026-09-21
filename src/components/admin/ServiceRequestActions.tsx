@@ -43,6 +43,7 @@ export function ServiceRequestActions({
     status: string;
     scheduled_at?: string | null;
     scheduled_technician?: string | null;
+    provider_id?: string | null;
     materials_needed?: string | null;
     team_message?: string | null;
   };
@@ -52,7 +53,7 @@ export function ServiceRequestActions({
   const setStatus = useServerFn(setServiceRequestStatus);
 
   const [scheduledAt, setScheduledAt] = useState(toLocalInput(request.scheduled_at));
-  const [technician, setTechnician] = useState(request.scheduled_technician ?? "");
+  const [providerId, setProviderId] = useState(request.provider_id ?? "");
   const [materials, setMaterials] = useState(request.materials_needed ?? "");
   const [message, setMessage] = useState(request.team_message ?? "");
   // Só profissionais cadastrados e ativos podem ser escolhidos.
@@ -68,7 +69,7 @@ export function ServiceRequestActions({
         data: {
           request_id: request.id,
           scheduled_at: scheduledAt,
-          scheduled_technician: technician,
+          provider_id: providerId || null,
           materials_needed: materials,
           team_message: message,
         } as never,
@@ -129,14 +130,17 @@ export function ServiceRequestActions({
 
       <div className="mt-3 space-y-1.5">
         <Label>Profissional que fará o serviço</Label>
-        <Select value={technician || "none"} onValueChange={(value) => setTechnician(value === "none" ? "" : value)}>
+        <Select
+          value={providerId || "none"}
+          onValueChange={(value) => setProviderId(value === "none" ? "" : value)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Escolha o profissional cadastrado" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">A definir</SelectItem>
             {providers.map((provider) => (
-              <SelectItem key={provider.id} value={provider.full_name}>
+              <SelectItem key={provider.id} value={provider.id}>
                 {provider.full_name} · {providerRoleLabel(provider.role)}
               </SelectItem>
             ))}

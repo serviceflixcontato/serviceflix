@@ -96,7 +96,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("service_requests")
           .select(
-            "id, user_id, request_code, title, category, urgency, status, location, description, created_at, materials_needed, scheduled_at, scheduled_technician, team_message, schedule_status, client_response_note, client_responded_at",
+            "id, user_id, request_code, title, category, urgency, status, location, description, created_at, materials_needed, scheduled_at, scheduled_technician, provider_id, provider_name, provider_role, provider_photo_url, team_message, schedule_status, client_response_note, client_responded_at",
           )
           .order("created_at", { ascending: false }),
         supabaseAdmin
@@ -477,6 +477,7 @@ const scheduleSchema = z.object({
   request_id: z.string().uuid(),
   scheduled_at: z.string().min(10).max(40),
   scheduled_technician: z.string().trim().max(120).optional(),
+  provider_id: z.string().uuid().nullable().optional(),
   materials_needed: z.string().trim().max(1500).optional(),
   team_message: z.string().trim().max(1500).optional(),
 });
@@ -491,11 +492,15 @@ export const scheduleServiceRequest = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Guarda foto, nome e função do profissional na própria solicitação,
+    // para o cliente ver quem vai atender.
+    const provider = await providerSnapshot(data.provider_id);
     const { error } = await supabaseAdmin
       .from("service_requests")
       .update({
         scheduled_at: new Date(data.scheduled_at).toISOString(),
-        scheduled_technician: data.scheduled_technician || null,
+        scheduled_technician: provider.provider_name ?? data.scheduled_technician ?? null,
+        ...provider,
         materials_needed: data.materials_needed || null,
         team_message: data.team_message || null,
         schedule_status: "aguardando_confirmacao",
@@ -557,16 +562,19 @@ export const createWorkOrder = createServerFn({ method: "POST" })
     // Quando a OS nasce de uma solicitação do cliente, ela herda o código
     // gerado na solicitação (OS123456SF) para os dois lados ficarem ligados.
     let osNumber = generateOsNumber();
+    let inheritedProviderId: string | null = null;
     if (data.request_id) {
       const { data: request } = await supabaseAdmin
         .from("service_requests")
-        .select("request_code")
+        .select("request_code, provider_id")
         .eq("id", data.request_id)
         .maybeSingle();
       if (request?.request_code) osNumber = request.request_code;
+      inheritedProviderId = request?.provider_id ?? null;
     }
 
-    const provider = await providerSnapshot(data.provider_id);
+    // Se a OS não indicar profissional, usa o que já foi escolhido na solicitação.
+    const provider = await providerSnapshot(data.provider_id ?? inheritedProviderId);
 
     const { error } = await supabaseAdmin.from("work_orders").insert({
       user_id: data.user_id,
