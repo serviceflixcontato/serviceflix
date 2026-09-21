@@ -4,12 +4,11 @@ import {
   AlertTriangle,
   BadgeCheck,
   ChevronDown,
-  CircleSlash,
   Loader2,
   PiggyBank,
   Plus,
   Receipt,
-  Wallet,
+  Ticket,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -28,31 +27,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatBRL, formatDate, formatDateTime } from "@/hooks/use-panel-data";
-import { createFinanceCharge } from "@/lib/admin.functions";
+import { createFinanceCharge } from "@/lib/finance.functions";
 import {
-  PAYMENT_CATEGORY_LABELS,
-  isOverdue,
+  groupInvoices,
+  invoiceTotals,
   methodLabel,
   receivedByMethod,
-  netAmount,
-  paymentMethodsLabel,
-} from "@/lib/finance";
+  sumDue,
+  type Invoice,
+} from "@/lib/money";
 
-type Payment = {
-  id: string;
-  user_id: string;
-  subscription_id: string | null;
-  description: string;
-  amount_cents: number;
-  voucher_discount_cents: number | null;
-  due_date: string;
-  paid_at: string | null;
-  status: string;
-  method: string | null;
-  category: string | null;
-  provider: string | null;
-  reference?: string | null;
-};
+type Payment = Invoice & { user_id: string };
 
 type Subscription = {
   id: string;
@@ -70,19 +55,14 @@ type Subscription = {
 type Profile = { id: string; full_name: string | null; email: string | null };
 
 const VIEWS = [
-  { id: "baixa", label: "Dar baixa em pagamentos" },
-  { id: "contratos", label: "Contratos" },
-  { id: "recebidos", label: "Recebidos" },
-  { id: "areceber", label: "A receber" },
-  { id: "atrasados", label: "Atrasados" },
-  { id: "adicionais", label: "Serviços adicionais" },
-  { id: "cancelados", label: "Cancelados" },
+  { id: "aprovar", label: "Aprovar contratos" },
+  { id: "baixa", label: "Dar baixa" },
+  { id: "caixa", label: "Caixa" },
 ] as const;
-
 
 type ViewId = (typeof VIEWS)[number]["id"];
 
-/** Caixa da Service Flix: tudo que entrou, vai entrar e foi cancelado. */
+/** Caixa da Service Flix: aprovar contratos, dar baixa e ver o dinheiro. */
 export function FinanceTab({
   profiles,
   subscriptions,
@@ -92,95 +72,60 @@ export function FinanceTab({
   subscriptions: Subscription[];
   payments: Payment[];
 }) {
-  const [view, setView] = useState<ViewId>("baixa");
+  const [view, setView] = useState<ViewId>("aprovar");
 
   const nameById = new Map(
     profiles.map((profile) => [profile.id, profile.full_name ?? profile.email ?? "Cliente"]),
   );
 
-  const paid = payments.filter((p) => p.status === "pago");
-  const canceled = payments.filter((p) => p.status === "cancelada");
-  const open = payments.filter((p) => p.status !== "pago" && p.status !== "cancelada");
-  const overdue = open.filter(isOverdue);
-  const upcoming = open.filter((p) => !isOverdue(p));
-  const extras = payments.filter((p) => (p.category ?? "mensalidade") === "servico_adicional");
-
-  const sum = (list: Payment[]) => list.reduce((total, item) => total + netAmount(item), 0);
+  const groups = groupInvoices(payments);
   const month = new Date().toISOString().slice(0, 7);
-  const paidThisMonth = paid.filter((p) => (p.paid_at ?? "").slice(0, 7) === month);
+  const paidThisMonth = groups.paid.filter((p) => (p.paid_at ?? "").slice(0, 7) === month);
   const voucherTotal = payments
     .filter((p) => p.status !== "cancelada")
-    .reduce((t, p) => t + (p.voucher_discount_cents ?? 0), 0);
+    .reduce((total, p) => total + (p.voucher_discount_cents ?? 0), 0);
 
-  const waitingAnalysis = subscriptions.filter(
-    (sub) => (sub.approval_status ?? "aguardando_pagamento") === "em_analise",
+  const waiting = subscriptions.filter(
+    (sub) => (sub.approval_status ?? "aguardando_pagamento") !== "aprovado",
   );
-
-  // Faturas em que o cliente avisou que já pagou (Pix/dinheiro) vêm primeiro na baixa.
-  const declared = (p: Payment) => (p.reference ?? "").startsWith("Cliente informou pagamento");
-  const toSettle = [...overdue, ...upcoming].sort(
-    (a, b) => Number(declared(b)) - Number(declared(a)),
-  );
+  const needsAnalysis = (sub: Subscription) =>
+    (sub.approval_status ?? "aguardando_pagamento") === "em_analise";
+  const alerts = waiting.filter(needsAnalysis);
 
   const entries = receivedByMethod(payments);
-
-  const listFor: Record<ViewId, Payment[]> = {
-    baixa: toSettle,
-    contratos: [],
-    recebidos: paid,
-    areceber: upcoming,
-    atrasados: overdue,
-    adicionais: extras,
-    cancelados: canceled,
-  };
-
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Money icon={PiggyBank} label="Recebido no total" value={formatBRL(sum(paid))} hint={`${paid.length} lançamento(s)`} />
-        <Money icon={Wallet} label="Recebido neste mês" value={formatBRL(sum(paidThisMonth))} hint={`${paidThisMonth.length} lançamento(s)`} />
-        <Money icon={Receipt} label="A receber" value={formatBRL(sum(upcoming))} hint={`${upcoming.length} fatura(s)`} />
-        <Money icon={AlertTriangle} label="Atrasado" value={formatBRL(sum(overdue))} hint={`${overdue.length} fatura(s)`} />
-        <Money icon={BadgeCheck} label="Contratos aprovados" value={String(subscriptions.filter((s) => s.approval_status === "aprovado").length)} hint={`${subscriptions.length} no total`} />
-        <Money icon={Loader2} label="Em análise financeira" value={String(waitingAnalysis.length)} hint="aguardando aprovação da equipe" />
-        <Money icon={CircleSlash} label="Cancelado" value={formatBRL(sum(canceled))} hint={`${subscriptions.filter((s) => s.approval_status === "cancelado").length} contrato(s)`} />
-        <Money icon={Receipt} label="Descontos em voucher" value={formatBRL(voucherTotal)} hint="abatimentos por indicação" />
+        <Money
+          icon={PiggyBank}
+          label="Recebido neste mês"
+          value={formatBRL(sumDue(paidThisMonth))}
+          hint={`${paidThisMonth.length} pagamento(s)`}
+        />
+        <Money
+          icon={Receipt}
+          label="A receber"
+          value={formatBRL(sumDue(groups.upcoming))}
+          hint={`${groups.upcoming.length} fatura(s)`}
+        />
+        <Money
+          icon={AlertTriangle}
+          label="Atrasado"
+          value={formatBRL(sumDue(groups.overdue))}
+          hint={`${groups.overdue.length} fatura(s)`}
+        />
+        <Money
+          icon={Ticket}
+          label="Crédito de indicação usado"
+          value={formatBRL(voucherTotal)}
+          hint="abatido em faturas"
+        />
       </div>
-
-      <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-        <h2 className="text-lg font-semibold">Como o dinheiro entrou</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Soma de tudo que já foi recebido em cada forma de pagamento, mais o total abatido em
-          vouchers de indicação.
-        </p>
-        {entries.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">Nenhum valor recebido ainda.</p>
-        ) : (
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {entries.map((entry) => (
-              <li
-                key={entry.method}
-                className="rounded-xl border border-border bg-background p-4"
-              >
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                  {entry.label}
-                </p>
-                <p className="mt-1 text-xl font-bold">{formatBRL(entry.cents)}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {entry.count} lançamento(s)
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <NewCharge profiles={profiles} subscriptions={subscriptions} />
 
       <nav className="flex gap-2 overflow-x-auto rounded-xl border border-border bg-card p-2 shadow-card">
         {VIEWS.map((item) => {
-          const blink = item.id === "contratos" && waitingAnalysis.length > 0 && view !== item.id;
+          const blink = item.id === "aprovar" && alerts.length > 0 && view !== item.id;
           return (
             <button
               key={item.id}
@@ -193,37 +138,35 @@ export function FinanceTab({
               } ${blink ? "blink-alert text-foreground" : ""}`}
             >
               {item.label}
+              {item.id === "aprovar" && alerts.length > 0 ? ` (${alerts.length})` : ""}
             </button>
           );
         })}
       </nav>
 
-      {view === "contratos" ? (
+      {view === "aprovar" ? (
         <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-          <h2 className="text-lg font-semibold">Contratos e situação financeira</h2>
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <BadgeCheck className="h-5 w-5 text-primary" /> Contratos para aprovar
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Cada contrato mostra os meios de pagamento usados (inclusive combinações como cartão +
-            voucher) e a situação da análise. Só o contrato aprovado libera as ordens de serviço.
+            Confira se o pagamento entrou e ative o contrato informando como o dinheiro chegou. Só
+            depois de ativar o cliente pode pedir ordens de serviço.
           </p>
-          {subscriptions.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">Nenhum contrato registrado.</p>
+          {waiting.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Nenhum contrato aguardando aprovação.
+            </p>
           ) : (
             <ul className="mt-4 space-y-3">
-              {subscriptions.map((sub) => {
-                const subPayments = payments.filter(
-                  (p) => p.subscription_id === sub.id || (!p.subscription_id && p.user_id === sub.user_id),
-                );
-                const subPaid = subPayments.filter((p) => p.status === "pago");
-                const subOpen = subPayments.filter(
-                  (p) => p.status !== "pago" && p.status !== "cancelada",
-                );
-                const needsAnalysis =
-                  (sub.approval_status ?? "aguardando_pagamento") === "em_analise";
+              {waiting.map((sub) => {
+                const subPayments = payments.filter((p) => p.subscription_id === sub.id);
+                const subGroups = groupInvoices(subPayments);
                 return (
                   <li
                     key={sub.id}
                     className={`rounded-xl border p-4 ${
-                      needsAnalysis ? "blink-alert" : "border-border"
+                      needsAnalysis(sub) ? "blink-alert" : "border-border"
                     }`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -236,12 +179,9 @@ export function FinanceTab({
                           {sub.contract_number ?? "sem número"} · aberto em{" "}
                           {formatDateTime(sub.created_at)}
                         </p>
-                        <p className="mt-1 text-sm">
-                          <strong>Meio de pagamento:</strong> {paymentMethodsLabel(subPayments)}
-                        </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Recebido {formatBRL(sum(subPaid))} · em aberto {formatBRL(sum(subOpen))}
-                          {sub.approved_at ? ` · aprovado em ${formatDateTime(sub.approved_at)}` : ""}
+                          Já recebido {formatBRL(sumDue(subGroups.paid))} · em aberto{" "}
+                          {formatBRL(sumDue(subGroups.open))}
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
@@ -249,101 +189,120 @@ export function FinanceTab({
                         <ContractApproval subscriptionId={sub.id} status={sub.approval_status} />
                       </div>
                     </div>
-
-                    {subOpen.length > 0 ? (
-                      <ul className="mt-3 space-y-2">
-                        {subOpen.map((payment) => (
-                          <li
-                            key={payment.id}
-                            className="space-y-2 rounded-lg border border-border bg-background p-3 text-sm"
-                          >
-                            <p>
-                              {payment.description} · {formatBRL(netAmount(payment))} · vence{" "}
-                              {formatDate(payment.due_date)}
-                              {payment.method ? ` · ${methodLabel(payment.method)}` : ""}
-                            </p>
-                            <PaymentSettle payment={payment} />
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-
                   </li>
                 );
               })}
             </ul>
           )}
         </section>
-      ) : (
+      ) : null}
+
+      {view === "baixa" ? (
         <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-          <h2 className="text-lg font-semibold">
-            {VIEWS.find((item) => item.id === view)?.label}
-          </h2>
+          <h2 className="text-lg font-semibold">Faturas em aberto</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Total: <strong>{formatBRL(sum(listFor[view]))}</strong> em {listFor[view].length}{" "}
-            lançamento(s).
+            Quando o cliente pagar por Pix, dinheiro ou online, dê a baixa aqui. O valor entra no
+            caixa na hora.
           </p>
-          {listFor[view].length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">Nada por aqui ainda.</p>
+          {groups.open.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">Nenhuma fatura em aberto.</p>
           ) : (
             <ul className="mt-4 space-y-3">
-              {listFor[view].map((payment) => (
-                <li
-                  key={payment.id}
-                  className="space-y-3 rounded-xl border border-border p-4"
-                >
+              {groups.open.map((payment) => (
+                <li key={payment.id} className="space-y-3 rounded-xl border border-border p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold">
-                        {nameById.get(payment.user_id) ?? "Cliente"} · {payment.description}
+                        {nameById.get((payment as Payment).user_id) ?? "Cliente"} ·{" "}
+                        {payment.description}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {PAYMENT_CATEGORY_LABELS[payment.category ?? "mensalidade"]} ·{" "}
-                        {payment.method ? methodLabel(payment.method) : "meio não informado"} ·
-                        vencimento {formatDate(payment.due_date)}
-                        {payment.paid_at ? ` · pago em ${formatDateTime(payment.paid_at)}` : ""}
+                        Vencimento {formatDate(payment.due_date)}
+                        {invoiceTotals(payment).discount > 0
+                          ? ` · crédito aplicado −${formatBRL(invoiceTotals(payment).discount)}`
+                          : ""}
                       </p>
                       {payment.reference ? (
                         <p className="mt-1 text-xs text-muted-foreground">{payment.reference}</p>
                       ) : null}
-                      {declared(payment) && payment.status !== "pago" ? (
-                        <Badge variant="outline" className="mt-2 border-primary text-primary">
-                          Cliente avisou que pagou · confirmar e dar baixa
-                        </Badge>
-                      ) : null}
-                      {(payment.voucher_discount_cents ?? 0) > 0 ? (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Desconto em voucher: -{formatBRL(payment.voucher_discount_cents)}
-                        </p>
-                      ) : null}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-base font-semibold">{formatBRL(netAmount(payment))}</span>
-                      <Badge
-                        variant={
-                          payment.status === "pago"
-                            ? "default"
-                            : payment.status === "cancelada"
-                              ? "secondary"
-                              : "outline"
-                        }
-                      >
-                        {payment.status === "pago"
-                          ? "Recebido"
-                          : payment.status === "cancelada"
-                            ? "Cancelado"
-                            : "Em aberto"}
-                      </Badge>
+                      <span className="text-base font-semibold">
+                        {formatBRL(invoiceTotals(payment).due)}
+                      </span>
+                      <Badge variant="outline">Em aberto</Badge>
                     </div>
                   </div>
-                  {payment.status !== "cancelada" ? <PaymentSettle payment={payment} /> : null}
+                  <PaymentSettle payment={payment} />
                 </li>
-
               ))}
             </ul>
           )}
         </section>
-      )}
+      ) : null}
+
+      {view === "caixa" ? (
+        <div className="space-y-6">
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+            <h2 className="text-lg font-semibold">Como o dinheiro entrou</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Soma de tudo que já foi recebido em cada forma de pagamento.
+            </p>
+            {entries.length === 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">Nenhum valor recebido ainda.</p>
+            ) : (
+              <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {entries.map((entry) => (
+                  <li key={entry.method} className="rounded-xl border border-border bg-background p-4">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                      {entry.label}
+                    </p>
+                    <p className="mt-1 text-xl font-bold">{formatBRL(entry.cents)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {entry.count} lançamento(s)
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+            <h2 className="text-lg font-semibold">Pagamentos recebidos</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Total: <strong>{formatBRL(sumDue(groups.paid))}</strong> em {groups.paid.length}{" "}
+              pagamento(s).
+            </p>
+            {groups.paid.length === 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">Nada recebido ainda.</p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {groups.paid.map((payment) => (
+                  <li key={payment.id} className="rounded-xl border border-border p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">
+                          {nameById.get((payment as Payment).user_id) ?? "Cliente"} ·{" "}
+                          {payment.description}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Recebido em {formatDateTime(payment.paid_at)}
+                          {payment.method ? ` · ${methodLabel(payment.method)}` : ""}
+                        </p>
+                      </div>
+                      <span className="text-base font-semibold">
+                        {formatBRL(invoiceTotals(payment).gross)}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <NewCharge profiles={profiles} subscriptions={subscriptions} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -385,7 +344,7 @@ function NewCharge({
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState(new Date().toISOString().slice(0, 10));
   const [status, setStatus] = useState<"pendente" | "pago">("pendente");
-  const [method, setMethod] = useState("dinheiro");
+  const [method, setMethod] = useState("pix");
 
   const queryClient = useQueryClient();
   const create = useServerFn(createFinanceCharge);
@@ -395,7 +354,8 @@ function NewCharge({
         data: {
           user_id: userId,
           subscription_id:
-            subscriptions.find((sub) => sub.user_id === userId && sub.status === "ativa")?.id ?? null,
+            subscriptions.find((sub) => sub.user_id === userId && sub.status === "ativa")?.id ??
+            null,
           description,
           amount_cents: Math.round(Number(amount.replace(",", ".")) * 100),
           due_date: dueDate,
@@ -423,7 +383,7 @@ function NewCharge({
         className="flex w-full items-center justify-between gap-2 text-left"
       >
         <span className="flex items-center gap-2 text-lg font-semibold">
-          <Plus className="h-5 w-5 text-primary" /> Lançar serviço adicional no caixa
+          <Plus className="h-5 w-5 text-primary" /> Lançar serviço adicional
         </span>
         <ChevronDown className={`h-4 w-4 transition-transform ${open ? "" : "-rotate-90"}`} />
       </button>
@@ -455,11 +415,19 @@ function NewCharge({
           </div>
           <div className="space-y-1.5">
             <Label>Valor (R$)</Label>
-            <Input value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="350,00" />
+            <Input
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              placeholder="350,00"
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Vencimento</Label>
-            <Input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(event) => setDueDate(event.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Situação</Label>
@@ -475,16 +443,15 @@ function NewCharge({
           </div>
           {status === "pago" ? (
             <div className="space-y-1.5">
-              <Label>Meio de pagamento</Label>
+              <Label>Forma de pagamento</Label>
               <Select value={method} onValueChange={setMethod}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                  <SelectItem value="online">Pagamento online (Mercado Pago)</SelectItem>
                   <SelectItem value="pix">Pix</SelectItem>
-                  <SelectItem value="cartao">Cartão</SelectItem>
-                  <SelectItem value="voucher">Voucher</SelectItem>
+                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
                 </SelectContent>
               </Select>
             </div>

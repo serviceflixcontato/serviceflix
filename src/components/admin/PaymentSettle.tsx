@@ -14,12 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { setPaymentStatusManually } from "@/lib/admin.functions";
+import { setPaymentStatusManually } from "@/lib/finance.functions";
 
+/** Formas de pagamento: só a equipe registra Pix e dinheiro. */
 export const MANUAL_METHODS = [
+  { value: "online", label: "Pagamento online (Mercado Pago)" },
   { value: "pix", label: "Pix" },
   { value: "dinheiro", label: "Dinheiro" },
-  { value: "online", label: "Pagamento online (Mercado Pago)" },
 ] as const;
 
 type SettlePayment = {
@@ -29,15 +30,12 @@ type SettlePayment = {
   reference?: string | null;
 };
 
-/**
- * Baixa manual de uma fatura: a equipe escolhe o meio (Pix, dinheiro, etc.),
- * a data em que o valor entrou e uma observação, e confirma o recebimento.
- */
+/** Baixa manual: meio de pagamento, data em que o valor entrou e observação. */
 export function PaymentSettle({ payment }: { payment: SettlePayment }) {
   const queryClient = useQueryClient();
   const update = useServerFn(setPaymentStatusManually);
   const [open, setOpen] = useState(false);
-  const [method, setMethod] = useState(payment.method ?? "pix");
+  const [method, setMethod] = useState(payment.method ?? "online");
   const [paidOn, setPaidOn] = useState(new Date().toISOString().slice(0, 10));
   const [reference, setReference] = useState(payment.reference ?? "");
 
@@ -55,7 +53,7 @@ export function PaymentSettle({ payment }: { payment: SettlePayment }) {
     onSuccess: (_result, input) => {
       toast.success(
         input.status === "pago"
-          ? "Pagamento baixado como recebido."
+          ? "Pagamento registrado como recebido."
           : input.status === "cancelada"
             ? "Fatura cancelada."
             : "Fatura voltou para em aberto.",
@@ -66,9 +64,7 @@ export function PaymentSettle({ payment }: { payment: SettlePayment }) {
     onError: () => toast.error("Não foi possível atualizar o pagamento."),
   });
 
-  const settled = payment.status === "pago";
-
-  if (settled) {
+  if (payment.status === "pago") {
     return (
       <Button
         size="sm"
@@ -85,7 +81,7 @@ export function PaymentSettle({ payment }: { payment: SettlePayment }) {
     <div className="w-full">
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant={open ? "secondary" : "default"} onClick={() => setOpen((v) => !v)}>
-          {open ? "Fechar" : "Dar baixa (recebido)"}
+          {open ? "Fechar" : "Confirmar recebimento"}
         </Button>
         <Button
           size="sm"
@@ -108,7 +104,7 @@ export function PaymentSettle({ payment }: { payment: SettlePayment }) {
           }}
         >
           <div className="space-y-1.5">
-            <Label>Meio de pagamento</Label>
+            <Label>Como o dinheiro entrou</Label>
             <Select value={method} onValueChange={setMethod}>
               <SelectTrigger>
                 <SelectValue />
