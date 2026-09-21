@@ -562,16 +562,19 @@ export const createWorkOrder = createServerFn({ method: "POST" })
     // Quando a OS nasce de uma solicitação do cliente, ela herda o código
     // gerado na solicitação (OS123456SF) para os dois lados ficarem ligados.
     let osNumber = generateOsNumber();
+    let inheritedProviderId: string | null = null;
     if (data.request_id) {
       const { data: request } = await supabaseAdmin
         .from("service_requests")
-        .select("request_code")
+        .select("request_code, provider_id")
         .eq("id", data.request_id)
         .maybeSingle();
       if (request?.request_code) osNumber = request.request_code;
+      inheritedProviderId = request?.provider_id ?? null;
     }
 
-    const provider = await providerSnapshot(data.provider_id);
+    // Se a OS não indicar profissional, usa o que já foi escolhido na solicitação.
+    const provider = await providerSnapshot(data.provider_id ?? inheritedProviderId);
 
     const { error } = await supabaseAdmin.from("work_orders").insert({
       user_id: data.user_id,
