@@ -348,10 +348,33 @@ function Solicitacoes() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {order.completed_at
                       ? `Concluída em ${formatDateTime(order.completed_at)}`
-                      : `Agendada para ${formatDateTime(order.scheduled_for)}`}{" "}
-                    · {order.technician ?? "Profissional a definir"}
+                      : `Agendada para ${formatDateTime(order.scheduled_for)}`}
                     {order.hours_spent ? ` · ${order.hours_spent}h` : ""}
                   </p>
+                  {order.provider_name ? (
+                    <div className="mt-3 flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
+                      {providerPhotos?.get(order.provider_photo_url ?? "") ? (
+                        <img
+                          src={providerPhotos.get(order.provider_photo_url ?? "")}
+                          alt={order.provider_name}
+                          className="h-14 w-14 rounded-full object-cover"
+                        />
+                      ) : null}
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          Profissional que vai executar
+                        </p>
+                        <p className="font-semibold">{order.provider_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {providerRoleLabel(order.provider_role)}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Profissional a definir
+                    </p>
+                  )}
                   {order.description ? (
                     <p className="mt-2 text-sm text-muted-foreground">{order.description}</p>
                   ) : null}
