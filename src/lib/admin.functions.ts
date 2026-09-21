@@ -875,6 +875,61 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
       .eq("id", data.subscription_id);
     if (error) throw error;
 
+    const { logClientEvent } = await import("./history.server");
+    if (pendingRow?.user_id) {
+      const statusTitle: Record<string, string> = {
+        aprovado: "Contrato aprovado e ativo",
+        cancelado: "Contrato cancelado",
+        em_analise: "Contrato em análise financeira",
+        aguardando_pagamento: "Contrato aguardando pagamento",
+      };
+      await logClientEvent({
+        user_id: pendingRow.user_id,
+        subscription_id: data.subscription_id,
+        kind: "contrato",
+        title: statusTitle[data.approval_status] ?? data.approval_status,
+        detail: data.approval_notes ?? null,
+        method: data.payment_method ?? null,
+        created_by: context.userId,
+      });
+
+      if (data.approval_status === "aprovado" && hasPendingPlan) {
+        const newName = patch.plan_name ?? "";
+        await logClientEvent({
+          user_id: pendingRow.user_id,
+          subscription_id: data.subscription_id,
+          kind: "plano",
+          title: `Plano alterado: ${pendingRow.plan_name} → ${newName}`,
+          detail: "Troca aprovada pela equipe após a análise do pagamento.",
+          amount_cents: patch.monthly_price_cents ?? null,
+          created_by: context.userId,
+        });
+
+        // A próxima fatura em aberto passa a ter o valor do novo plano.
+        if ((patch.monthly_price_cents ?? 0) > 0) {
+          const { data: open } = await supabaseAdmin
+            .from("payments")
+            .select("id")
+            .eq("subscription_id", data.subscription_id)
+            .neq("status", "pago")
+            .neq("status", "cancelada")
+            .order("due_date", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (open?.id) {
+            await supabaseAdmin
+              .from("payments")
+              .update({
+                amount_cents: patch.monthly_price_cents!,
+                description: `Mensalidade ${newName}`,
+              })
+              .eq("id", open.id);
+          }
+        }
+      }
+    }
+
+
     // Aprovação só acontece depois do pagamento confirmado: a fatura da adesão
     // (primeira mensalidade em aberto) passa a constar como paga no caixa e no
     // histórico de faturas pagas do cliente.
