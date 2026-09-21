@@ -533,19 +533,19 @@ function Pagamentos() {
                     const startDate = adhesion.paid_at ?? adhesion.due_date;
                     return (
                       <div className="mt-4 rounded-xl border-2 border-primary bg-primary/10 p-4">
-                        <p className="text-sm font-bold uppercase tracking-wide text-primary">
+                        <p className="text-sm font-bold uppercase tracking-wide text-foreground">
                           Adesão paga
                         </p>
-                        <p className="mt-1 text-sm text-primary">
+                        <p className="mt-1 text-sm text-foreground">
                           {adhesion.description} · {formatBRL(adhesion.amount_cents)}
                         </p>
-                        <p className="mt-1 text-xs text-primary">
+                        <p className="mt-1 text-xs text-foreground">
                           Início da adesão em {formatDate(startDate)} · próximo vencimento em{" "}
                           {formatDate(
                             subscription.next_billing_date ?? nextMonthOf(adhesion.due_date),
                           )}
                         </p>
-                        <p className="mt-1 text-xs text-primary">
+                        <p className="mt-1 text-xs text-foreground">
                           Forma de pagamento:{" "}
                           {adhesion.method ?? subscription.payment_method ?? "—"}
                         </p>
