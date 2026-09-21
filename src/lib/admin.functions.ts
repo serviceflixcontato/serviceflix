@@ -688,15 +688,16 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
         .limit(1)
         .maybeSingle();
 
+      const fallback =
+        subscription?.payment_method?.startsWith("Pix")
+          ? "pix"
+          : subscription?.payment_method?.startsWith("Cartão")
+            ? "cartao"
+            : subscription?.payment_method?.startsWith("Dinheiro")
+              ? "dinheiro"
+              : null;
+
       if (openInvoice) {
-        const fallback =
-          subscription?.payment_method?.startsWith("Pix")
-            ? "pix"
-            : subscription?.payment_method?.startsWith("Cartão")
-              ? "cartao"
-              : subscription?.payment_method?.startsWith("Dinheiro")
-                ? "dinheiro"
-                : null;
         const { error: payError } = await supabaseAdmin
           .from("payments")
           .update({
@@ -706,6 +707,25 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
           })
           .eq("id", openInvoice.id);
         if (payError) throw payError;
+      } else if (subscription?.user_id) {
+        // Nenhuma fatura em aberto: registra a adesão (primeira mensalidade) já
+        // como paga para constar nas faturas pagas do cliente e no caixa.
+        const { data: plan } = await supabaseAdmin
+          .from("subscriptions")
+          .select("plan_name, monthly_price_cents")
+          .eq("id", data.subscription_id)
+          .maybeSingle();
+        const { error: insertError } = await supabaseAdmin.from("payments").insert({
+          user_id: subscription.user_id,
+          subscription_id: data.subscription_id,
+          description: `Primeira mensalidade ${plan?.plan_name ?? ""}`.trim(),
+          amount_cents: plan?.monthly_price_cents ?? 0,
+          due_date: new Date().toISOString().slice(0, 10),
+          status: "pago",
+          paid_at: new Date().toISOString(),
+          method: fallback ?? "dinheiro",
+        });
+        if (insertError) throw insertError;
       }
     }
 
