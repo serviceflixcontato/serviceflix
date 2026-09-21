@@ -239,14 +239,14 @@ export const activatePlanManually = createServerFn({ method: "POST" })
       const { error } = await supabaseAdmin.from("payments").insert({
         user_id: data.user_id,
         subscription_id: subscriptionId,
-        description: `Mensalidade ${data.plan_name} (dinheiro)`,
+        description: `Mensalidade ${data.plan_name} (${METHOD_LABELS[data.payment_method]})`,
         amount_cents: data.monthly_price_cents,
         due_date: data.started_at,
         paid_at: new Date().toISOString(),
         status: "pago",
-        method: "dinheiro",
-        provider: "manual",
-        provider_mode: "manual",
+        method: data.payment_method,
+        provider: data.payment_method === "online" ? "mercado_pago" : "manual",
+        provider_mode: data.payment_method === "online" ? "online" : "manual",
       });
       if (error) throw error;
     }

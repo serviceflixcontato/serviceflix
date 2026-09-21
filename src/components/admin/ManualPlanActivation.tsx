@@ -170,6 +170,22 @@ export function ManualPlanActivation({ clients }: { clients: Client[] }) {
         </div>
 
         <div>
+          <Label>Forma de pagamento</Label>
+          <Select value={method} onValueChange={setMethod}>
+            <SelectTrigger className="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {METHOD_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
           <Label htmlFor="contrato">Nº do contrato (opcional)</Label>
           <Input
             id="contrato"
