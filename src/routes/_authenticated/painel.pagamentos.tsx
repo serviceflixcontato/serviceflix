@@ -70,11 +70,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 function currentOption(method: string | null | undefined): OptionId | null {
-  if (!method) return null;
-  if (method.startsWith("Pix")) return "pix";
-  if (method.startsWith("Cartão")) return "cartao";
-  if (method.startsWith("Dinheiro")) return "dinheiro";
-  return null;
+  return method ? "online" : null;
 }
 
 function Pagamentos() {
@@ -137,40 +133,18 @@ function Pagamentos() {
       await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       await queryClient.invalidateQueries({ queryKey: ["payments"] });
 
-      if (input.option === "dinheiro") {
-        toast.success(
-          "Pedido finalizado! Aguarde nossa equipe aprovar e ativar o seu contrato. Quando estiver ativo, aparecerá na sua área de cliente.",
-        );
-        return;
-      }
       if (!result.paymentId) {
         toast.info("Seu plano ainda não tem valor definido. Fale com nosso time.");
         return;
       }
       toast.success(
-        "Pagamento preparado. Agora aplique seu voucher e confira a diferença antes de pagar online.",
+        "Pagamento preparado. Após pagar, aguarde a aprovação da nossa equipe para liberar as ordens de serviço.",
       );
       goToInvoices();
     },
     onError: () => toast.error("Não foi possível registrar a forma de pagamento."),
   });
 
-  /** Cliente avisa que pagou por Pix/dinheiro; a equipe confirma no painel. */
-  const declareMutation = useMutation({
-    mutationFn: (input: { payment_id: string; method: "pix" | "dinheiro" }) =>
-      declarePayment({ data: input }),
-    onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: ["payments"] });
-      if (!result.ok) {
-        toast.info("Esta fatura já consta como paga.");
-        return;
-      }
-      toast.success(
-        "Aviso enviado! Nossa equipe vai conferir e dar baixa no pagamento em breve.",
-      );
-    },
-    onError: () => toast.error("Não foi possível enviar o aviso de pagamento."),
-  });
 
   const payInvoice = useMutation({
     mutationFn: (paymentId: string) => invoiceCheckout({ data: { paymentId } }),
