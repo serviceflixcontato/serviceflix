@@ -15,6 +15,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { ApprovalBadge, ContractApproval } from "@/components/admin/ContractApproval";
+import { PaymentSettle } from "@/components/admin/PaymentSettle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatBRL, formatDate, formatDateTime } from "@/hooks/use-panel-data";
-import { createFinanceCharge, setPaymentStatusManually } from "@/lib/admin.functions";
+import { createFinanceCharge } from "@/lib/admin.functions";
 import {
   PAYMENT_CATEGORY_LABELS,
   isOverdue,
@@ -49,6 +50,7 @@ type Payment = {
   method: string | null;
   category: string | null;
   provider: string | null;
+  reference?: string | null;
 };
 
 type Subscription = {
