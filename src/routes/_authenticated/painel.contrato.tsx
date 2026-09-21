@@ -269,20 +269,33 @@ function ChangePlan({ subscription }: { subscription: SubscriptionLike }) {
     mutationFn: () =>
       change({ data: { subscription_id: subscription.id, plan_slug: slug as never } }),
     onSuccess: async () => {
-      toast.success("Plano alterado. Efetue o pagamento do novo valor na aba Pagamentos.");
+      toast.success(
+        "Pedido enviado. Nosso time analisa o pagamento e ativa o novo plano em seguida.",
+      );
       await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       await queryClient.invalidateQueries({ queryKey: ["payments"] });
     },
-    onError: () => toast.error("Não foi possível mudar o plano agora."),
+    onError: () => toast.error("Não foi possível pedir a mudança de plano agora."),
   });
+
+  const pending = subscription.pending_plan_name ?? null;
 
   return (
     <div className="mt-6 rounded-xl border border-border bg-muted/30 p-4">
       <h3 className="text-sm font-semibold">Mudar de plano</h3>
       <p className="mt-1 text-xs text-muted-foreground">
-        O contrato assinado continua o mesmo, apenas para leitura. Ao mudar de plano, o novo valor
-        aparece na aba Pagamentos e a liberação acontece após a aprovação da nossa equipe.
+        Você continua com o plano atual até a mudança ser liberada. Escolha o novo plano, faça o
+        pagamento na aba Pagamentos e nosso time ativa o plano após conferir o pagamento.
       </p>
+      {pending ? (
+        <p className="mt-3 rounded-lg border border-yellow-400 bg-yellow-100/60 p-3 text-xs text-foreground">
+          Pedido de mudança para <strong>{pending}</strong> em análise
+          {subscription.pending_price_cents != null
+            ? ` — novo valor ${formatBRL(subscription.pending_price_cents)}`
+            : ""}
+          . Seu plano atual segue valendo até a aprovação.
+        </p>
+      ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Select value={slug} onValueChange={setSlug}>
           <SelectTrigger className="w-56">
