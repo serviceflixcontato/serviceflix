@@ -569,6 +569,9 @@ export function AdminOverview() {
                         />
                       </div>
                     </div>
+                    <ClientHistory
+                      events={events.filter((event) => event.user_id === profile.id)}
+                    />
                   </li>
                 );
               })}
