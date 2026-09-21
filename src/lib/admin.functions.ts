@@ -240,14 +240,40 @@ export const activatePlanManually = createServerFn({ method: "POST" })
       approved_at: isActive ? new Date().toISOString() : null,
     };
 
-    // Sempre cria um novo contrato: um cliente pode ter mais de um plano ativo.
-    const { data: created, error: createError } = await supabaseAdmin
+    // Um contrato por cliente: se já existir um contrato não cancelado, ele é
+    // atualizado com o novo plano em vez de criar outro.
+    const { data: current } = await supabaseAdmin
       .from("subscriptions")
-      .insert(payload)
-      .select("id")
-      .single();
-    if (createError) throw createError;
-    const subscriptionId = created.id;
+      .select("id, plan_name")
+      .eq("user_id", data.user_id)
+      .neq("status", "cancelada")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let subscriptionId: string;
+    if (current) {
+      const { error: updateError } = await supabaseAdmin
+        .from("subscriptions")
+        .update({
+          ...payload,
+          pending_plan_slug: null,
+          pending_plan_name: null,
+          pending_price_cents: null,
+          pending_requested_at: null,
+        })
+        .eq("id", current.id);
+      if (updateError) throw updateError;
+      subscriptionId = current.id;
+    } else {
+      const { data: created, error: createError } = await supabaseAdmin
+        .from("subscriptions")
+        .insert(payload)
+        .select("id")
+        .single();
+      if (createError) throw createError;
+      subscriptionId = created.id;
+    }
 
     if (data.register_cash_payment && data.monthly_price_cents > 0) {
       const { error } = await supabaseAdmin.from("payments").insert({
