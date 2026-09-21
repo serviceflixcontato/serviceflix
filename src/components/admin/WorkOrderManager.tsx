@@ -40,6 +40,10 @@ export type AdminWorkOrder = {
   title: string;
   description: string | null;
   technician: string | null;
+  provider_id?: string | null;
+  provider_name?: string | null;
+  provider_role?: string | null;
+  provider_photo_url?: string | null;
   scheduled_for: string | null;
   completed_at: string | null;
   hours_spent: number | null;
