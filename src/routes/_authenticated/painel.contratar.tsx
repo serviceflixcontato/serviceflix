@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -19,7 +19,7 @@ import { buildContractFields } from "@/lib/contract-fields";
 import { PLANS } from "@/lib/plans";
 import { planPriceLabel, usePlanPrices } from "@/hooks/use-plan-prices";
 import { useAcceptContract } from "@/hooks/use-contract";
-import { useProfile } from "@/hooks/use-panel-data";
+import { useProfile, useSubscriptions } from "@/hooks/use-panel-data";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
 
@@ -58,6 +58,8 @@ function Contratar() {
   const { data: profile } = useProfile();
   const { data: prices } = usePlanPrices();
   const acceptMutation = useAcceptContract();
+  const { data: subscriptions = [] } = useSubscriptions();
+  const hasContract = subscriptions.some((sub) => sub.status !== "cancelada");
 
   const [form, setForm] = useState<FormState>({
     plan_slug: plano ?? "master",
@@ -164,9 +166,29 @@ function Contratar() {
       });
       toast.success("Contrato assinado! Agora escolha como pagar.");
       void navigate({ to: "/painel/pagamentos" });
-    } catch {
-      toast.error("Não foi possível registrar o aceite. Tente novamente.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      toast.error(
+        message.includes("já possui um contrato")
+          ? "Você já possui um contrato. Cada cliente pode ter apenas um contrato."
+          : "Não foi possível registrar o aceite. Tente novamente.",
+      );
     }
+  }
+
+  if (hasContract) {
+    return (
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+        <h1 className="text-xl font-bold">Você já tem um contrato</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Cada cliente pode ter apenas um contrato. Para mudar de plano ou encerrar o atual, fale
+          com a nossa equipe.
+        </p>
+        <Button asChild className="mt-4">
+          <Link to="/painel/contrato">Ver meu contrato</Link>
+        </Button>
+      </section>
+    );
   }
 
   return (

@@ -30,23 +30,25 @@ function Contrato() {
   const orphanContracts = contracts.filter(
     (contract) => !subscriptions.some((sub) => sub.id === contract.subscription_id),
   );
+  const hasContract = subscriptions.some((sub) => sub.status !== "cancelada");
 
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold">Meus contratos</h1>
+            <h1 className="text-xl font-bold">Meu contrato</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Você pode ter mais de um contrato ao mesmo tempo — por exemplo, um para o condomínio e
-              outro para a residência.
+              Cada cliente tem um único contrato. Para trocar de plano, fale com nossa equipe.
             </p>
           </div>
-          <Button asChild variant="outline">
-            <Link to="/painel/contratar">
-              <Plus className="mr-2 h-4 w-4" /> Novo contrato
-            </Link>
-          </Button>
+          {hasContract ? null : (
+            <Button asChild variant="outline">
+              <Link to="/painel/contratar">
+                <Plus className="mr-2 h-4 w-4" /> Assinar contrato
+              </Link>
+            </Button>
+          )}
         </div>
       </section>
 
@@ -197,6 +199,13 @@ function ContractCard({
             <Row label="Observações" value={subscription.contract_notes} />
           ) : null}
         </dl>
+      ) : null}
+
+      {contract ? (
+        <p className="mt-4 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+          Contrato já assinado. Ele fica disponível apenas para leitura e download — não pode ser
+          alterado nem aceito novamente. Para mudar alguma condição, fale com a nossa equipe.
+        </p>
       ) : null}
 
       <div className="mt-5 flex flex-wrap gap-2">
