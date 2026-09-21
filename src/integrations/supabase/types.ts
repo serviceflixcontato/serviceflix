@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_events: {
+        Row: {
+          amount_cents: number | null
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          id: string
+          kind: string
+          method: string | null
+          subscription_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          kind?: string
+          method?: string | null
+          subscription_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number | null
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          kind?: string
+          method?: string | null
+          subscription_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_events_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_leads: {
         Row: {
           created_at: string
@@ -578,6 +625,10 @@ export type Database = {
           next_billing_date: string | null
           payment_choice: string | null
           payment_method: string | null
+          pending_plan_name: string | null
+          pending_plan_slug: string | null
+          pending_price_cents: number | null
+          pending_requested_at: string | null
           plan_name: string
           plan_slug: string
           provider: string | null
@@ -601,6 +652,10 @@ export type Database = {
           next_billing_date?: string | null
           payment_choice?: string | null
           payment_method?: string | null
+          pending_plan_name?: string | null
+          pending_plan_slug?: string | null
+          pending_price_cents?: number | null
+          pending_requested_at?: string | null
           plan_name: string
           plan_slug: string
           provider?: string | null
@@ -624,6 +679,10 @@ export type Database = {
           next_billing_date?: string | null
           payment_choice?: string | null
           payment_method?: string | null
+          pending_plan_name?: string | null
+          pending_plan_slug?: string | null
+          pending_price_cents?: number | null
+          pending_requested_at?: string | null
           plan_name?: string
           plan_slug?: string
           provider?: string | null
