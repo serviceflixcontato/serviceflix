@@ -87,23 +87,11 @@ export function FinanceTab({
   subscriptions: Subscription[];
   payments: Payment[];
 }) {
-  const [view, setView] = useState<ViewId>("contratos");
-  const queryClient = useQueryClient();
-  const setPaymentStatus = useServerFn(setPaymentStatusManually);
+  const [view, setView] = useState<ViewId>("baixa");
 
   const nameById = new Map(
     profiles.map((profile) => [profile.id, profile.full_name ?? profile.email ?? "Cliente"]),
   );
-
-  const confirm = useMutation({
-    mutationFn: (input: { payment_id: string; status: string; method?: string }) =>
-      setPaymentStatus({ data: input as never }),
-    onSuccess: () => {
-      toast.success("Caixa atualizado.");
-      void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
-    },
-    onError: () => toast.error("Não foi possível atualizar o lançamento."),
-  });
 
   const paid = payments.filter((p) => p.status === "pago");
   const canceled = payments.filter((p) => p.status === "cancelada");
@@ -122,6 +110,7 @@ export function FinanceTab({
   );
 
   const listFor: Record<ViewId, Payment[]> = {
+    baixa: [...overdue, ...upcoming],
     contratos: [],
     recebidos: paid,
     areceber: upcoming,
@@ -129,6 +118,7 @@ export function FinanceTab({
     adicionais: extras,
     cancelados: canceled,
   };
+
 
   return (
     <div className="space-y-6">
