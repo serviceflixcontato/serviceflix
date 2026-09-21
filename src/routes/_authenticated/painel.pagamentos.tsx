@@ -507,44 +507,15 @@ function Pagamentos() {
                         </p>
                       </div>
 
-                      <h2 className="text-lg font-semibold">Como você quer pagar?</h2>
+                      <h2 className="text-lg font-semibold">Pagamento online</h2>
                       <p className="text-sm text-muted-foreground">
-                        Escolha uma opção e clique em finalizar. A liberação da conta é feita pela
-                        nossa equipe depois da análise do contrato e da confirmação do pagamento.
+                        Pelo site, o pagamento é feito somente online (Pix, boleto ou cartão pelo
+                        Mercado Pago). Pagamentos em dinheiro ou Pix combinados em visita
+                        presencial são registrados pela nossa equipe no sistema.
                       </p>
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {OPTIONS.map((option) => {
-                          const selected =
-                            (selectedOption[subscription.id] ??
-                              currentOption(subscription.payment_method)) === option.id;
-                          return (
-                            <button
-                              key={option.id}
-                              type="button"
-                              onClick={() =>
-                                setSelectedOption((prev) => ({
-                                  ...prev,
-                                  [subscription.id]: option.id,
-                                }))
-                              }
-                              className={`rounded-xl border p-4 text-left transition-colors hover:border-primary ${
-                                selected ? "border-primary bg-accent" : "border-border"
-                              }`}
-                            >
-                              <option.icon className="h-5 w-5 text-primary" />
-                              <p className="mt-2 font-semibold">{option.title}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {option.description}
-                              </p>
-                            </button>
-                          );
-                        })}
-                      </div>
 
                       {(() => {
-                        const chosen =
-                          selectedOption[subscription.id] ??
-                          currentOption(subscription.payment_method);
+                        const chosen: OptionId = "online";
                         const pending =
                           chooseMutation.isPending &&
                           chooseMutation.variables?.subscriptionId === subscription.id;
