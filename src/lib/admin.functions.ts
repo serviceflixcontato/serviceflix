@@ -205,6 +205,15 @@ export const activatePlanManually = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const METHOD_LABELS: Record<string, string> = {
+      online: "Online — Mercado Pago",
+      dinheiro: "Dinheiro",
+      pix: "Pix",
+    };
+
+    const contractMethod = METHOD_CONTRACT_LABELS[data.payment_method] ?? data.payment_method;
+    const isActive = data.status === "ativa";
+
     const payload = {
       user_id: data.user_id,
       plan_slug: data.plan_slug,
@@ -215,15 +224,13 @@ export const activatePlanManually = createServerFn({ method: "POST" })
       next_billing_date: data.next_billing_date ?? null,
       contract_number: data.contract_number ?? null,
       contract_notes: data.contract_notes ?? null,
-      payment_method: data.payment_method,
+      payment_method: contractMethod,
       provider: data.payment_method === "online" ? "mercado_pago" : "manual",
       provider_mode: data.payment_method === "online" ? "online" : "manual",
-    };
-
-    const METHOD_LABELS: Record<string, string> = {
-      online: "Online — Mercado Pago",
-      dinheiro: "Dinheiro",
-      pix: "Pix",
+      // Ativação manual já vale como análise financeira concluída pela equipe:
+      // libera as ordens de serviço na área do cliente.
+      approval_status: isActive ? "aprovado" : "aguardando_pagamento",
+      approved_at: isActive ? new Date().toISOString() : null,
     };
 
     // Sempre cria um novo contrato: um cliente pode ter mais de um plano ativo.
