@@ -38,10 +38,22 @@ function Contrato() {
   const { data: subscriptions = [], isLoading } = useSubscriptions();
   const { data: contracts = [] } = useMyContracts();
 
-  const orphanContracts = contracts.filter(
-    (contract) => !subscriptions.some((sub) => sub.id === contract.subscription_id),
-  );
-  const hasContract = subscriptions.some((sub) => sub.status !== "cancelada");
+  // Um contrato por cliente: mostramos apenas o contrato atual (o mais recente
+  // não cancelado; se todos estiverem cancelados, o mais recente).
+  const currentSubscription =
+    subscriptions
+      .filter((sub) => sub.status !== "cancelada")
+      .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))[0] ??
+    [...subscriptions].sort((a, b) =>
+      String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")),
+    )[0] ??
+    null;
+
+  const currentContract = currentSubscription
+    ? (contracts.find((item) => item.subscription_id === currentSubscription.id) ?? null)
+    : (contracts[0] ?? null);
+
+  const hasContract = currentSubscription != null && currentSubscription.status !== "cancelada";
 
   return (
     <div className="space-y-6">
@@ -91,7 +103,7 @@ function Contrato() {
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
-      ) : subscriptions.length === 0 && orphanContracts.length === 0 ? (
+      ) : !currentSubscription && !currentContract ? (
         <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
           <p className="text-sm text-muted-foreground">
             Você ainda não possui um contrato. Escolha um plano, leia o contrato e assine aqui mesmo
@@ -102,19 +114,11 @@ function Contrato() {
           </Button>
         </section>
       ) : (
-        <div className="space-y-6">
-          {subscriptions.map((sub) => (
-            <ContractCard
-              key={sub.id}
-              subscription={sub}
-              contract={contracts.find((item) => item.subscription_id === sub.id) ?? null}
-              profile={profile ?? null}
-            />
-          ))}
-          {orphanContracts.map((contract) => (
-            <ContractCard key={contract.id} subscription={null} contract={contract} profile={profile ?? null} />
-          ))}
-        </div>
+        <ContractCard
+          subscription={currentSubscription}
+          contract={currentContract}
+          profile={profile ?? null}
+        />
       )}
     </div>
   );
