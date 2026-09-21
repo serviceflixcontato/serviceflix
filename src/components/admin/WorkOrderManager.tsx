@@ -388,7 +388,10 @@ function WorkOrderRow({
             {order.scheduled_for
               ? `agendada para ${formatDateTime(order.scheduled_for)}`
               : "sem data marcada"}{" "}
-            · {order.technician ?? "técnico a definir"}
+            ·{" "}
+            {order.provider_name
+              ? `${order.provider_name} (${providerRoleLabel(order.provider_role)})`
+              : (order.technician ?? "profissional a definir")}
           </p>
           {order.completed_at ? (
             <p className="mt-1 text-xs text-muted-foreground">
