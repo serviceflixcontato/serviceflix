@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -19,7 +19,7 @@ import { buildContractFields } from "@/lib/contract-fields";
 import { PLANS } from "@/lib/plans";
 import { planPriceLabel, usePlanPrices } from "@/hooks/use-plan-prices";
 import { useAcceptContract } from "@/hooks/use-contract";
-import { useProfile } from "@/hooks/use-panel-data";
+import { useProfile, useSubscriptions } from "@/hooks/use-panel-data";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
 
@@ -58,6 +58,8 @@ function Contratar() {
   const { data: profile } = useProfile();
   const { data: prices } = usePlanPrices();
   const acceptMutation = useAcceptContract();
+  const { data: subscriptions = [] } = useSubscriptions();
+  const hasContract = subscriptions.some((sub) => sub.status !== "cancelada");
 
   const [form, setForm] = useState<FormState>({
     plan_slug: plano ?? "master",
