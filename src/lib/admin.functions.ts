@@ -77,20 +77,21 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         supabaseAdmin
           .from("profiles")
           .select(
-            "id, full_name, email, phone, address, address_number, complement, neighborhood, city_uf, cpf_cnpj, client_type, created_at, updated_at",
+            "id, full_name, email, phone, address, address_number, complement, neighborhood, city_uf, cpf_cnpj, client_type, registration_status, registration_activated_at, created_at, updated_at",
           )
           .order("created_at", { ascending: false }),
         supabaseAdmin
           .from("subscriptions")
           .select(
-            "id, user_id, plan_slug, plan_name, status, monthly_price_cents, started_at, next_billing_date, contract_number, contract_notes, payment_method, payment_choice, activation_requested_at, created_at",
+            "id, user_id, plan_slug, plan_name, status, approval_status, approved_at, approval_notes, monthly_price_cents, started_at, next_billing_date, contract_number, contract_notes, payment_method, payment_choice, activation_requested_at, created_at",
           )
           .order("created_at", { ascending: false }),
         supabaseAdmin
           .from("payments")
           .select(
-            "id, user_id, subscription_id, description, amount_cents, voucher_discount_cents, due_date, paid_at, status, method, reference, provider, created_at",
+            "id, user_id, subscription_id, description, amount_cents, voucher_discount_cents, due_date, paid_at, status, method, category, reference, provider, created_at",
           )
+
           .order("due_date", { ascending: false }),
         supabaseAdmin
           .from("service_requests")
