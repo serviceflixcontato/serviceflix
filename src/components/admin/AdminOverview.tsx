@@ -52,6 +52,7 @@ import { setRegistrationStatus } from "@/lib/admin.functions";
 import { REGISTRATION_STATUS_LABELS, paymentMethodsLabel } from "@/lib/finance";
 import { ServiceRequestActions } from "@/components/admin/ServiceRequestActions";
 import { WorkOrderManager } from "@/components/admin/WorkOrderManager";
+import { ProviderManager } from "@/components/admin/ProviderManager";
 import { activateSubscriptionFromContract } from "@/lib/activation.functions";
 import {
   REFERRAL_STATUS_LABELS,
