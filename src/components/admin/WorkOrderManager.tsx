@@ -424,8 +424,20 @@ function WorkOrderRow({
             />
           </div>
           <div>
-            <Label className="text-xs">Técnico</Label>
-            <Input value={technician} onChange={(e) => setTechnician(e.target.value)} maxLength={80} />
+            <Label className="text-xs">Prestador</Label>
+            <Select value={providerId} onValueChange={setProviderId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Escolha o prestador" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">A definir</SelectItem>
+                {providers.map((provider) => (
+                  <SelectItem key={provider.id} value={provider.id}>
+                    {provider.full_name} · {providerRoleLabel(provider.role)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label className="text-xs">Data e hora</Label>
