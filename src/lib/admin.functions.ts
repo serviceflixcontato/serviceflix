@@ -1142,5 +1142,20 @@ export const createFinanceCharge = createServerFn({ method: "POST" })
       provider_mode: "manual",
     });
     if (error) throw error;
+
+    const { logClientEvent } = await import("./history.server");
+    await logClientEvent({
+      user_id: data.user_id,
+      subscription_id: data.subscription_id ?? null,
+      kind: "cobranca",
+      title:
+        data.status === "pago"
+          ? `Valor adicional recebido — ${data.description}`
+          : `Valor adicional lançado — ${data.description}`,
+      amount_cents: data.amount_cents,
+      method: data.method ?? null,
+      created_by: context.userId,
+    });
+
     return { ok: true as const };
   });
