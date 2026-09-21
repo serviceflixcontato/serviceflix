@@ -123,6 +123,10 @@ export const Route = createFileRoute("/api/public/mercadopago-webhook")({
                     .update({ approval_status: "em_analise" })
                     .eq("id", paidRow.subscription_id)
                     .neq("approval_status", "aprovado");
+
+                  // Mês pago não volta a aparecer para pagamento.
+                  const { syncNextBilling } = await import("@/lib/billing.server");
+                  await syncNextBilling(paidRow.subscription_id);
                 }
               }
             }
