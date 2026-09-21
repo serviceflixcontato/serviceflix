@@ -33,6 +33,7 @@ import {
   PAYMENT_CATEGORY_LABELS,
   isOverdue,
   methodLabel,
+  receivedByMethod,
   netAmount,
   paymentMethodsLabel,
 } from "@/lib/finance";
@@ -121,6 +122,8 @@ export function FinanceTab({
     (a, b) => Number(declared(b)) - Number(declared(a)),
   );
 
+  const entries = receivedByMethod(payments);
+
   const listFor: Record<ViewId, Payment[]> = {
     baixa: toSettle,
     contratos: [],
@@ -144,6 +147,34 @@ export function FinanceTab({
         <Money icon={CircleSlash} label="Cancelado" value={formatBRL(sum(canceled))} hint={`${subscriptions.filter((s) => s.approval_status === "cancelado").length} contrato(s)`} />
         <Money icon={Receipt} label="Descontos em voucher" value={formatBRL(voucherTotal)} hint="abatimentos por indicação" />
       </div>
+
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+        <h2 className="text-lg font-semibold">Como o dinheiro entrou</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Soma de tudo que já foi recebido em cada forma de pagamento, mais o total abatido em
+          vouchers de indicação.
+        </p>
+        {entries.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">Nenhum valor recebido ainda.</p>
+        ) : (
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {entries.map((entry) => (
+              <li
+                key={entry.method}
+                className="rounded-xl border border-border bg-background p-4"
+              >
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  {entry.label}
+                </p>
+                <p className="mt-1 text-xl font-bold">{formatBRL(entry.cents)}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {entry.count} lançamento(s)
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <NewCharge profiles={profiles} subscriptions={subscriptions} />
 

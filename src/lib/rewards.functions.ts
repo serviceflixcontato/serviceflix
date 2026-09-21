@@ -96,7 +96,7 @@ export const applyVoucherToPayment = createServerFn({ method: "POST" })
 
     const { data: payment, error } = await supabase
       .from("payments")
-      .select("id, user_id, amount_cents, voucher_discount_cents, status")
+      .select("id, user_id, subscription_id, amount_cents, voucher_discount_cents, status")
       .eq("id", data.payment_id)
       .maybeSingle();
     if (error) throw error;
@@ -146,6 +146,11 @@ export const applyVoucherToPayment = createServerFn({ method: "POST" })
       .eq("id", voucher.id);
     if (balanceError) throw balanceError;
 
+    if (newRemaining === 0) {
+      const { syncNextBilling } = await import("./billing.server");
+      await syncNextBilling(payment.subscription_id);
+    }
+
     return {
       ok: true as const,
       applied,
@@ -165,7 +170,7 @@ export const applyAvailableVouchersToPayment = createServerFn({ method: "POST" }
     const { supabase, userId } = context;
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
-      .select("id, user_id, amount_cents, voucher_discount_cents, status")
+      .select("id, user_id, subscription_id, amount_cents, voucher_discount_cents, status")
       .eq("id", data.payment_id)
       .maybeSingle();
     if (paymentError) throw paymentError;
@@ -235,6 +240,11 @@ export const applyAvailableVouchersToPayment = createServerFn({ method: "POST" }
         .eq("id", use.id)
         .eq("user_id", userId);
       if (updateVoucherError) throw updateVoucherError;
+    }
+
+    if (remaining === 0) {
+      const { syncNextBilling } = await import("./billing.server");
+      await syncNextBilling(payment.subscription_id);
     }
 
     return {
