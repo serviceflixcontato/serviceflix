@@ -1,44 +1,41 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertTriangle,
-  Banknote,
   CheckCircle2,
   Clock,
   CreditCard,
-  FlaskConical,
   Loader2,
-  QrCode,
-  Repeat,
+  Sparkles,
   Ticket,
-  CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CONTACT } from "@/lib/plans";
-import { chooseSubscriptionPayment } from "@/lib/activation.functions";
 import {
+  chooseSubscriptionPayment,
   createInvoiceCheckout,
-  createSubscriptionCheckout,
   createUpcomingInvoice,
-} from "@/lib/payments.functions";
+} from "@/lib/finance.functions";
 import {
-  adhesionPaymentOf,
-  daysUntilDue,
+  adhesionOf,
+  creditBalance,
   dueLabel,
+  groupInvoices,
+  invoiceTotals,
+  isApproved,
   isDueSoon,
+  methodLabel,
   monthLabel,
-  nextMonthOf,
-} from "@/lib/billing";
-import { usePaymentConfig } from "@/hooks/use-payment-config";
-import { useMyContracts } from "@/hooks/use-contract";
-import { useApplyAvailableVouchers, useApplyVoucher, useMyVouchers } from "@/hooks/use-vouchers";
+  sumDue,
+  type Invoice,
+} from "@/lib/money";
+import { useApplyAvailableVouchers, useMyVouchers } from "@/hooks/use-vouchers";
 import {
-  STATUS_LABELS,
   formatBRL,
   formatDate,
   formatDateTime,
@@ -50,749 +47,380 @@ export const Route = createFileRoute("/_authenticated/painel/pagamentos")({
   component: Pagamentos,
 });
 
-function notConfiguredToast() {
-  toast.info(
-    "O pagamento online está sendo configurado. Enquanto isso, fale com nosso time pelo WhatsApp " +
-      CONTACT.whatsappLabel + " para receber o link de cobrança.",
-  );
-}
-
-type OptionId = "online";
-
 const TABS = [
-  { id: "efetuar" as const, label: "Efetuar pagamento" },
-  { id: "a_vencer" as const, label: "Faturas a vencer" },
-  { id: "atrasadas" as const, label: "Faturas atrasadas" },
-  { id: "pagas" as const, label: "Faturas pagas" },
+  { id: "a_vencer" as const, label: "A vencer" },
+  { id: "atrasadas" as const, label: "Atrasadas" },
+  { id: "pagas" as const, label: "Pagas" },
 ];
 
 type TabId = (typeof TABS)[number]["id"];
 
-function currentOption(method: string | null | undefined): OptionId | null {
-  return method ? "online" : null;
+function notConfiguredToast() {
+  toast.info(
+    "O pagamento online está sendo finalizado. Fale com nosso time pelo WhatsApp " +
+      CONTACT.whatsappLabel +
+      " para receber o link de cobrança.",
+  );
 }
 
 function Pagamentos() {
   const queryClient = useQueryClient();
   const { data: payments = [], isLoading } = usePayments();
   const { data: subscriptions = [] } = useSubscriptions();
-  const { data: contracts = [] } = useMyContracts();
-  const { data: config } = usePaymentConfig();
-  const [tab, setTab] = useState<TabId>("efetuar");
-  // Faturas canceladas não contam como em aberto (mesma regra do caixa administrativo).
-  const open = payments.filter(
-    (payment) => payment.status !== "pago" && payment.status !== "cancelada",
-  );
-  const paid = payments.filter((payment) => payment.status === "pago");
-  const dueSoon = open.filter((payment) => isDueSoon(payment));
-  const late = open.filter((payment) => {
-    const days = daysUntilDue(payment.due_date);
-    return days !== null && days < 0;
-  });
-  const upcoming = open.filter((payment) => {
-    const days = daysUntilDue(payment.due_date);
-    return days === null || days >= 0;
-  });
-
   const { data: vouchers = [] } = useMyVouchers();
-  const availableVouchers = vouchers.filter(
-    (voucher) => voucher.status === "disponivel" && voucher.balance_cents > 0,
-  );
-  const applyVoucher = useApplyVoucher();
-  const applyAvailableVouchers = useApplyAvailableVouchers();
-  const availableVoucherTotal = availableVouchers.reduce(
-    (total, voucher) => total + voucher.balance_cents,
-    0,
-  );
+  const [tab, setTab] = useState<TabId>("a_vencer");
 
-  const invoiceCheckout = useServerFn(createInvoiceCheckout);
-  const subscriptionCheckout = useServerFn(createSubscriptionCheckout);
+  const invoices = payments as unknown as Invoice[];
+  const groups = groupInvoices(invoices);
+  const credit = creditBalance(vouchers);
+
+  const subscription =
+    subscriptions.find((item) => item.status === "ativa") ?? subscriptions[0] ?? null;
+  const approved = isApproved(subscription);
+  const nextInvoice = groups.open[0] ?? null;
+  const adhesion = subscription ? adhesionOf(invoices, subscription.id) : null;
+
+  const checkout = useServerFn(createInvoiceCheckout);
+  const upcoming = useServerFn(createUpcomingInvoice);
   const choosePayment = useServerFn(chooseSubscriptionPayment);
+  const applyCredit = useApplyAvailableVouchers();
 
-  function goToInvoices() {
-    setTab("efetuar");
-    window.setTimeout(() => {
-      document.getElementById("faturas-em-aberto")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 100);
-  }
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ["payments"] });
+    void queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+    void queryClient.invalidateQueries({ queryKey: ["vouchers"] });
+  };
 
-  const chooseMutation = useMutation({
-    mutationFn: (input: { option: OptionId; subscriptionId: string }) =>
-      choosePayment({ data: { option: input.option, subscription_id: input.subscriptionId } }),
-    onSuccess: async (result, input) => {
-      if (!result.ok) {
-        toast.info("Assine o contrato de um plano antes de escolher a forma de pagamento.");
-        return;
-      }
-      await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
-      await queryClient.invalidateQueries({ queryKey: ["payments"] });
-
-      if (!result.paymentId) {
-        toast.info("Seu plano ainda não tem valor definido. Fale com nosso time.");
-        return;
-      }
-      toast.success(
-        "Pagamento preparado. Após pagar, aguarde a aprovação da nossa equipe para liberar as ordens de serviço.",
-      );
-      goToInvoices();
-    },
-    onError: () => toast.error("Não foi possível registrar a forma de pagamento."),
-  });
-
-
-  const payInvoice = useMutation({
-    mutationFn: (paymentId: string) => invoiceCheckout({ data: { paymentId } }),
+  const payOnline = useMutation({
+    mutationFn: (paymentId: string) => checkout({ data: { paymentId } }),
     onSuccess: (result) => {
-      if (result.ok) {
-        window.location.href = result.checkoutUrl;
+      if (result.ok && result.checkoutUrl) {
+        window.open(result.checkoutUrl, "_blank", "noopener");
+        toast.success("Abrimos o pagamento online em outra aba.");
+        refresh();
+        return;
+      }
+      if (result.reason === "nothing_due") {
+        toast.success("Esta fatura já está quitada com o seu crédito.");
+        refresh();
         return;
       }
       notConfiguredToast();
     },
-    onError: () => toast.error("Não foi possível gerar o pagamento. Tente novamente."),
+    onError: () => toast.error("Não foi possível abrir o pagamento online."),
   });
 
-  const upcomingInvoice = useServerFn(createUpcomingInvoice);
-  const advanceMutation = useMutation({
-    mutationFn: (input: { subscription_id: string; due_date: string }) =>
-      upcomingInvoice({ data: input }),
-    onSuccess: async (result) => {
-      if (!result.ok) {
-        toast.info("Seu plano ainda não tem valor definido. Fale com nosso time.");
-        return;
+  const generateInvoice = useMutation({
+    mutationFn: async () => {
+      if (!subscription) return null;
+      if (subscription.next_billing_date) {
+        return upcoming({
+          data: {
+            subscription_id: subscription.id,
+            due_date: subscription.next_billing_date.slice(0, 10),
+          },
+        });
       }
-      await queryClient.invalidateQueries({ queryKey: ["payments"] });
-      toast.success(
-        "Mensalidade liberada para pagamento. Aplique seu voucher e pague pelo meio que preferir.",
-      );
-      goToInvoices();
+      return choosePayment({ data: { option: "online", subscription_id: subscription.id } });
     },
-    onError: () => toast.error("Não foi possível liberar a mensalidade."),
-  });
-
-  const startSubscription = useMutation({
-    mutationFn: () => subscriptionCheckout(),
-    onSuccess: (result) => {
-      if (result.ok) {
-        window.location.href = result.checkoutUrl;
-        return;
-      }
-      if (result.reason === "no_subscription") {
-        toast.info("Você ainda não tem um plano com valor definido. Fale com nosso time.");
-        return;
-      }
-      if (result.reason === "no_email") {
-        toast.info("Cadastre seu e-mail no perfil para ativar a assinatura recorrente.");
-        return;
-      }
-      notConfiguredToast();
+    onSuccess: () => {
+      toast.success("Cobrança gerada. Agora é só pagar online.");
+      refresh();
     },
-    onError: () => toast.error("Não foi possível iniciar a assinatura. Tente novamente."),
+    onError: () => toast.error("Não foi possível gerar a cobrança agora."),
   });
 
-  /** Card de fatura: valor do plano, desconto do voucher e saldo a pagar. */
-  function renderInvoice(payment: (typeof payments)[number]) {
-    const discount = payment.voucher_discount_cents ?? 0;
-    const due = Math.max(payment.amount_cents - discount, 0);
-    const soon = isDueSoon(payment);
-    const days = daysUntilDue(payment.due_date);
-    const isLate = days !== null && days < 0;
-    return (
-      <li
-        key={payment.id}
-        className={`rounded-xl border p-4 ${soon ? "blink-alert" : "border-border"}`}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="font-semibold">{payment.description}</p>
-            <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              {isLate ? (
-                <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-              ) : (
-                <Clock className="h-3.5 w-3.5" />
-              )}
-              Vence em {formatDate(payment.due_date)} · {dueLabel(payment.due_date)} ·{" "}
-              {STATUS_LABELS[payment.status] ?? payment.status}
-            </p>
-            <div className="mt-2 grid gap-1 text-xs">
-              <p>
-                Valor do plano: <strong>{formatBRL(payment.amount_cents)}</strong>
-              </p>
-              <p className="text-primary">
-                Desconto voucher por indicação: <strong>-{formatBRL(discount)}</strong>
-              </p>
-              <p>
-                Saldo a pagar: <strong>{formatBRL(due)}</strong>
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <span className="text-xs text-muted-foreground">Total no pagamento online</span>
-            <span className="text-2xl font-bold">{formatBRL(due)}</span>
-            <Button
-              size="sm"
-              disabled={payInvoice.isPending}
-              onClick={() => payInvoice.mutate(payment.id)}
-            >
-              {payInvoice.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {discount > 0
-                ? `Pagar diferença de ${formatBRL(due)} online`
-                : `Pagar ${formatBRL(due)} online`}
-            </Button>
-          </div>
-        </div>
-
-
-        {due > 0 && availableVouchers.length > 0 ? (
-          <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/50 p-3">
-            <p className="flex items-center gap-2 text-xs font-semibold">
-              <Ticket className="h-3.5 w-3.5 text-primary" /> Usar voucher de indicação
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Clique em um voucher ou use o saldo acumulado. Depois do uso, ele não poderá ser
-              utilizado novamente.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {availableVouchers.map((voucher) => (
-                <Button
-                  key={voucher.id}
-                  variant="outline"
-                  size="sm"
-                  disabled={applyVoucher.isPending || applyAvailableVouchers.isPending}
-                  onClick={() =>
-                    applyVoucher.mutate(
-                      { payment_id: payment.id, code: voucher.code },
-                      {
-                        onSuccess: (result) => {
-                          if (!result.ok) {
-                            toast.error("Voucher inválido, já utilizado ou sem saldo.");
-                            return;
-                          }
-                          toast.success(
-                            result.paid
-                              ? `Crédito de ${formatBRL(result.applied)} aplicado. A fatura foi quitada!`
-                              : `Crédito aplicado. Falta pagar ${formatBRL(result.remaining)}.`,
-                          );
-                        },
-                        onError: () => toast.error("Não foi possível aplicar o voucher."),
-                      },
-                    )
-                  }
-                >
-                  <Ticket className="mr-2 h-4 w-4" />
-                  {voucher.code} · {formatBRL(voucher.balance_cents)}
-                </Button>
-              ))}
-              {availableVouchers.length > 1 ? (
-                <Button
-                  size="sm"
-                  disabled={applyVoucher.isPending || applyAvailableVouchers.isPending}
-                  onClick={() =>
-                    applyAvailableVouchers.mutate(
-                      { payment_id: payment.id },
-                      {
-                        onSuccess: (result) => {
-                          if (!result.ok) {
-                            toast.error("Não há crédito disponível para esta fatura.");
-                            return;
-                          }
-                          toast.success(
-                            result.paid
-                              ? `${formatBRL(result.applied)} em vouchers aplicados. Fatura quitada!`
-                              : `${formatBRL(result.applied)} em vouchers aplicados. Falta pagar ${formatBRL(result.remaining)}.`,
-                          );
-                        },
-                        onError: () => toast.error("Não foi possível aplicar os vouchers."),
-                      },
-                    )
-                  }
-                >
-                  {applyAvailableVouchers.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Usar saldo acumulado · {formatBRL(Math.min(availableVoucherTotal, due))}
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-      </li>
+  const useCredit = (paymentId: string) =>
+    applyCredit.mutate(
+      { payment_id: paymentId },
+      {
+        onSuccess: (result) => {
+          if (!result.ok) {
+            toast.info("Não há crédito disponível para usar nesta fatura.");
+            return;
+          }
+          toast.success(
+            result.paid
+              ? "Seu crédito cobriu o valor inteiro. Fatura quitada!"
+              : `Crédito de ${formatBRL(result.applied)} aplicado. Pague só a diferença.`,
+          );
+          refresh();
+        },
+        onError: () => toast.error("Não foi possível usar o crédito agora."),
+      },
     );
-  }
+
+  const listFor: Record<TabId, Invoice[]> = {
+    a_vencer: groups.upcoming,
+    atrasadas: groups.overdue,
+    pagas: groups.paid,
+  };
 
   return (
     <div className="space-y-6">
-      {dueSoon.length > 0 ? (
-        <section className="blink-alert rounded-2xl border p-5 shadow-card">
-          <p className="flex items-center gap-2 font-semibold">
-            <CalendarClock className="h-5 w-5" /> Mensalidade prestes a vencer
-          </p>
-          <ul className="mt-2 space-y-1 text-sm">
-            {dueSoon.map((payment) => (
-              <li key={payment.id}>
-                {monthLabel(payment.due_date) || payment.description} ·{" "}
-                {formatBRL(
-                  Math.max(payment.amount_cents - (payment.voucher_discount_cents ?? 0), 0),
-                )}{" "}
-                · {dueLabel(payment.due_date)}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-xs">
-            Pague adiantado online e use seu voucher para abater o valor.
-          </p>
-        </section>
-      ) : null}
-
-      <section className="rounded-2xl border border-primary/40 bg-accent p-5 shadow-card">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="flex items-center gap-2 text-sm font-semibold text-accent-foreground">
-              <Ticket className="h-4 w-4 text-primary" /> Saldo disponível em vouchers
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              O crédito é acumulativo e pode abater parte ou todo o valor das suas faturas.
-            </p>
-          </div>
-          <strong className="text-2xl text-primary">{formatBRL(availableVoucherTotal)}</strong>
-        </div>
-      </section>
-
-      {config?.mode === "sandbox" ? (
-        <p className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-muted/60 p-3 text-xs text-muted-foreground">
-          <FlaskConical className="h-4 w-4 text-primary" />
-          Pagamentos em <strong>modo teste</strong> do Mercado Pago — nenhuma cobrança real é feita.
+      <header>
+        <h1 className="text-2xl font-bold">Pagamentos</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Todo pagamento é feito online, com segurança. A liberação das ordens de serviço é feita
+          pela nossa equipe assim que o pagamento é conferido.
         </p>
+      </header>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Carregando seus pagamentos…</p>
       ) : null}
 
-      <nav className="flex flex-wrap gap-2">
-        {TABS.map((item) => {
-          const count =
-            item.id === "a_vencer"
-              ? upcoming.length
-              : item.id === "atrasadas"
-                ? late.length
-                : item.id === "pagas"
-                  ? paid.length
-                  : 0;
-          const active = tab === item.id;
-          const blink = item.id === "atrasadas" && late.length > 0 && !active;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setTab(item.id)}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                active
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : blink
-                    ? "blink-alert"
-                    : "border-border bg-card hover:border-primary"
-              }`}
-            >
-              {item.label}
-              {count > 0 ? (
-                <span className="ml-2 rounded-full bg-background/30 px-2 py-0.5 text-xs">
-                  {count}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </nav>
+      {/* Bloco principal: o que precisa ser pago agora */}
+      <section
+        className={`rounded-2xl border bg-card p-6 shadow-card ${
+          nextInvoice && isDueSoon(nextInvoice) ? "blink-alert" : "border-border"
+        }`}
+      >
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <CreditCard className="h-5 w-5 text-primary" /> Pagamento atual
+        </h2>
 
-      {tab === "efetuar" ? (
-        <>
-          {subscriptions.length === 0 ? (
-            <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-              <h1 className="text-xl font-bold">Escolha um plano para começar</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Depois de escolher o plano e assinar o contrato, você volta aqui para pagar.
-              </p>
-              <Button asChild className="mt-4">
-                <Link to="/painel/contratar">Escolher plano e assinar contrato</Link>
-              </Button>
-            </section>
-          ) : (
-            subscriptions.map((subscription) => {
-              const contract = contracts.find((item) => item.subscription_id === subscription.id);
-              const isActive = subscription.status === "ativa";
-              return (
-                <section
-                  key={subscription.id}
-                  className="rounded-2xl border border-border bg-card p-6 shadow-card"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <h1 className="text-xl font-bold">{subscription.plan_name}</h1>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {formatBRL(subscription.monthly_price_cents)}/mês
-                        {contract?.contract_code ? ` · contrato nº ${contract.contract_code}` : ""}
-                      </p>
-                      {contract ? (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Contrato assinado em {formatDateTime(contract.accepted_at)}
-                        </p>
-                      ) : null}
-                      {subscription.next_billing_date ? (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Próxima cobrança em {formatDate(subscription.next_billing_date)}
-                        </p>
-                      ) : null}
-                    </div>
-                    <Badge variant={isActive ? "default" : "secondary"}>
-                      {STATUS_LABELS[subscription.status] ?? subscription.status}
-                    </Badge>
-                  </div>
-
-                  {(() => {
-                    const adhesion = adhesionPaymentOf(payments, subscription.id);
-                    if (!adhesion) return null;
-                    const startDate = adhesion.paid_at ?? adhesion.due_date;
-                    return (
-                      <div className="mt-4 rounded-xl border-2 border-primary bg-primary/10 p-4">
-                        <p className="text-sm font-bold uppercase tracking-wide text-foreground">
-                          Adesão paga
-                        </p>
-                        <p className="mt-1 text-sm text-foreground">
-                          {adhesion.description} · {formatBRL(adhesion.amount_cents)}
-                        </p>
-                        <p className="mt-1 text-xs text-foreground">
-                          Início da adesão em {formatDate(startDate)} · próximo vencimento em{" "}
-                          {formatDate(
-                            subscription.next_billing_date ?? nextMonthOf(adhesion.due_date),
-                          )}
-                        </p>
-                        <p className="mt-1 text-xs text-foreground">
-                          Forma de pagamento:{" "}
-                          {adhesion.method ?? subscription.payment_method ?? "—"}
-                        </p>
-                      </div>
-                    );
-                  })()}
-
-                  {!isActive && subscription.approval_status === "em_analise" ? (
-                    <div className="mt-4 blink-alert rounded-xl border p-4">
-                      <p className="text-sm font-semibold">
-                        Pagamento recebido · ativação pendente
-                      </p>
-                      <p className="mt-1 text-xs">
-                        Nossa equipe está conferindo o valor na conta. Assim que confirmarmos, seu
-                        plano é ativado e as solicitações de serviço ficam liberadas.
-                      </p>
-                    </div>
-                  ) : null}
-
-                  {!isActive ? (
-                    <div className="mt-6 space-y-4">
-                      <div className="rounded-xl border border-primary/40 bg-accent p-4">
-                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                          Valor do plano contratado
-                        </p>
-                        <p className="mt-1 text-3xl font-bold text-accent-foreground">
-                          {formatBRL(subscription.monthly_price_cents)}
-                          <span className="ml-1 text-sm font-normal text-muted-foreground">
-                            /mês
-                          </span>
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Valor já definido na contratação pela internet. Qualquer valor diferente é
-                          combinado direto com a nossa equipe.
-                        </p>
-                      </div>
-
-                      <h2 className="text-lg font-semibold">Pagamento online</h2>
-                      <p className="text-sm text-muted-foreground">
-                        Pelo site, o pagamento é feito somente online (Pix, boleto ou cartão pelo
-                        Mercado Pago). Pagamentos em dinheiro ou Pix combinados em visita
-                        presencial são registrados pela nossa equipe no sistema.
-                      </p>
-
-                      {(() => {
-                        const chosen: OptionId = "online";
-                        const pending =
-                          chooseMutation.isPending &&
-                          chooseMutation.variables?.subscriptionId === subscription.id;
-                        const planValue = subscription.monthly_price_cents ?? 0;
-                        const estimatedDifference = Math.max(planValue - availableVoucherTotal, 0);
-                        return (
-                          <div className="space-y-3">
-                            {(
-                              <div className="rounded-xl border border-primary/40 bg-accent p-4">
-                                <p className="text-sm font-semibold text-accent-foreground">
-                                  Resumo do seu pagamento
-                                </p>
-                                <div className="mt-3 space-y-2 text-sm">
-                                  <p className="flex items-center justify-between gap-4">
-                                    <span className="text-muted-foreground">Valor do plano</span>
-                                    <strong>{formatBRL(planValue)}</strong>
-                                  </p>
-                                  <p className="flex items-center justify-between gap-4">
-                                    <span className="text-muted-foreground">
-                                      Desconto voucher por indicação
-                                    </span>
-                                    <strong className="text-primary">
-                                      -{formatBRL(Math.min(availableVoucherTotal, planValue))}
-                                    </strong>
-                                  </p>
-                                  <p className="flex items-center justify-between gap-4 border-t border-primary/30 pt-2">
-                                    <span className="font-semibold">Saldo a pagar</span>
-                                    <strong className="text-xl">
-                                      {formatBRL(estimatedDifference)}
-                                    </strong>
-                                  </p>
-                                </div>
-                                <p className="mt-3 text-xs text-muted-foreground">
-                                  {availableVoucherTotal > 0
-                                    ? "Ao continuar, aplique o voucher na fatura: o pagamento será cobrado somente pelo saldo a pagar."
-                                    : "Você não tem vouchers disponíveis. O pagamento será pelo valor cheio do plano."}
-                                </p>
-                              </div>
-                            )}
-                            <div className="flex flex-wrap items-center gap-3">
-                              <Button
-                                disabled={pending}
-                                onClick={() =>
-                                  chooseMutation.mutate({
-                                    option: chosen,
-                                    subscriptionId: subscription.id,
-                                  })
-                                }
-                              >
-                                {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                Continuar para o pagamento online
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {subscription.activation_requested_at ? (
-                        <p className="rounded-xl border border-primary/40 bg-accent p-3 text-sm text-accent-foreground">
-                          Pedido finalizado em {formatDateTime(subscription.activation_requested_at)}.
-                          {" "}Aguarde a aprovação: mesmo com o pagamento online já feito, a ativação
-                          do contrato é sempre conferida e liberada pela nossa equipe. Depois da
-                          aprovação, as ordens de serviço ficam liberadas para solicitação.
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <>
-                      {subscription.next_billing_date
-                        ? (() => {
-                            const nextDue = subscription.next_billing_date;
-                            const existingInvoice = payments.find(
-                              (payment) =>
-                                payment.subscription_id === subscription.id &&
-                                payment.due_date?.slice(0, 10) === nextDue.slice(0, 10),
-                            );
-                            // Mês já quitado (inclusive adiantado) não volta a aparecer.
-                            if (existingInvoice?.status === "pago") return null;
-                            const soon = isDueSoon({ due_date: nextDue, status: "pendente" });
-                            return (
-                              <div
-                                className={`mt-6 rounded-xl border p-4 ${
-                                  soon ? "blink-alert" : "border-border"
-                                }`}
-                              >
-                                <p className="flex items-center gap-2 text-sm font-semibold">
-                                  <CalendarClock className="h-4 w-4 text-primary" /> Mensalidade de{" "}
-                                  {monthLabel(nextDue)} · {dueLabel(nextDue)}
-                                </p>
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                  Valor {formatBRL(subscription.monthly_price_cents)} · vencimento em{" "}
-                                  {formatDate(nextDue)}. Você pode adiantar o pagamento e usar seu
-                                  voucher como abatimento.
-                                </p>
-                                <Button
-                                  size="sm"
-                                  className="mt-3"
-                                  disabled={advanceMutation.isPending}
-                                  onClick={() => {
-                                    if (existingInvoice) {
-                                      goToInvoices();
-                                      return;
-                                    }
-                                    advanceMutation.mutate({
-                                      subscription_id: subscription.id,
-                                      due_date: nextDue,
-                                    });
-                                  }}
-                                >
-                                  {advanceMutation.isPending ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  ) : null}
-                                  {existingInvoice
-                                    ? "Ver fatura desta mensalidade"
-                                    : "Adiantar esta mensalidade"}
-                                </Button>
-                              </div>
-                            );
-                          })()
-                        : null}
-
-                      <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-border p-4">
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold">Débito automático mensal</p>
-                          <p className="text-xs text-muted-foreground">
-                            Autorize uma vez no cartão e a mensalidade é cobrada todo mês pelo
-                            Mercado Pago.
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={startSubscription.isPending}
-                          onClick={() => startSubscription.mutate()}
-                        >
-                          {startSubscription.isPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Repeat className="mr-2 h-4 w-4" />
-                          )}
-                          Ativar recorrência
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </section>
-              );
-            })
-          )}
-
-          <section
-            id="faturas-em-aberto"
-            className="scroll-mt-6 rounded-2xl border border-border bg-card p-6 shadow-card"
-          >
-            <h2 className="text-lg font-semibold">Faturas em aberto</h2>
-            {isLoading ? (
-              <p className="mt-4 text-sm text-muted-foreground">Carregando...</p>
-            ) : open.length === 0 ? (
-              <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="h-4 w-4 text-primary" /> Nenhuma fatura pendente.
+        {nextInvoice ? (
+          <NextInvoiceCard
+            invoice={nextInvoice}
+            credit={credit}
+            paying={payOnline.isPending}
+            applying={applyCredit.isPending}
+            onPay={() => payOnline.mutate(nextInvoice.id)}
+            onUseCredit={() => useCredit(nextInvoice.id)}
+          />
+        ) : (
+          <div className="mt-4 space-y-3 text-sm text-muted-foreground">
+            <p className="flex items-center gap-2 text-foreground">
+              <CheckCircle2 className="h-4 w-4 text-primary" /> Você está em dia. Nenhum valor em
+              aberto.
+            </p>
+            {subscription ? (
+              <p>
+                Próximo vencimento:{" "}
+                <strong className="text-foreground">
+                  {formatDate(subscription.next_billing_date)}
+                </strong>
+                {subscription.monthly_price_cents
+                  ? ` · ${formatBRL(subscription.monthly_price_cents)}`
+                  : ""}
               </p>
             ) : (
-              <ul className="mt-4 space-y-3">{open.map((payment) => renderInvoice(payment))}</ul>
+              <p>Escolha um plano para começar.</p>
             )}
-          </section>
+            {subscription ? (
+              <Button
+                variant="outline"
+                disabled={generateInvoice.isPending}
+                onClick={() => generateInvoice.mutate()}
+              >
+                {generateInvoice.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Adiantar o próximo mês
+              </Button>
+            ) : null}
+          </div>
+        )}
 
-          {availableVouchers.length > 0 ? (
-            <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-              <h2 className="flex items-center gap-2 text-lg font-semibold">
-                <Ticket className="h-5 w-5 text-primary" /> Meus vouchers de indicação
-              </h2>
-              <ul className="mt-4 space-y-3">
-                {availableVouchers.map((voucher) => (
-                  <li
-                    key={voucher.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4"
-                  >
+        {credit > 0 ? (
+          <p className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-background p-3 text-sm">
+            <Ticket className="h-4 w-4 text-primary" />
+            Você tem <strong>{formatBRL(credit)}</strong> de crédito de indicação para usar nas
+            suas faturas.
+          </p>
+        ) : null}
+      </section>
+
+      {/* Aviso de liberação */}
+      {subscription && !approved ? (
+        <section className="rounded-2xl border border-primary/50 bg-primary/5 p-5">
+          <p className="flex items-center gap-2 font-semibold text-foreground">
+            <Clock className="h-4 w-4 text-primary" /> Aguardando a liberação da nossa equipe
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {groups.paid.length > 0
+              ? "Recebemos o seu pagamento. Assim que conferirmos, o plano fica ativo e as ordens de serviço são liberadas."
+              : "Depois do pagamento, nossa equipe confere e ativa o seu plano. Só então as ordens de serviço ficam liberadas."}
+          </p>
+        </section>
+      ) : null}
+
+      {/* Adesão (primeiro pagamento) */}
+      {adhesion ? (
+        <section className="rounded-2xl border-2 border-primary bg-primary/10 p-5 text-foreground">
+          <p className="flex items-center gap-2 font-semibold">
+            <Sparkles className="h-4 w-4" /> Adesão paga · {formatBRL(invoiceTotals(adhesion).gross)}
+          </p>
+          <p className="mt-2 text-sm">
+            Início em {formatDate(adhesion.paid_at ?? adhesion.due_date)} ·{" "}
+            {adhesion.method ? methodLabel(adhesion.method) : "pagamento confirmado"}
+            {subscription?.next_billing_date
+              ? ` · próximo vencimento em ${formatDate(subscription.next_billing_date)}`
+              : ""}
+          </p>
+        </section>
+      ) : null}
+
+      {/* Listas */}
+      <nav className="flex gap-2 rounded-xl border border-border bg-card p-2 shadow-card">
+        {TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setTab(item.id)}
+            className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              tab === item.id
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            {item.label} ({listFor[item.id].length})
+          </button>
+        ))}
+      </nav>
+
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+        <p className="text-sm text-muted-foreground">
+          Total: <strong className="text-foreground">{formatBRL(sumDue(listFor[tab]))}</strong>
+        </p>
+        {listFor[tab].length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">Nada por aqui.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {listFor[tab].map((invoice) => {
+              const totals = invoiceTotals(invoice);
+              const paid = invoice.status === "pago";
+              return (
+                <li key={invoice.id} className="rounded-xl border border-border p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold">{voucher.code}</p>
+                      <p className="font-semibold">{invoice.description}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Disponível para abatimento · crédito original{" "}
-                        {formatBRL(voucher.amount_cents)}
+                        {paid
+                          ? `Pago em ${formatDateTime(invoice.paid_at)}${
+                              invoice.method ? ` · ${methodLabel(invoice.method)}` : ""
+                            }`
+                          : `Vencimento ${formatDate(invoice.due_date)} · ${dueLabel(invoice.due_date)}`}
                       </p>
+                      {totals.discount > 0 ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Crédito de indicação aplicado: −{formatBRL(totals.discount)}
+                        </p>
+                      ) : null}
                     </div>
-                    <span className="text-lg font-semibold">
-                      {formatBRL(voucher.balance_cents)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-        </>
-      ) : null}
+                    <div className="flex items-center gap-3">
+                      <span className="text-base font-semibold">
+                        {formatBRL(paid ? totals.gross : totals.due)}
+                      </span>
+                      <Badge variant={paid ? "default" : "outline"}>
+                        {paid ? "Paga" : monthLabel(invoice.due_date) || "Em aberto"}
+                      </Badge>
+                    </div>
+                  </div>
 
-      {tab === "a_vencer" ? (
-        <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <CalendarClock className="h-5 w-5 text-primary" /> Faturas a vencer
-          </h2>
-          {upcoming.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Nenhuma mensalidade aguardando pagamento.
-            </p>
-          ) : (
-            <ul className="mt-4 space-y-3">{upcoming.map((payment) => renderInvoice(payment))}</ul>
-          )}
-        </section>
-      ) : null}
-
-      {tab === "atrasadas" ? (
-        <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <AlertTriangle className="h-5 w-5 text-destructive" /> Faturas atrasadas
-          </h2>
-          {late.length === 0 ? (
-            <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 className="h-4 w-4 text-primary" /> Você não tem faturas atrasadas.
-            </p>
-          ) : (
-            <ul className="mt-4 space-y-3">{late.map((payment) => renderInvoice(payment))}</ul>
-          )}
-        </section>
-      ) : null}
-
-      {tab === "pagas" ? (
-        <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <CheckCircle2 className="h-5 w-5 text-primary" /> Faturas pagas
-          </h2>
-          {paid.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Seus pagamentos confirmados aparecerão aqui.
-            </p>
-          ) : (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[600px] text-left text-sm">
-                <thead className="text-xs uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="pb-3">Fatura</th>
-                    <th className="pb-3">Valor do plano</th>
-                    <th className="pb-3">Desconto voucher</th>
-                    <th className="pb-3">Pago em</th>
-                    <th className="pb-3">Forma</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paid.map((payment) => {
-                    const isAdhesion = payment.subscription_id
-                      ? adhesionPaymentOf(payments, payment.subscription_id)?.id === payment.id
-                      : false;
-                    return (
-                    <tr
-                      key={payment.id}
-                      className={`border-t ${
-                        isAdhesion ? "border-primary text-primary" : "border-border"
-                      }`}
-                    >
-                      <td className="py-3 font-medium">
-                        {payment.description}
-                        {isAdhesion ? (
-                          <span className="ml-2 rounded-full border border-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
-                            Adesão paga
-                          </span>
+                  {!paid ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        disabled={payOnline.isPending}
+                        onClick={() => payOnline.mutate(invoice.id)}
+                      >
+                        {payOnline.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : null}
-                      </td>
-                      <td className="py-3">{formatBRL(payment.amount_cents)}</td>
-                      <td className="py-3 text-primary">
-                        -{formatBRL(payment.voucher_discount_cents ?? 0)}
-                      </td>
-                      <td className="py-3 text-muted-foreground">{formatDate(payment.paid_at)}</td>
-                      <td className="py-3 text-muted-foreground">{payment.method ?? "—"}</td>
-                    </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
+                        Pagar online {formatBRL(totals.due)}
+                      </Button>
+                      {credit > 0 ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={applyCredit.isPending}
+                          onClick={() => useCredit(invoice.id)}
+                        >
+                          Usar meu crédito
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/** Conta na tela: valor do plano − crédito = a pagar. */
+function NextInvoiceCard({
+  invoice,
+  credit,
+  paying,
+  applying,
+  onPay,
+  onUseCredit,
+}: {
+  invoice: Invoice;
+  credit: number;
+  paying: boolean;
+  applying: boolean;
+  onPay: () => void;
+  onUseCredit: () => void;
+}) {
+  const totals = invoiceTotals(invoice);
+  return (
+    <div className="mt-4 space-y-4">
+      <div>
+        <p className="font-semibold">{invoice.description}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Vencimento {formatDate(invoice.due_date)} · {dueLabel(invoice.due_date)}
+        </p>
+      </div>
+
+      <dl className="space-y-2 rounded-xl border border-border bg-background p-4 text-sm">
+        <div className="flex justify-between">
+          <dt className="text-muted-foreground">Valor do plano</dt>
+          <dd className="font-medium">{formatBRL(totals.gross)}</dd>
+        </div>
+        {totals.discount > 0 ? (
+          <div className="flex justify-between">
+            <dt className="text-muted-foreground">Crédito de indicação</dt>
+            <dd className="font-medium">− {formatBRL(totals.discount)}</dd>
+          </div>
+        ) : null}
+        <div className="flex justify-between border-t border-border pt-2 text-base">
+          <dt className="font-semibold">A pagar</dt>
+          <dd className="font-bold text-primary">{formatBRL(totals.due)}</dd>
+        </div>
+      </dl>
+
+      <div className="flex flex-wrap gap-2">
+        {totals.due > 0 ? (
+          <Button disabled={paying} onClick={onPay}>
+            {paying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Pagar online {formatBRL(totals.due)}
+          </Button>
+        ) : (
+          <p className="flex items-center gap-2 text-sm text-foreground">
+            <CheckCircle2 className="h-4 w-4 text-primary" /> Fatura quitada com o seu crédito.
+          </p>
+        )}
+        {credit > 0 && totals.due > 0 ? (
+          <Button variant="outline" disabled={applying} onClick={onUseCredit}>
+            {applying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Usar meu crédito ({formatBRL(credit)})
+          </Button>
+        ) : null}
+      </div>
+
+      {invoice.status !== "pago" ? (
+        <p className="flex items-start gap-2 text-xs text-muted-foreground">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 text-primary" />
+          Pagamentos em dinheiro ou Pix feitos presencialmente são registrados pela nossa equipe no
+          sistema.
+        </p>
       ) : null}
     </div>
   );

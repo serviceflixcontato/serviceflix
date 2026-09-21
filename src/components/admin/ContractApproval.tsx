@@ -15,12 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { setSubscriptionApproval } from "@/lib/admin.functions";
+import { setSubscriptionApproval } from "@/lib/finance.functions";
 import {
   APPROVAL_STATUS_LABELS,
   APPROVAL_STATUS_OPTIONS,
   type ApprovalStatus,
-} from "@/lib/finance";
+} from "@/lib/money";
 
 export function ApprovalBadge({ status }: { status?: string | null }) {
   const value = status ?? "aguardando_pagamento";
