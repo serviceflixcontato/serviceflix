@@ -6,3 +6,4 @@
 - [ ] Contrato assinado é somente leitura: aba Contrato exibe o texto assinado, sem editar nem aceitar de novo.
 - [ ] Configurar credenciais do Mercado Pago (pagamento online).
 - [ ] Opção "Mudar de plano": mesmo contrato, novo valor a pagar, contrato segue só leitura.
+- [ ] Modo teste simulando pagamento online (sem credenciais do Mercado Pago).
