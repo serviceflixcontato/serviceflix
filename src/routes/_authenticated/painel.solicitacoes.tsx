@@ -71,9 +71,14 @@ function Solicitacoes() {
   const { data: photos = [] } = useServicePhotos();
   const { data: orders = [] } = useWorkOrders();
   // Fotos dos profissionais que vão executar cada ordem de serviço.
-  const providerPhotoPaths = orders
-    .map((order) => (order as { provider_photo_url?: string | null }).provider_photo_url ?? "")
-    .filter(Boolean);
+  const providerPhotoPaths = [
+    ...orders.map(
+      (order) => (order as { provider_photo_url?: string | null }).provider_photo_url ?? "",
+    ),
+    ...requests.map(
+      (request) => (request as { provider_photo_url?: string | null }).provider_photo_url ?? "",
+    ),
+  ].filter(Boolean);
   const { data: providerPhotos } = useQuery({
     queryKey: ["provider-photos", providerPhotoPaths.join("|")],
     queryFn: () => signProviderPhotos(providerPhotoPaths),
@@ -319,6 +324,10 @@ function Solicitacoes() {
                       request={request}
                       photos={photosByRequest.get(request.id) ?? []}
                       startOpen={request.status === "aberta"}
+                      providerPhoto={providerPhotos?.get(
+                        (request as { provider_photo_url?: string | null }).provider_photo_url ??
+                          "",
+                      )}
                     />
                   ))}
                 </ul>
@@ -406,7 +415,9 @@ function RequestItem({
   request,
   photos,
   startOpen,
+  providerPhoto,
 }: {
+  providerPhoto?: string | null;
   request: NonNullable<ReturnType<typeof useServiceRequests>["data"]>[number];
   photos: ServicePhoto[];
   startOpen: boolean;
@@ -440,7 +451,7 @@ function RequestItem({
       {open ? (
         <div className="border-t border-border p-4">
           <p className="text-sm text-muted-foreground">{request.description}</p>
-          <ScheduleResponse request={request} />
+          <ScheduleResponse request={request} providerPhoto={providerPhoto} />
           <PhotoGrid
             photos={photos.filter((photo) => photo.kind === "cliente")}
             title="Fotos enviadas por você"

@@ -9,18 +9,28 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime } from "@/hooks/use-panel-data";
 import { supabase } from "@/integrations/supabase/client";
+import { providerRoleLabel } from "@/lib/providers";
 
 type RequestRow = {
   id: string;
   scheduled_at?: string | null;
   scheduled_technician?: string | null;
+  provider_name?: string | null;
+  provider_role?: string | null;
+  provider_photo_url?: string | null;
   materials_needed?: string | null;
   team_message?: string | null;
   schedule_status?: string | null;
   client_response_note?: string | null;
 };
 
-export function ScheduleResponse({ request }: { request: RequestRow }) {
+export function ScheduleResponse({
+  request,
+  providerPhoto,
+}: {
+  request: RequestRow;
+  providerPhoto?: string | null;
+}) {
   const queryClient = useQueryClient();
   const [showReschedule, setShowReschedule] = useState(false);
   const [reason, setReason] = useState("");
@@ -67,10 +77,25 @@ export function ScheduleResponse({ request }: { request: RequestRow }) {
       <p className="mt-2">
         <strong>Data e hora da visita:</strong> {formatDateTime(request.scheduled_at)}
       </p>
-      {request.scheduled_technician ? (
-        <p className="mt-2">
-          <strong>Profissional responsável:</strong> {request.scheduled_technician}
-        </p>
+      {request.provider_name || request.scheduled_technician ? (
+        <div className="mt-3 flex items-center gap-3 rounded-lg border border-border bg-background/60 p-3">
+          {providerPhoto ? (
+            <img
+              src={providerPhoto}
+              alt={request.provider_name ?? "Profissional"}
+              className="h-14 w-14 rounded-full object-cover"
+            />
+          ) : null}
+          <div>
+            <p className="text-xs text-muted-foreground">Profissional responsável</p>
+            <p className="font-semibold">
+              {request.provider_name ?? request.scheduled_technician}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {providerRoleLabel(request.provider_role)}
+            </p>
+          </div>
+        </div>
       ) : null}
       {request.materials_needed ? (
         <p className="mt-2">
