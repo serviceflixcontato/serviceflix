@@ -279,6 +279,7 @@ export function WorkOrderManager({
                 order={order}
                 nameById={nameById}
                 busy={statusMutation.isPending}
+                providers={providers}
                 onStatus={(status) => statusMutation.mutate({ order_id: order.id, status })}
                 onConclude={() => handleConclude(order)}
                 onDelete={() => deleteMutation.mutate(order.id)}
@@ -302,6 +303,7 @@ export function WorkOrderManager({
                 order={order}
                 nameById={nameById}
                 busy={statusMutation.isPending}
+                providers={providers}
                 onStatus={(status) => statusMutation.mutate({ order_id: order.id, status })}
                 onConclude={() => handleConclude(order)}
                 onDelete={() => deleteMutation.mutate(order.id)}
