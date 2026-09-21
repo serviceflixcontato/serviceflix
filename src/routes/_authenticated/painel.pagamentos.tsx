@@ -523,7 +523,7 @@ function Pagamentos() {
                         const estimatedDifference = Math.max(planValue - availableVoucherTotal, 0);
                         return (
                           <div className="space-y-3">
-                            {chosen ? (
+                            {(
                               <div className="rounded-xl border border-primary/40 bg-accent p-4">
                                 <p className="text-sm font-semibold text-accent-foreground">
                                   Resumo do seu pagamento
@@ -554,12 +554,11 @@ function Pagamentos() {
                                     : "Você não tem vouchers disponíveis. O pagamento será pelo valor cheio do plano."}
                                 </p>
                               </div>
-                            ) : null}
+                            )}
                             <div className="flex flex-wrap items-center gap-3">
                               <Button
-                                disabled={!chosen || pending}
+                                disabled={pending}
                                 onClick={() =>
-                                  chosen &&
                                   chooseMutation.mutate({
                                     option: chosen,
                                     subscriptionId: subscription.id,
@@ -567,19 +566,8 @@ function Pagamentos() {
                                 }
                               >
                                 {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                {chosen === "dinheiro"
-                                  ? "Finalizar e aguardar aprovação"
-                                  : chosen === "pix"
-                                    ? "Continuar com Pix"
-                                    : chosen === "cartao"
-                                      ? "Continuar com cartão"
-                                      : "Finalizar pedido"}
+                                Continuar para o pagamento online
                               </Button>
-                              {!chosen ? (
-                                <span className="text-xs text-muted-foreground">
-                                  Selecione uma forma de pagamento acima.
-                                </span>
-                              ) : null}
                             </div>
                           </div>
                         );
@@ -587,11 +575,10 @@ function Pagamentos() {
 
                       {subscription.activation_requested_at ? (
                         <p className="rounded-xl border border-primary/40 bg-accent p-3 text-sm text-accent-foreground">
-                          Pedido finalizado em {formatDateTime(subscription.activation_requested_at)}{" "}
-                          · forma escolhida: <strong>{subscription.payment_method}</strong>.
-                          {subscription.payment_method?.startsWith("Dinheiro")
-                            ? " Aguarde: nossa equipe vai conferir o pagamento e ativar o seu contrato. Quando estiver ativo, sua área de cliente já mostra as solicitações e ordens de serviço."
-                            : " Assim que o pagamento for confirmado, nossa equipe ativa o seu contrato e as solicitações de serviço aparecem na sua área de cliente."}
+                          Pedido finalizado em {formatDateTime(subscription.activation_requested_at)}.
+                          {" "}Aguarde a aprovação: mesmo com o pagamento online já feito, a ativação
+                          do contrato é sempre conferida e liberada pela nossa equipe. Depois da
+                          aprovação, as ordens de serviço ficam liberadas para solicitação.
                         </p>
                       ) : null}
                     </div>
