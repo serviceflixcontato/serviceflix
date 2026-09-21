@@ -23,6 +23,8 @@ import {
   setWorkOrderStatus,
   updateWorkOrder,
 } from "@/lib/admin.functions";
+import { useProviders } from "@/components/admin/ProviderManager";
+import { providerRoleLabel } from "@/lib/providers";
 
 type Client = { id: string; full_name: string | null; email: string | null };
 type RequestRow = {
