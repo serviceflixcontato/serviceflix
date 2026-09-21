@@ -21,6 +21,8 @@ import { planPriceLabel, usePlanPrices } from "@/hooks/use-plan-prices";
 import { useAcceptContract } from "@/hooks/use-contract";
 import { useProfile } from "@/hooks/use-panel-data";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+
 const PLAN_SLUGS = PLANS.map((plan) => plan.slug);
 
 type ContratarSearch = { plano?: string };
@@ -113,7 +115,7 @@ function Contratar() {
   const requiredFilled =
     form.full_name.trim().length > 2 &&
     form.cpf_cnpj.trim().length >= 11 &&
-    form.email.trim().includes("@") &&
+    EMAIL_RE.test(form.email.trim()) &&
     form.phone.trim().length >= 8 &&
     form.address.trim().length > 2 &&
     form.address_number.trim().length > 0 &&
@@ -126,6 +128,10 @@ function Contratar() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!EMAIL_RE.test(form.email.trim())) {
+      toast.error("Informe um e-mail válido (exemplo: nome@dominio.com).");
+      return;
+    }
     if (!requiredFilled) {
       toast.error("Preencha todos os dados obrigatórios do contrato.");
       return;
