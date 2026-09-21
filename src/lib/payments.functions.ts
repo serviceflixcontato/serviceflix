@@ -247,7 +247,18 @@ export const declareOfflinePayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => declareSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { data: invoice, error: findError } = await context.supabase
+      .from("payments")
+      .select("id, status")
+      .eq("id", data.payment_id)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (findError) throw findError;
+    if (!invoice) return { ok: false as const, reason: "not_found" as const };
+    if (invoice.status === "pago") return { ok: false as const, reason: "already_paid" as const };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("payments")
       .update({
         method: data.method,
