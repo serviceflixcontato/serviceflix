@@ -372,11 +372,29 @@ export const setPaymentStatusManually = createServerFn({ method: "POST" })
     // Mês pago (inclusive adiantado) não volta a aparecer para pagamento.
     const { data: row } = await supabaseAdmin
       .from("payments")
-      .select("subscription_id")
+      .select("subscription_id, user_id, description, amount_cents")
       .eq("id", data.payment_id)
       .maybeSingle();
     const { syncNextBilling } = await import("./billing.server");
     await syncNextBilling(row?.subscription_id ?? null);
+
+    if (row?.user_id) {
+      const { logClientEvent } = await import("./history.server");
+      await logClientEvent({
+        user_id: row.user_id,
+        subscription_id: row.subscription_id,
+        kind: "pagamento",
+        title:
+          data.status === "pago"
+            ? `Pagamento recebido — ${row.description}`
+            : `Fatura marcada como ${data.status} — ${row.description}`,
+        detail: data.reference || null,
+        amount_cents: row.amount_cents,
+        method: data.method ?? (data.status === "pago" ? "dinheiro" : null),
+        created_by: context.userId,
+      });
+    }
+
 
     return { ok: true as const };
   });
