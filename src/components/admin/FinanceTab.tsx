@@ -151,15 +151,15 @@ export function FinanceTab({
       {view === "aprovar" ? (
         <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <BadgeCheck className="h-5 w-5 text-primary" /> Contratos para aprovar
+            <BadgeCheck className="h-5 w-5 text-primary" /> Contratos e mudanças de plano
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Confira se o pagamento entrou e ative o contrato informando como o dinheiro chegou. Só
-            depois de ativar o cliente pode pedir ordens de serviço.
+            As mudanças mostram o plano atual e o novo plano separadamente. Confira o pagamento
+            antes de ativar um contrato ou aprovar uma mudança.
           </p>
           {waiting.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              Nenhum contrato aguardando aprovação.
+              Nenhum contrato ou mudança de plano aguardando aprovação.
             </p>
           ) : (
             <ul className="mt-4 space-y-3">
