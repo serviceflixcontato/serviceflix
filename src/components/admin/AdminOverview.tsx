@@ -74,6 +74,7 @@ const TABS = [
   { id: "clientes", label: "Clientes" },
   { id: "assinaturas", label: "Assinaturas e pagamentos" },
   { id: "servicos", label: "Solicitações e OS" },
+  { id: "prestadores", label: "Prestadores de serviço" },
   { id: "contratos", label: "Contratos assinados" },
   { id: "financeiro", label: "Financeiro (caixa)" },
   { id: "indicacoes", label: "Indicações" },
