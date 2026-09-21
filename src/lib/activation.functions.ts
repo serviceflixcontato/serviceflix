@@ -153,6 +153,27 @@ export const activateSubscriptionFromContract = createServerFn({ method: "POST" 
           method: openInvoice.method ?? "dinheiro",
         })
         .eq("id", openInvoice.id);
+    } else {
+      // Sem fatura em aberto: registra a adesão (primeira mensalidade) já paga
+      // para aparecer nas faturas pagas do cliente e no caixa.
+      const { data: sub } = await supabaseAdmin
+        .from("subscriptions")
+        .select("user_id, plan_name, monthly_price_cents")
+        .eq("id", data.subscription_id)
+        .maybeSingle();
+      if (sub?.user_id) {
+        const { error: insertError } = await supabaseAdmin.from("payments").insert({
+          user_id: sub.user_id,
+          subscription_id: data.subscription_id,
+          description: `Primeira mensalidade ${sub.plan_name ?? ""}`.trim(),
+          amount_cents: sub.monthly_price_cents ?? 0,
+          due_date: new Date().toISOString().slice(0, 10),
+          status: "pago",
+          paid_at: new Date().toISOString(),
+          method: "dinheiro",
+        });
+        if (insertError) throw insertError;
+      }
     }
 
     return { ok: true as const };
