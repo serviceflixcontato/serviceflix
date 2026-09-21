@@ -55,3 +55,28 @@ export function monthLabel(dueDate: string | null | undefined) {
   if (parts.length !== 3) return "";
   return `${MONTHS[(parts[1]! ?? 1) - 1]} de ${parts[0]}`;
 }
+
+/**
+ * Adesão: o primeiro pagamento do contrato (a primeira mensalidade quitada).
+ * Ela aparece destacada em amarelo na área do cliente.
+ */
+export function adhesionPaymentOf<
+  T extends { subscription_id: string | null; status: string; due_date: string; paid_at: string | null },
+>(payments: T[], subscriptionId: string): T | null {
+  const paid = payments
+    .filter((payment) => payment.subscription_id === subscriptionId && payment.status === "pago")
+    .sort((a, b) => (a.paid_at ?? a.due_date).localeCompare(b.paid_at ?? b.due_date));
+  return paid[0] ?? null;
+}
+
+/** Vencimento seguinte a uma data AAAA-MM-DD (mesmo dia do mês que vem). */
+export function nextMonthOf(date: string | null | undefined) {
+  if (!date) return null;
+  const [year, month, day] = date.slice(0, 10).split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const base = new Date(Date.UTC(year, month - 1, 1));
+  base.setUTCMonth(base.getUTCMonth() + 1);
+  const lastDay = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + 1, 0)).getUTCDate();
+  base.setUTCDate(Math.min(day, lastDay));
+  return base.toISOString().slice(0, 10);
+}

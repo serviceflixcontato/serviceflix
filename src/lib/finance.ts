@@ -88,3 +88,31 @@ export function isOverdue(payment: { status: string; due_date: string }) {
   if (payment.status === "pago" || payment.status === "cancelada") return false;
   return new Date(payment.due_date) < new Date(new Date().toISOString().slice(0, 10));
 }
+
+/** Como o dinheiro entrou: total recebido em cada meio de pagamento. */
+export function receivedByMethod(
+  payments: Array<{ status: string; method?: string | null; amount_cents: number; voucher_discount_cents?: number | null }>,
+) {
+  const totals = new Map<string, { cents: number; count: number }>();
+  const add = (key: string, cents: number) => {
+    if (cents <= 0) return;
+    const current = totals.get(key) ?? { cents: 0, count: 0 };
+    totals.set(key, { cents: current.cents + cents, count: current.count + 1 });
+  };
+
+  for (const payment of payments) {
+    if (payment.status === "cancelada") continue;
+    const discount = payment.voucher_discount_cents ?? 0;
+    // O voucher entra no caixa como abatimento, mesmo em fatura ainda em aberto.
+    add("voucher", discount);
+    if (payment.status !== "pago") continue;
+    const paidCents = Math.max(payment.amount_cents - discount, 0);
+    const method = payment.method && payment.method !== "voucher" ? payment.method : null;
+    if (!method) continue;
+    add(method, paidCents);
+  }
+
+  return [...totals.entries()]
+    .map(([method, value]) => ({ method, label: methodLabel(method), ...value }))
+    .sort((a, b) => b.cents - a.cents);
+}
