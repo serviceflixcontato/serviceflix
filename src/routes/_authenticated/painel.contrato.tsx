@@ -123,12 +123,17 @@ function Contrato() {
 type SubscriptionLike = {
   id: string;
   plan_name: string;
+  plan_slug?: string | null;
   status: string;
   contract_number: string | null;
   contract_notes: string | null;
   started_at: string | null;
   next_billing_date: string | null;
   monthly_price_cents: number | null;
+  pending_plan_name?: string | null;
+  pending_plan_slug?: string | null;
+  pending_price_cents?: number | null;
+  pending_requested_at?: string | null;
 };
 
 function ContractCard({
