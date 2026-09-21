@@ -23,7 +23,6 @@ import { CONTACT } from "@/lib/plans";
 import { chooseSubscriptionPayment } from "@/lib/activation.functions";
 import {
   createInvoiceCheckout,
-  declareOfflinePayment,
   createSubscriptionCheckout,
   createUpcomingInvoice,
 } from "@/lib/payments.functions";
@@ -58,28 +57,7 @@ function notConfiguredToast() {
   );
 }
 
-const OPTIONS = [
-  {
-    id: "pix" as const,
-    icon: QrCode,
-    title: "Pix online",
-    description: "Pague na hora pelo Mercado Pago e envie para análise da nossa equipe.",
-  },
-  {
-    id: "cartao" as const,
-    icon: CreditCard,
-    title: "Cartão de crédito",
-    description: "Pagamento online pelo Mercado Pago, com opção de mensalidade recorrente.",
-  },
-  {
-    id: "dinheiro" as const,
-    icon: Banknote,
-    title: "Dinheiro (presencial)",
-    description: "Combinamos a entrega do valor e a equipe confirma o recebimento no sistema.",
-  },
-];
-
-type OptionId = "pix" | "cartao" | "dinheiro";
+type OptionId = "online";
 
 const TABS = [
   { id: "efetuar" as const, label: "Efetuar pagamento" },
@@ -91,11 +69,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 function currentOption(method: string | null | undefined): OptionId | null {
-  if (!method) return null;
-  if (method.startsWith("Pix")) return "pix";
-  if (method.startsWith("Cartão")) return "cartao";
-  if (method.startsWith("Dinheiro")) return "dinheiro";
-  return null;
+  return method ? "online" : null;
 }
 
 function Pagamentos() {
@@ -104,7 +78,6 @@ function Pagamentos() {
   const { data: subscriptions = [] } = useSubscriptions();
   const { data: contracts = [] } = useMyContracts();
   const { data: config } = usePaymentConfig();
-  const [selectedOption, setSelectedOption] = useState<Record<string, OptionId>>({});
   const [tab, setTab] = useState<TabId>("efetuar");
   // Faturas canceladas não contam como em aberto (mesma regra do caixa administrativo).
   const open = payments.filter(
@@ -133,7 +106,6 @@ function Pagamentos() {
   );
 
   const invoiceCheckout = useServerFn(createInvoiceCheckout);
-  const declarePayment = useServerFn(declareOfflinePayment);
   const subscriptionCheckout = useServerFn(createSubscriptionCheckout);
   const choosePayment = useServerFn(chooseSubscriptionPayment);
 
@@ -158,40 +130,18 @@ function Pagamentos() {
       await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       await queryClient.invalidateQueries({ queryKey: ["payments"] });
 
-      if (input.option === "dinheiro") {
-        toast.success(
-          "Pedido finalizado! Aguarde nossa equipe aprovar e ativar o seu contrato. Quando estiver ativo, aparecerá na sua área de cliente.",
-        );
-        return;
-      }
       if (!result.paymentId) {
         toast.info("Seu plano ainda não tem valor definido. Fale com nosso time.");
         return;
       }
       toast.success(
-        "Pagamento preparado. Agora aplique seu voucher e confira a diferença antes de pagar online.",
+        "Pagamento preparado. Após pagar, aguarde a aprovação da nossa equipe para liberar as ordens de serviço.",
       );
       goToInvoices();
     },
     onError: () => toast.error("Não foi possível registrar a forma de pagamento."),
   });
 
-  /** Cliente avisa que pagou por Pix/dinheiro; a equipe confirma no painel. */
-  const declareMutation = useMutation({
-    mutationFn: (input: { payment_id: string; method: "pix" | "dinheiro" }) =>
-      declarePayment({ data: input }),
-    onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: ["payments"] });
-      if (!result.ok) {
-        toast.info("Esta fatura já consta como paga.");
-        return;
-      }
-      toast.success(
-        "Aviso enviado! Nossa equipe vai conferir e dar baixa no pagamento em breve.",
-      );
-    },
-    onError: () => toast.error("Não foi possível enviar o aviso de pagamento."),
-  });
 
   const payInvoice = useMutation({
     mutationFn: (paymentId: string) => invoiceCheckout({ data: { paymentId } }),
@@ -266,7 +216,6 @@ function Pagamentos() {
               )}
               Vence em {formatDate(payment.due_date)} · {dueLabel(payment.due_date)} ·{" "}
               {STATUS_LABELS[payment.status] ?? payment.status}
-              {payment.method === "dinheiro" ? " · aguardando confirmação da equipe" : ""}
             </p>
             <div className="mt-2 grid gap-1 text-xs">
               <p>
@@ -283,47 +232,19 @@ function Pagamentos() {
           <div className="flex flex-col items-end gap-2">
             <span className="text-xs text-muted-foreground">Total no pagamento online</span>
             <span className="text-2xl font-bold">{formatBRL(due)}</span>
-            {payment.method === "dinheiro" ? null : (
-              <Button
-                size="sm"
-                disabled={payInvoice.isPending}
-                onClick={() => payInvoice.mutate(payment.id)}
-              >
-                {payInvoice.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {discount > 0
-                  ? `Pagar diferença de ${formatBRL(due)} online`
-                  : `Pagar ${formatBRL(due)} online`}
-              </Button>
-            )}
+            <Button
+              size="sm"
+              disabled={payInvoice.isPending}
+              onClick={() => payInvoice.mutate(payment.id)}
+            >
+              {payInvoice.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {discount > 0
+                ? `Pagar diferença de ${formatBRL(due)} online`
+                : `Pagar ${formatBRL(due)} online`}
+            </Button>
           </div>
         </div>
 
-        {due > 0 ? (
-          <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/40 p-3">
-            <p className="text-xs font-semibold">Pagou por Pix?</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Avise nossa equipe. Depois de conferir, damos baixa e a fatura passa para
-              &quot;Faturas pagas&quot;.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={declareMutation.isPending}
-                onClick={() =>
-                  declareMutation.mutate({ payment_id: payment.id, method: "pix" })
-                }
-              >
-                Já paguei por Pix
-              </Button>
-            </div>
-            {payment.reference ? (
-              <p className="mt-2 text-xs text-primary">
-                Aviso registrado · aguardando confirmação da equipe
-              </p>
-            ) : null}
-          </div>
-        ) : null}
 
         {due > 0 && availableVouchers.length > 0 ? (
           <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/50 p-3">
@@ -421,7 +342,7 @@ function Pagamentos() {
             ))}
           </ul>
           <p className="mt-2 text-xs">
-            Pague adiantado por Pix, cartão ou dinheiro — e use seu voucher para abater o valor.
+            Pague adiantado online e use seu voucher para abater o valor.
           </p>
         </section>
       ) : null}
@@ -583,44 +504,15 @@ function Pagamentos() {
                         </p>
                       </div>
 
-                      <h2 className="text-lg font-semibold">Como você quer pagar?</h2>
+                      <h2 className="text-lg font-semibold">Pagamento online</h2>
                       <p className="text-sm text-muted-foreground">
-                        Escolha uma opção e clique em finalizar. A liberação da conta é feita pela
-                        nossa equipe depois da análise do contrato e da confirmação do pagamento.
+                        Pelo site, o pagamento é feito somente online (Pix, boleto ou cartão pelo
+                        Mercado Pago). Pagamentos em dinheiro ou Pix combinados em visita
+                        presencial são registrados pela nossa equipe no sistema.
                       </p>
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {OPTIONS.map((option) => {
-                          const selected =
-                            (selectedOption[subscription.id] ??
-                              currentOption(subscription.payment_method)) === option.id;
-                          return (
-                            <button
-                              key={option.id}
-                              type="button"
-                              onClick={() =>
-                                setSelectedOption((prev) => ({
-                                  ...prev,
-                                  [subscription.id]: option.id,
-                                }))
-                              }
-                              className={`rounded-xl border p-4 text-left transition-colors hover:border-primary ${
-                                selected ? "border-primary bg-accent" : "border-border"
-                              }`}
-                            >
-                              <option.icon className="h-5 w-5 text-primary" />
-                              <p className="mt-2 font-semibold">{option.title}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {option.description}
-                              </p>
-                            </button>
-                          );
-                        })}
-                      </div>
 
                       {(() => {
-                        const chosen =
-                          selectedOption[subscription.id] ??
-                          currentOption(subscription.payment_method);
+                        const chosen: OptionId = "online";
                         const pending =
                           chooseMutation.isPending &&
                           chooseMutation.variables?.subscriptionId === subscription.id;
@@ -628,7 +520,7 @@ function Pagamentos() {
                         const estimatedDifference = Math.max(planValue - availableVoucherTotal, 0);
                         return (
                           <div className="space-y-3">
-                            {chosen ? (
+                            {(
                               <div className="rounded-xl border border-primary/40 bg-accent p-4">
                                 <p className="text-sm font-semibold text-accent-foreground">
                                   Resumo do seu pagamento
@@ -659,12 +551,11 @@ function Pagamentos() {
                                     : "Você não tem vouchers disponíveis. O pagamento será pelo valor cheio do plano."}
                                 </p>
                               </div>
-                            ) : null}
+                            )}
                             <div className="flex flex-wrap items-center gap-3">
                               <Button
-                                disabled={!chosen || pending}
+                                disabled={pending}
                                 onClick={() =>
-                                  chosen &&
                                   chooseMutation.mutate({
                                     option: chosen,
                                     subscriptionId: subscription.id,
@@ -672,19 +563,8 @@ function Pagamentos() {
                                 }
                               >
                                 {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                {chosen === "dinheiro"
-                                  ? "Finalizar e aguardar aprovação"
-                                  : chosen === "pix"
-                                    ? "Continuar com Pix"
-                                    : chosen === "cartao"
-                                      ? "Continuar com cartão"
-                                      : "Finalizar pedido"}
+                                Continuar para o pagamento online
                               </Button>
-                              {!chosen ? (
-                                <span className="text-xs text-muted-foreground">
-                                  Selecione uma forma de pagamento acima.
-                                </span>
-                              ) : null}
                             </div>
                           </div>
                         );
@@ -692,11 +572,10 @@ function Pagamentos() {
 
                       {subscription.activation_requested_at ? (
                         <p className="rounded-xl border border-primary/40 bg-accent p-3 text-sm text-accent-foreground">
-                          Pedido finalizado em {formatDateTime(subscription.activation_requested_at)}{" "}
-                          · forma escolhida: <strong>{subscription.payment_method}</strong>.
-                          {subscription.payment_method?.startsWith("Dinheiro")
-                            ? " Aguarde: nossa equipe vai conferir o pagamento e ativar o seu contrato. Quando estiver ativo, sua área de cliente já mostra as solicitações e ordens de serviço."
-                            : " Assim que o pagamento for confirmado, nossa equipe ativa o seu contrato e as solicitações de serviço aparecem na sua área de cliente."}
+                          Pedido finalizado em {formatDateTime(subscription.activation_requested_at)}.
+                          {" "}Aguarde a aprovação: mesmo com o pagamento online já feito, a ativação
+                          do contrato é sempre conferida e liberada pela nossa equipe. Depois da
+                          aprovação, as ordens de serviço ficam liberadas para solicitação.
                         </p>
                       ) : null}
                     </div>

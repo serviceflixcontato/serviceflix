@@ -50,7 +50,7 @@ type FormState = {
   payment_method: string;
 };
 
-const PAYMENT_METHODS = ["Mercado Pago (Pix, boleto ou cartão)", "Dinheiro", "A definir"];
+const PAYMENT_METHODS = ["Pagamento online (Mercado Pago)"];
 
 function Contratar() {
   const navigate = useNavigate();

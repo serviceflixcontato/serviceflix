@@ -4,13 +4,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const PAYMENT_CHOICES = {
-  pix: { choice: "online", label: "Pix (Mercado Pago)" },
-  cartao: { choice: "online", label: "Cartão de crédito (Mercado Pago)" },
-  dinheiro: { choice: "dinheiro", label: "Dinheiro (presencial)" },
+  online: { choice: "online", label: "Pagamento online (Mercado Pago)" },
 } as const;
 
 const chooseSchema = z.object({
-  option: z.enum(["pix", "cartao", "dinheiro"]),
+  option: z.enum(["online"]),
   subscription_id: z.string().uuid().optional(),
 });
 
