@@ -129,3 +129,85 @@ export const acceptContract = createServerFn({ method: "POST" })
 
     return { ok: true as const, acceptance };
   });
+
+const changePlanSchema = z.object({
+  subscription_id: z.string().uuid(),
+  plan_slug: z.enum(["basico", "master", "premium", "personalizado"]),
+});
+
+/**
+ * Troca de plano do cliente: o contrato assinado continua o mesmo (somente leitura).
+ * Muda apenas o plano e o valor; a ativação segue dependendo da nossa equipe.
+ */
+export const changeMyPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => changePlanSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: subscription, error: subError } = await supabase
+      .from("subscriptions")
+      .select("id, plan_slug, plan_name")
+      .eq("id", data.subscription_id)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (subError) throw subError;
+    if (!subscription) throw new Error("Contrato não encontrado.");
+    if (subscription.plan_slug === data.plan_slug) {
+      return { ok: true as const, unchanged: true as const };
+    }
+
+    const { data: price } = await supabase
+      .from("plan_prices")
+      .select("price_cents")
+      .eq("slug", data.plan_slug)
+      .maybeSingle();
+
+    const { PLANS } = await import("@/lib/plans");
+    const planName = PLANS.find((plan) => plan.slug === data.plan_slug)?.name ?? data.plan_slug;
+    const amount = price?.price_cents ?? null;
+
+    const { error: updateError } = await supabase
+      .from("subscriptions")
+      .update({
+        plan_slug: data.plan_slug,
+        plan_name: planName,
+        monthly_price_cents: amount,
+        approval_status: "em_analise",
+        activation_requested_at: new Date().toISOString(),
+      })
+      .eq("id", subscription.id);
+    if (updateError) throw updateError;
+
+    // A próxima fatura em aberto passa a ter o valor do novo plano.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (amount && amount > 0) {
+      const { data: open } = await supabaseAdmin
+        .from("payments")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("subscription_id", subscription.id)
+        .neq("status", "pago")
+        .order("due_date", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (open?.id) {
+        await supabaseAdmin
+          .from("payments")
+          .update({ amount_cents: amount, description: `Mensalidade ${planName}` })
+          .eq("id", open.id);
+      } else {
+        await supabaseAdmin.from("payments").insert({
+          user_id: userId,
+          subscription_id: subscription.id,
+          description: `Mensalidade ${planName}`,
+          amount_cents: amount,
+          due_date: new Date().toISOString().slice(0, 10),
+          status: "pendente",
+        });
+      }
+    }
+
+    return { ok: true as const, plan_name: planName, amount_cents: amount };
+  });
