@@ -492,11 +492,15 @@ export const scheduleServiceRequest = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Guarda foto, nome e função do profissional na própria solicitação,
+    // para o cliente ver quem vai atender.
+    const provider = await providerSnapshot(data.provider_id);
     const { error } = await supabaseAdmin
       .from("service_requests")
       .update({
         scheduled_at: new Date(data.scheduled_at).toISOString(),
-        scheduled_technician: data.scheduled_technician || null,
+        scheduled_technician: provider.provider_name ?? data.scheduled_technician ?? null,
+        ...provider,
         materials_needed: data.materials_needed || null,
         team_message: data.team_message || null,
         schedule_status: "aguardando_confirmacao",
