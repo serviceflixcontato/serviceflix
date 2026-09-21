@@ -28,6 +28,12 @@ const STATUS_OPTIONS = [
   { value: "cancelada", label: "Cancelada" },
 ] as const;
 
+const METHOD_OPTIONS = [
+  { value: "online", label: "Pagamento online — Mercado Pago (pela plataforma)" },
+  { value: "dinheiro", label: "Dinheiro" },
+  { value: "pix", label: "Pix" },
+] as const;
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -53,6 +59,7 @@ export function ManualPlanActivation({ clients }: { clients: Client[] }) {
   const [contract, setContract] = useState("");
   const [notes, setNotes] = useState("");
   const [cash, setCash] = useState(true);
+  const [method, setMethod] = useState<string>("online");
 
   useEffect(() => {
     const price = prices.find((item) => item.slug === planSlug);
@@ -78,6 +85,7 @@ export function ManualPlanActivation({ clients }: { clients: Client[] }) {
           contract_number: contract || null,
           contract_notes: notes || null,
           register_cash_payment: cash,
+          payment_method: method,
         } as never,
       });
     },
@@ -170,6 +178,22 @@ export function ManualPlanActivation({ clients }: { clients: Client[] }) {
         </div>
 
         <div>
+          <Label>Forma de pagamento</Label>
+          <Select value={method} onValueChange={setMethod}>
+            <SelectTrigger className="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {METHOD_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
           <Label htmlFor="contrato">Nº do contrato (opcional)</Label>
           <Input
             id="contrato"
@@ -220,7 +244,7 @@ export function ManualPlanActivation({ clients }: { clients: Client[] }) {
             checked={cash}
             onChange={(event) => setCash(event.target.checked)}
           />
-          Registrar já o pagamento em dinheiro deste mês como recebido
+          Registrar já a mensalidade deste mês como recebida (na forma de pagamento escolhida acima)
         </label>
 
         <div className="md:col-span-2">

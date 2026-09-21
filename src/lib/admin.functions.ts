@@ -189,6 +189,7 @@ const manualPlanSchema = z.object({
   contract_number: z.string().trim().max(60).nullable().optional(),
   contract_notes: z.string().trim().max(500).nullable().optional(),
   register_cash_payment: z.boolean().default(false),
+  payment_method: z.enum(["online", "dinheiro", "pix"]).default("dinheiro"),
 });
 
 /** Ativa (ou atualiza) manualmente o plano de um cliente — inclui pagamento em dinheiro. */
@@ -214,8 +215,15 @@ export const activatePlanManually = createServerFn({ method: "POST" })
       next_billing_date: data.next_billing_date ?? null,
       contract_number: data.contract_number ?? null,
       contract_notes: data.contract_notes ?? null,
-      provider: "manual",
-      provider_mode: "manual",
+      payment_method: data.payment_method,
+      provider: data.payment_method === "online" ? "mercado_pago" : "manual",
+      provider_mode: data.payment_method === "online" ? "online" : "manual",
+    };
+
+    const METHOD_LABELS: Record<string, string> = {
+      online: "Online — Mercado Pago",
+      dinheiro: "Dinheiro",
+      pix: "Pix",
     };
 
     // Sempre cria um novo contrato: um cliente pode ter mais de um plano ativo.
@@ -231,14 +239,14 @@ export const activatePlanManually = createServerFn({ method: "POST" })
       const { error } = await supabaseAdmin.from("payments").insert({
         user_id: data.user_id,
         subscription_id: subscriptionId,
-        description: `Mensalidade ${data.plan_name} (dinheiro)`,
+        description: `Mensalidade ${data.plan_name} (${METHOD_LABELS[data.payment_method]})`,
         amount_cents: data.monthly_price_cents,
         due_date: data.started_at,
         paid_at: new Date().toISOString(),
         status: "pago",
-        method: "dinheiro",
-        provider: "manual",
-        provider_mode: "manual",
+        method: data.payment_method,
+        provider: data.payment_method === "online" ? "mercado_pago" : "manual",
+        provider_mode: data.payment_method === "online" ? "online" : "manual",
       });
       if (error) throw error;
     }
