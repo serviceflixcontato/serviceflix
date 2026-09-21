@@ -201,6 +201,13 @@ function ContractCard({
         </dl>
       ) : null}
 
+      {contract ? (
+        <p className="mt-4 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+          Contrato já assinado. Ele fica disponível apenas para leitura e download — não pode ser
+          alterado nem aceito novamente. Para mudar alguma condição, fale com a nossa equipe.
+        </p>
+      ) : null}
+
       <div className="mt-5 flex flex-wrap gap-2">
         {contract && contractFields ? (
           <>
