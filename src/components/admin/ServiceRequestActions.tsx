@@ -55,6 +55,8 @@ export function ServiceRequestActions({
   const [technician, setTechnician] = useState(request.scheduled_technician ?? "");
   const [materials, setMaterials] = useState(request.materials_needed ?? "");
   const [message, setMessage] = useState(request.team_message ?? "");
+  // Só profissionais cadastrados e ativos podem ser escolhidos.
+  const providers = (useProviders().data ?? []).filter((provider) => provider.active);
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
