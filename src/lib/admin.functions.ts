@@ -119,6 +119,12 @@ export const getAdminOverview = createServerFn({ method: "GET" })
           .order("accepted_at", { ascending: false }),
       ]);
 
+    const events = await supabaseAdmin
+      .from("client_events")
+      .select("id, user_id, subscription_id, kind, title, detail, amount_cents, method, created_at")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+
     // Só a conta técnica de acesso administrativo fica fora da relação de clientes.
     const clientProfiles = (profiles.data ?? []).filter(
       (profile) => !(profile.email ?? "").toLowerCase().endsWith("@admin.serviceflix.local"),
@@ -134,6 +140,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       referrals: referrals.data ?? [],
       leads: leads.data ?? [],
       contracts: contracts.data ?? [],
+      events: events.data ?? [],
     };
   });
 
