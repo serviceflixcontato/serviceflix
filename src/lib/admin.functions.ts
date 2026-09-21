@@ -777,7 +777,11 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
           .eq("status", "pago")
           .limit(1)
           .maybeSingle();
-        if (alreadyPaid) return { ok: true as const };
+        if (alreadyPaid) {
+          const { syncNextBilling } = await import("./billing.server");
+          await syncNextBilling(data.subscription_id);
+          return { ok: true as const };
+        }
         const { data: plan } = await supabaseAdmin
           .from("subscriptions")
           .select("plan_name, monthly_price_cents")

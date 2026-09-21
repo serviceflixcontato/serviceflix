@@ -185,5 +185,8 @@ export const activateSubscriptionFromContract = createServerFn({ method: "POST" 
       }
     }
 
+    const { syncNextBilling } = await import("./billing.server");
+    await syncNextBilling(data.subscription_id);
+
     return { ok: true as const };
   });
