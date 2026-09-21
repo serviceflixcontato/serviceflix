@@ -29,6 +29,8 @@ import {
 } from "@/hooks/use-panel-data";
 import { groupPhotos, useServicePhotos, type ServicePhoto } from "@/hooks/use-service-photos";
 import { uploadServicePhotos } from "@/lib/service-photos";
+import { providerRoleLabel, signProviderPhotos } from "@/lib/providers";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/painel/solicitacoes")({
   component: Solicitacoes,
