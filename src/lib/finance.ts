@@ -40,7 +40,7 @@ export const METHOD_LABELS: Record<string, string> = {
   pix: "Pix",
   cartao: "Cartão",
   voucher: "Voucher de indicação",
-  online: "Pagamento online",
+  online: "Online — Mercado Pago",
   boleto: "Boleto",
 };
 
