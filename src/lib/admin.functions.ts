@@ -520,8 +520,31 @@ const workOrderCreateSchema = z.object({
   title: z.string().trim().min(2).max(140),
   description: z.string().trim().max(1500).optional(),
   technician: z.string().trim().max(80).optional(),
+  provider_id: z.string().uuid().nullable().optional(),
   scheduled_for: z.string().min(10).max(40).nullable().optional(),
 });
+
+/** Dados públicos do prestador que ficam guardados na OS (o cliente vê isso). */
+async function providerSnapshot(providerId: string | null | undefined) {
+  if (!providerId) {
+    return { provider_id: null, provider_name: null, provider_role: null, provider_photo_url: null };
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("service_providers")
+    .select("id, full_name, role, photo_url")
+    .eq("id", providerId)
+    .maybeSingle();
+  if (!data) {
+    return { provider_id: null, provider_name: null, provider_role: null, provider_photo_url: null };
+  }
+  return {
+    provider_id: data.id,
+    provider_name: data.full_name,
+    provider_role: data.role,
+    provider_photo_url: data.photo_url,
+  };
+}
 
 /** Cria uma ordem de serviço para um cliente (com ou sem solicitação vinculada). */
 export const createWorkOrder = createServerFn({ method: "POST" })
