@@ -95,6 +95,13 @@ function Pagamentos() {
     mutationFn: (paymentId: string) => checkout({ data: { paymentId } }),
     onSuccess: (result) => {
       if (result.ok && result.checkoutUrl) {
+        const simulated = "simulated" in result && result.simulated;
+        if (simulated) {
+          void navigate({ to: "/painel/pagamento-teste", search: { fatura: result.checkoutUrl.split("fatura=")[1] ?? "" } });
+          toast.info("Modo teste: simulação do pagamento online, sem cobrança real.");
+          refresh();
+          return;
+        }
         window.open(result.checkoutUrl, "_blank", "noopener");
         toast.success("Abrimos o pagamento online em outra aba.");
         refresh();
