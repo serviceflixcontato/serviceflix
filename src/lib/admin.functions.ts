@@ -285,6 +285,16 @@ export const setPaymentStatusManually = createServerFn({ method: "POST" })
       })
       .eq("id", data.payment_id);
     if (error) throw error;
+
+    // Mês pago (inclusive adiantado) não volta a aparecer para pagamento.
+    const { data: row } = await supabaseAdmin
+      .from("payments")
+      .select("subscription_id")
+      .eq("id", data.payment_id)
+      .maybeSingle();
+    const { syncNextBilling } = await import("./billing.server");
+    await syncNextBilling(row?.subscription_id ?? null);
+
     return { ok: true as const };
   });
 
@@ -632,7 +642,23 @@ const approvalSchema = z.object({
   subscription_id: z.string().uuid(),
   approval_status: z.enum(["aguardando_pagamento", "em_analise", "aprovado", "cancelado"]),
   approval_notes: z.string().trim().max(500).nullable().optional(),
+  /** Meio realmente usado no pagamento da adesão, informado pela equipe na ativação. */
+  payment_method: z
+    .enum(["pix", "dinheiro", "cartao", "transferencia", "voucher", "online"])
+    .nullable()
+    .optional(),
+  /** Data em que o valor entrou (AAAA-MM-DD). */
+  paid_on: z.string().trim().min(8).max(10).nullable().optional(),
 });
+
+const METHOD_CONTRACT_LABELS: Record<string, string> = {
+  pix: "Pix",
+  dinheiro: "Dinheiro (presencial)",
+  cartao: "Cartão de crédito",
+  transferencia: "Transferência bancária",
+  voucher: "Voucher de indicação",
+  online: "Pagamento online (Mercado Pago)",
+};
 
 /**
  * Análise financeira do contrato feita pela equipe.
@@ -701,25 +727,45 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
         .limit(1)
         .maybeSingle();
 
+      const chosen = data.payment_method ?? null;
+      const paidAt = data.paid_on
+        ? new Date(`${data.paid_on}T12:00:00`).toISOString()
+        : new Date().toISOString();
+
       const fallback =
-        subscription?.payment_method?.startsWith("Pix")
+        chosen ??
+        (subscription?.payment_method?.startsWith("Pix")
           ? "pix"
           : subscription?.payment_method?.startsWith("Cartão")
             ? "cartao"
             : subscription?.payment_method?.startsWith("Dinheiro")
               ? "dinheiro"
-              : null;
+              : null);
+
+      // O meio informado na ativação fica registrado no contrato do cliente.
+      if (chosen) {
+        await supabaseAdmin
+          .from("subscriptions")
+          .update({ payment_method: METHOD_CONTRACT_LABELS[chosen] ?? chosen })
+          .eq("id", data.subscription_id);
+        await supabaseAdmin
+          .from("contract_acceptances")
+          .update({ payment_method: METHOD_CONTRACT_LABELS[chosen] ?? chosen })
+          .eq("subscription_id", data.subscription_id);
+      }
 
       if (openInvoice) {
         const { error: payError } = await supabaseAdmin
           .from("payments")
           .update({
             status: "pago",
-            paid_at: new Date().toISOString(),
-            method: openInvoice.method ?? fallback,
+            paid_at: paidAt,
+            method: chosen ?? openInvoice.method ?? fallback,
           })
           .eq("id", openInvoice.id);
         if (payError) throw payError;
+        const { syncNextBilling } = await import("./billing.server");
+        await syncNextBilling(data.subscription_id);
       } else if (subscription?.user_id) {
         // Nenhuma fatura em aberto: registra a adesão (primeira mensalidade) já
         // como paga — mas só se ainda não houver pagamento registrado (evita
@@ -744,10 +790,12 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
           amount_cents: plan?.monthly_price_cents ?? 0,
           due_date: new Date().toISOString().slice(0, 10),
           status: "pago",
-          paid_at: new Date().toISOString(),
+          paid_at: paidAt,
           method: fallback ?? "dinheiro",
         });
         if (insertError) throw insertError;
+        const { syncNextBilling } = await import("./billing.server");
+        await syncNextBilling(data.subscription_id);
       }
     }
 
