@@ -8,6 +8,7 @@ import {
   Clock,
   Gift,
   Loader2,
+  Trash2,
   Users,
   Wrench,
 } from "lucide-react";
@@ -16,6 +17,17 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -27,6 +39,7 @@ import { STATUS_LABELS, formatBRL, formatDate, formatDateTime } from "@/hooks/us
 import { dueLabel, isDueSoon, monthLabel } from "@/lib/billing";
 import {
   getAdminOverview,
+  deleteClient,
   setPaymentStatusManually,
   updateReferralStatus,
 } from "@/lib/admin.functions";
@@ -494,18 +507,13 @@ export function AdminOverview() {
         <Card>
           <h2 className="text-lg font-semibold">Clientes cadastrados no site</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Todos os cadastros feitos pela área do cliente, com os dados completos usados no
-            contrato.
+            Dados do cadastro e controles da conta de cada cliente.
           </p>
           {profiles.length === 0 ? (
             <Empty text="Nenhum cliente cadastrado ainda." />
           ) : (
             <ul className="mt-4 space-y-3">
               {profiles.map((profile) => {
-                const clientSubs = subscriptions.filter((s) => s.user_id === profile.id);
-                const clientPayments = payments.filter((p) => p.user_id === profile.id);
-                const clientPaid = clientPayments.filter((p) => p.status === "pago");
-                const clientContracts = contracts.filter((c) => c.user_id === profile.id);
                 const fullAddress = [
                   profile.address,
                   profile.address_number,
@@ -533,104 +541,20 @@ export function AdminOverview() {
                           Endereço: {fullAddress || "não informado"}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Cadastro em {formatDateTime(profile.created_at)} ·{" "}
-                          {clientSubs.length === 1
-                            ? "1 contrato"
-                            : `${clientSubs.length} contratos`}
+                          Cadastro em {formatDateTime(profile.created_at)}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <Badge
-                          variant={
-                            clientSubs.some((s) => s.status === "ativa") ? "default" : "secondary"
-                          }
-                        >
-                          {clientSubs.some((s) => s.status === "ativa")
-                            ? "Cliente ativo"
-                            : clientSubs.length > 0
-                              ? "Aguardando ativação"
-                              : "Sem plano"}
-                        </Badge>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          Pago até hoje:{" "}
-                          {formatBRL(clientPaid.reduce((sum, p) => sum + (p.amount_cents ?? 0), 0))}
-                        </p>
-                        <div className="mt-3">
-                          <RegistrationControl
-                            userId={profile.id}
-                            status={profile.registration_status}
-                          />
-                        </div>
+                      <div className="flex flex-col items-end gap-3">
+                        <RegistrationControl
+                          userId={profile.id}
+                          status={profile.registration_status}
+                        />
+                        <DeleteClientControl
+                          userId={profile.id}
+                          clientName={profile.full_name ?? profile.email ?? "este cliente"}
+                        />
                       </div>
                     </div>
-
-                    {clientSubs.length === 0 ? (
-                      <p className="mt-3 text-sm text-muted-foreground">
-                        Nenhum contrato registrado para este cliente.
-                      </p>
-                    ) : (
-                      <ul className="mt-3 space-y-3">
-                        {clientSubs.map((sub) => {
-                          const subContract = clientContracts.find(
-                            (c) => c.subscription_id === sub.id,
-                          );
-                          const subPayments = clientPayments.filter(
-                            (p) => p.subscription_id === sub.id,
-                          );
-                          return (
-                            <li key={sub.id} className="rounded-lg border border-border/70 p-3">
-                              <div className="flex flex-wrap items-start justify-between gap-2">
-                                <div>
-                                  <p className="text-sm font-semibold">{sub.plan_name}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {formatBRL(sub.monthly_price_cents)}/mês · início{" "}
-                                    {formatDate(sub.started_at)} · próxima cobrança{" "}
-                                    {formatDate(sub.next_billing_date)}
-                                  </p>
-                                  <p className="text-xs text-primary">
-                                    {subContract?.contract_code
-                                      ? `Contrato nº ${subContract.contract_code}`
-                                      : sub.contract_number
-                                        ? `Contrato ${sub.contract_number}`
-                                        : "Contrato sem número"}
-                                  </p>
-                                </div>
-                                <div className="flex flex-col items-end gap-2">
-                                  <ApprovalBadge status={sub.approval_status} />
-                                  <ContractApproval
-                                    subscriptionId={sub.id}
-                                    status={sub.approval_status}
-                                  />
-                                </div>
-                              </div>
-                              <p className="mt-2 text-xs">
-                                <strong>Meio de pagamento:</strong>{" "}
-                                {paymentMethodsLabel(subPayments)}
-                              </p>
-
-                              {subPayments.length > 0 ? (
-                                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                                  {subPayments.map((payment) => (
-                                    <li key={payment.id}>
-                                      {formatBRL(payment.amount_cents)} · {payment.description} ·{" "}
-                                      {STATUS_LABELS[payment.status] ?? payment.status} ·{" "}
-                                      {payment.paid_at
-                                        ? `pago em ${formatDateTime(payment.paid_at)}`
-                                        : `vence em ${formatDate(payment.due_date)}`}
-                                      {payment.method ? ` · ${payment.method}` : ""}
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : null}
-
-                              <div className="mt-3">
-                                <SubscriptionRowActions sub={sub} />
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
                   </li>
                 );
               })}
@@ -1302,5 +1226,51 @@ function RegistrationControl({ userId, status }: { userId: string; status?: stri
         {current === "ativo" ? "Desativar cadastro" : "Ativar cadastro"}
       </Button>
     </div>
+  );
+}
+
+function DeleteClientControl({ userId, clientName }: { userId: string; clientName: string }) {
+  const queryClient = useQueryClient();
+  const removeClient = useServerFn(deleteClient);
+  const mutation = useMutation({
+    mutationFn: () => removeClient({ data: { user_id: userId } }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+      toast.success("Cliente excluído.");
+    },
+    onError: (error: Error) => toast.error(error.message || "Não foi possível excluir o cliente."),
+  });
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button size="sm" variant="destructive" disabled={mutation.isPending}>
+          {mutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="mr-2 h-4 w-4" />
+          )}
+          Excluir cliente
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir {clientName}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação apaga definitivamente o cadastro e todos os contratos, pagamentos,
+            solicitações, ordens de serviço, indicações e arquivos deste cliente.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={() => mutation.mutate()}
+          >
+            Excluir definitivamente
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
