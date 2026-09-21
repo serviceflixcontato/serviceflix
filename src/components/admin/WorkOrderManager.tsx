@@ -85,8 +85,9 @@ export function WorkOrderManager({
   const [requestId, setRequestId] = useState("none");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [technician, setTechnician] = useState("");
+  const [providerId, setProviderId] = useState("none");
   const [scheduledFor, setScheduledFor] = useState("");
+  const providers = (useProviders().data ?? []).filter((p) => p.active);
 
   const openRequests = useMemo(
     () => requests.filter((r) => r.status !== "cancelada"),
