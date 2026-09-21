@@ -610,3 +610,113 @@ export const saveReferralReceipt = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true as const };
   });
+
+// ===========================================================================
+// Ecossistema financeiro: ativação do cadastro x aprovação do contrato
+// ===========================================================================
+
+const approvalSchema = z.object({
+  subscription_id: z.string().uuid(),
+  approval_status: z.enum(["aguardando_pagamento", "em_analise", "aprovado", "cancelado"]),
+  approval_notes: z.string().trim().max(500).nullable().optional(),
+});
+
+/**
+ * Análise financeira do contrato feita pela equipe.
+ * "aprovado" é o único estado que ativa o contrato e libera as ordens de serviço.
+ */
+export const setSubscriptionApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => approvalSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const today = new Date();
+    const next = new Date(today);
+    next.setMonth(next.getMonth() + 1);
+
+    const patch: Record<string, unknown> = {
+      approval_status: data.approval_status,
+      approval_notes: data.approval_notes ?? null,
+    };
+
+    if (data.approval_status === "aprovado") {
+      patch["status"] = "ativa";
+      patch["approved_at"] = new Date().toISOString();
+      patch["started_at"] = today.toISOString().slice(0, 10);
+      patch["next_billing_date"] = next.toISOString().slice(0, 10);
+    } else if (data.approval_status === "cancelado") {
+      patch["status"] = "cancelada";
+      patch["approved_at"] = null;
+    } else {
+      patch["status"] = "pendente";
+      patch["approved_at"] = null;
+    }
+
+    const { error } = await supabaseAdmin
+      .from("subscriptions")
+      .update(patch)
+      .eq("id", data.subscription_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+const registrationSchema = z.object({
+  user_id: z.string().uuid(),
+  registration_status: z.enum(["pendente", "ativo"]),
+});
+
+/** Ativação do CADASTRO do cliente (dados conferidos) — não libera serviços sozinha. */
+export const setRegistrationStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => registrationSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        registration_status: data.registration_status,
+        registration_activated_at:
+          data.registration_status === "ativo" ? new Date().toISOString() : null,
+      })
+      .eq("id", data.user_id);
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
+const chargeSchema = z.object({
+  user_id: z.string().uuid(),
+  subscription_id: z.string().uuid().nullable().optional(),
+  description: z.string().trim().min(2).max(140),
+  amount_cents: z.number().int().min(1).max(100_000_000),
+  due_date: z.string().min(8).max(10),
+  category: z.enum(["mensalidade", "servico_adicional", "outro"]).default("servico_adicional"),
+  status: z.enum(["pendente", "pago"]).default("pendente"),
+  method: z.string().trim().max(40).nullable().optional(),
+});
+
+/** Lança no caixa uma cobrança avulsa (serviço adicional, material, taxa etc.). */
+export const createFinanceCharge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => chargeSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("payments").insert({
+      user_id: data.user_id,
+      subscription_id: data.subscription_id ?? null,
+      description: data.description,
+      amount_cents: data.amount_cents,
+      due_date: data.due_date,
+      category: data.category,
+      status: data.status,
+      method: data.method || (data.status === "pago" ? "dinheiro" : null),
+      paid_at: data.status === "pago" ? new Date().toISOString() : null,
+      provider: "manual",
+      provider_mode: "manual",
+    });
+    if (error) throw error;
+    return { ok: true as const };
+  });
