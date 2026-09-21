@@ -23,7 +23,6 @@ import { CONTACT } from "@/lib/plans";
 import { chooseSubscriptionPayment } from "@/lib/activation.functions";
 import {
   createInvoiceCheckout,
-  declareOfflinePayment,
   createSubscriptionCheckout,
   createUpcomingInvoice,
 } from "@/lib/payments.functions";
@@ -79,7 +78,6 @@ function Pagamentos() {
   const { data: subscriptions = [] } = useSubscriptions();
   const { data: contracts = [] } = useMyContracts();
   const { data: config } = usePaymentConfig();
-  const [selectedOption, setSelectedOption] = useState<Record<string, OptionId>>({});
   const [tab, setTab] = useState<TabId>("efetuar");
   // Faturas canceladas não contam como em aberto (mesma regra do caixa administrativo).
   const open = payments.filter(
@@ -108,7 +106,6 @@ function Pagamentos() {
   );
 
   const invoiceCheckout = useServerFn(createInvoiceCheckout);
-  const declarePayment = useServerFn(declareOfflinePayment);
   const subscriptionCheckout = useServerFn(createSubscriptionCheckout);
   const choosePayment = useServerFn(chooseSubscriptionPayment);
 
