@@ -70,6 +70,15 @@ function Solicitacoes() {
     subscription?.status === "ativa" && (subscription?.approval_status ?? "") === "aprovado";
   const { data: photos = [] } = useServicePhotos();
   const { data: orders = [] } = useWorkOrders();
+  // Fotos dos profissionais que vão executar cada ordem de serviço.
+  const providerPhotoPaths = orders
+    .map((order) => (order as { provider_photo_url?: string | null }).provider_photo_url ?? "")
+    .filter(Boolean);
+  const { data: providerPhotos } = useQuery({
+    queryKey: ["provider-photos", providerPhotoPaths.join("|")],
+    queryFn: () => signProviderPhotos(providerPhotoPaths),
+    enabled: providerPhotoPaths.length > 0,
+  });
   const [requestView, setRequestView] = useState<RequestViewId>("novas");
   const [submitting, setSubmitting] = useState(false);
   const [category, setCategory] = useState("");
