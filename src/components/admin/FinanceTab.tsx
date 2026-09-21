@@ -222,30 +222,19 @@ export function FinanceTab({
                         {subOpen.map((payment) => (
                           <li
                             key={payment.id}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-background p-3 text-sm"
+                            className="space-y-2 rounded-lg border border-border bg-background p-3 text-sm"
                           >
-                            <span>
+                            <p>
                               {payment.description} · {formatBRL(netAmount(payment))} · vence{" "}
                               {formatDate(payment.due_date)}
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={confirm.isPending}
-                              onClick={() =>
-                                confirm.mutate({
-                                  payment_id: payment.id,
-                                  status: "pago",
-                                  method: payment.method ?? "dinheiro",
-                                })
-                              }
-                            >
-                              Confirmar recebimento
-                            </Button>
+                              {payment.method ? ` · ${methodLabel(payment.method)}` : ""}
+                            </p>
+                            <PaymentSettle payment={payment} />
                           </li>
                         ))}
                       </ul>
                     ) : null}
+
                   </li>
                 );
               })}
