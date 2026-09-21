@@ -437,7 +437,12 @@ export function AdminOverview() {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <ContractApproval subscriptionId={sub.id} status={sub.approval_status} />
+                  <ContractApproval
+                    subscriptionId={sub.id}
+                    status={sub.approval_status}
+                    isPlanChange={Boolean(sub.pending_plan_slug)}
+                    requestedPlanName={sub.pending_plan_name ?? sub.pending_plan_slug}
+                  />
                   {openPayment ? (
                     <Button
                       variant="outline"

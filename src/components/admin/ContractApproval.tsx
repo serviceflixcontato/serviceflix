@@ -22,7 +22,13 @@ import {
   type ApprovalStatus,
 } from "@/lib/money";
 
-export function ApprovalBadge({ status }: { status?: string | null }) {
+export function ApprovalBadge({
+  status,
+  isPlanChange = false,
+}: {
+  status?: string | null;
+  isPlanChange?: boolean;
+}) {
   const value = status ?? "aguardando_pagamento";
   const variant =
     value === "aprovado"
@@ -32,7 +38,13 @@ export function ApprovalBadge({ status }: { status?: string | null }) {
         : value === "em_analise"
           ? "outline"
           : "secondary";
-  return <Badge variant={variant}>{APPROVAL_STATUS_LABELS[value] ?? value}</Badge>;
+  const label =
+    isPlanChange && value === "em_analise"
+      ? "Mudança em análise"
+      : isPlanChange && value === "aguardando_pagamento"
+        ? "Mudança aguardando pagamento"
+        : APPROVAL_STATUS_LABELS[value] ?? value;
+  return <Badge variant={variant}>{label}</Badge>;
 }
 
 /**
@@ -42,9 +54,13 @@ export function ApprovalBadge({ status }: { status?: string | null }) {
 export function ContractApproval({
   subscriptionId,
   status,
+  isPlanChange = false,
+  requestedPlanName,
 }: {
   subscriptionId: string;
   status?: string | null;
+  isPlanChange?: boolean;
+  requestedPlanName?: string | null;
 }) {
   const queryClient = useQueryClient();
   const approve = useServerFn(setSubscriptionApproval);
@@ -63,7 +79,11 @@ export function ContractApproval({
       setConfirming(false);
       toast.success(
         input.approval_status === "aprovado"
-          ? "Contrato ativo. Pagamento registrado no caixa e o cliente já pode abrir ordens de serviço."
+          ? isPlanChange
+            ? `Mudança para ${requestedPlanName ?? "o novo plano"} aprovada e aplicada.`
+            : "Contrato ativo. Pagamento registrado no caixa e o cliente já pode abrir ordens de serviço."
+          : isPlanChange && input.approval_status === "cancelado"
+            ? "Pedido de mudança recusado. O plano atual continua ativo."
           : `Contrato marcado como "${APPROVAL_STATUS_LABELS[input.approval_status]}".`,
       );
     },
@@ -91,7 +111,13 @@ export function ContractApproval({
           <SelectContent>
             {APPROVAL_STATUS_OPTIONS.map((option) => (
               <SelectItem key={option} value={option}>
-                {APPROVAL_STATUS_LABELS[option]}
+                {isPlanChange && option === "aprovado"
+                  ? "Aprovar mudança"
+                  : isPlanChange && option === "cancelado"
+                    ? "Recusar mudança"
+                    : isPlanChange && option === "em_analise"
+                      ? "Mudança em análise"
+                      : APPROVAL_STATUS_LABELS[option]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -101,7 +127,9 @@ export function ContractApproval({
       {confirming ? (
         <div className="w-full max-w-sm space-y-3 rounded-xl border border-primary/50 bg-background p-3 text-left">
           <p className="text-xs text-muted-foreground">
-            Como o cliente pagou? O meio escolhido fica registrado no contrato e entra no caixa.
+            {isPlanChange
+              ? "Confirme o pagamento do novo plano. Após a aprovação, a mudança será aplicada automaticamente."
+              : "Como o cliente pagou? O meio escolhido fica registrado no contrato e entra no caixa."}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -135,7 +163,7 @@ export function ContractApproval({
               }
             >
               {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Ativar contrato
+              {isPlanChange ? "Aprovar mudança" : "Ativar contrato"}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setConfirming(false)}>
               Cancelar
