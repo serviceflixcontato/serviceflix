@@ -22,7 +22,13 @@ import {
   type ApprovalStatus,
 } from "@/lib/money";
 
-export function ApprovalBadge({ status }: { status?: string | null }) {
+export function ApprovalBadge({
+  status,
+  isPlanChange = false,
+}: {
+  status?: string | null;
+  isPlanChange?: boolean;
+}) {
   const value = status ?? "aguardando_pagamento";
   const variant =
     value === "aprovado"
@@ -32,7 +38,13 @@ export function ApprovalBadge({ status }: { status?: string | null }) {
         : value === "em_analise"
           ? "outline"
           : "secondary";
-  return <Badge variant={variant}>{APPROVAL_STATUS_LABELS[value] ?? value}</Badge>;
+  const label =
+    isPlanChange && value === "em_analise"
+      ? "Mudança em análise"
+      : isPlanChange && value === "aguardando_pagamento"
+        ? "Mudança aguardando pagamento"
+        : APPROVAL_STATUS_LABELS[value] ?? value;
+  return <Badge variant={variant}>{label}</Badge>;
 }
 
 /**

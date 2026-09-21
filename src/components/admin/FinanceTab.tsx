@@ -209,7 +209,10 @@ export function FinanceTab({
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <ApprovalBadge status={sub.approval_status} />
+                        <ApprovalBadge
+                          status={sub.approval_status}
+                          isPlanChange={isPlanChange}
+                        />
                         <ContractApproval
                           subscriptionId={sub.id}
                           status={sub.approval_status}
