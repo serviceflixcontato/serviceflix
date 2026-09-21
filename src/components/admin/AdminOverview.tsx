@@ -496,6 +496,17 @@ export function AdminOverview() {
         })}
       </nav>
 
+      {tab === "prestadores" ? (
+        <Card>
+          <h2 className="text-lg font-semibold">Prestadores de serviço</h2>
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
+            Cadastre a equipe que executa os serviços. O cliente vê apenas a foto, o nome e a
+            função na ordem de serviço.
+          </p>
+          <ProviderManager />
+        </Card>
+      ) : null}
+
       {tab === "financeiro" ? (
         <FinanceTab
           profiles={profiles as never}
