@@ -151,6 +151,7 @@ export type Database = {
       payments: {
         Row: {
           amount_cents: number
+          category: string
           checkout_url: string | null
           created_at: string
           description: string
@@ -171,6 +172,7 @@ export type Database = {
         }
         Insert: {
           amount_cents: number
+          category?: string
           checkout_url?: string | null
           created_at?: string
           description?: string
@@ -191,6 +193,7 @@ export type Database = {
         }
         Update: {
           amount_cents?: number
+          category?: string
           checkout_url?: string | null
           created_at?: string
           description?: string
@@ -264,6 +267,8 @@ export type Database = {
           id: string
           neighborhood: string | null
           phone: string | null
+          registration_activated_at: string | null
+          registration_status: string
           updated_at: string
         }
         Insert: {
@@ -279,6 +284,8 @@ export type Database = {
           id: string
           neighborhood?: string | null
           phone?: string | null
+          registration_activated_at?: string | null
+          registration_status?: string
           updated_at?: string
         }
         Update: {
@@ -294,6 +301,8 @@ export type Database = {
           id?: string
           neighborhood?: string | null
           phone?: string | null
+          registration_activated_at?: string | null
+          registration_status?: string
           updated_at?: string
         }
         Relationships: []
@@ -493,6 +502,9 @@ export type Database = {
       subscriptions: {
         Row: {
           activation_requested_at: string | null
+          approval_notes: string | null
+          approval_status: string
+          approved_at: string | null
           contract_notes: string | null
           contract_number: string | null
           created_at: string
@@ -513,6 +525,9 @@ export type Database = {
         }
         Insert: {
           activation_requested_at?: string | null
+          approval_notes?: string | null
+          approval_status?: string
+          approved_at?: string | null
           contract_notes?: string | null
           contract_number?: string | null
           created_at?: string
@@ -533,6 +548,9 @@ export type Database = {
         }
         Update: {
           activation_requested_at?: string | null
+          approval_notes?: string | null
+          approval_status?: string
+          approved_at?: string | null
           contract_notes?: string | null
           contract_number?: string | null
           created_at?: string

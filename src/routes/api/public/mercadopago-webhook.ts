@@ -108,7 +108,25 @@ export const Route = createFileRoute("/api/public/mercadopago-webhook")({
                   paid_at: approved ? (mpPayment.date_approved ?? new Date().toISOString()) : null,
                 })
                 .eq("id", reference);
+
+              // Pagamento online aprovado: o contrato entra na fila de análise
+              // da equipe (fica piscando em amarelo no painel administrativo).
+              if (approved) {
+                const { data: paidRow } = await supabaseAdmin
+                  .from("payments")
+                  .select("subscription_id")
+                  .eq("id", reference)
+                  .maybeSingle();
+                if (paidRow?.subscription_id) {
+                  await supabaseAdmin
+                    .from("subscriptions")
+                    .update({ approval_status: "em_analise" })
+                    .eq("id", paidRow.subscription_id)
+                    .neq("approval_status", "aprovado");
+                }
+              }
             }
+
           } else if (topic === "subscription_preapproval" || topic === "preapproval") {
             const preapproval = await getPreapproval(token, dataId);
             if (preapproval.external_reference) {

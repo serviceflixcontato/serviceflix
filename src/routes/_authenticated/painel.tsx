@@ -39,7 +39,12 @@ function PainelLayout() {
   const queryClient = useQueryClient();
   const { data: profile } = useProfile();
   const { data: subscriptions = [] } = useSubscriptions();
-  const hasActive = subscriptions.some((subscription) => subscription.status === "ativa");
+  // A aba de solicitações só aparece com o CONTRATO aprovado pela equipe —
+  // ter o cadastro completo não basta.
+  const hasActive = subscriptions.some(
+    (subscription) =>
+      subscription.status === "ativa" && (subscription.approval_status ?? "") === "aprovado",
+  );
   const navItems = NAV.filter((item) => hasActive || !ACTIVE_ONLY.includes(item.to));
 
   async function handleSignOut() {

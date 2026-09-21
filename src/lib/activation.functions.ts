@@ -43,6 +43,7 @@ export const chooseSubscriptionPayment = createServerFn({ method: "POST" })
       .update({
         payment_method: selected.label,
         payment_choice: selected.choice,
+        approval_status: "em_analise",
         activation_requested_at: new Date().toISOString(),
       })
       .eq("id", subscription.id);
@@ -121,6 +122,8 @@ export const activateSubscriptionFromContract = createServerFn({ method: "POST" 
       .from("subscriptions")
       .update({
         status: "ativa",
+        approval_status: "aprovado",
+        approved_at: new Date().toISOString(),
         started_at: today.toISOString().slice(0, 10),
         next_billing_date: data.next_billing_date ?? next.toISOString().slice(0, 10),
         ...(data.contract_number ? { contract_number: data.contract_number } : {}),

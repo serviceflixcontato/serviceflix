@@ -36,7 +36,15 @@ function PainelHome() {
   const firstName = (profile?.full_name ?? "").split(" ")[0];
 
   const profileComplete = isProfileComplete(profile ?? null);
-  const isActive = subscription?.status === "ativa";
+  const isActive =
+    subscription?.status === "ativa" && (subscription?.approval_status ?? "") === "aprovado";
+  const approval = subscription?.approval_status ?? null;
+  const approvalMessage =
+    approval === "em_analise"
+      ? "Pagamento recebido. Nossa equipe está analisando e vai ativar seu contrato em seguida."
+      : approval === "cancelado"
+        ? "Este contrato foi cancelado. Fale com a nossa equipe para contratar novamente."
+        : "Escolha a forma de pagamento (cartão, Pix, dinheiro ou voucher) e finalize. A ativação é feita pela nossa equipe após a análise.";
 
   return (
     <div className="space-y-6">
@@ -57,9 +65,14 @@ function PainelHome() {
         <section className="rounded-2xl border border-border bg-card p-5 shadow-card">
           <h2 className="font-semibold">Ativação da conta</h2>
           <p className="mt-1 text-sm text-muted-foreground">
+            <strong>Cadastro:</strong>{" "}
+            {profileComplete ? "completo" : "faltam dados"} · <strong>Contrato:</strong>{" "}
+            {subscription ? "registrado, aguardando aprovação" : "ainda não contratado"}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
             {subscription
-              ? "Seu contrato está registrado. Escolha a forma de pagamento e aguarde a ativação pela nossa equipe para abrir solicitações."
-              : "Escolha um plano, assine o contrato e realize o pagamento. Após a ativação pela nossa equipe você poderá abrir solicitações."}
+              ? approvalMessage
+              : "Escolha um plano, assine o contrato e realize o pagamento. Só depois da aprovação da nossa equipe as ordens de serviço ficam liberadas."}
           </p>
           <Button asChild size="sm" variant="secondary" className="mt-3">
             <Link to={subscription ? "/painel/pagamentos" : "/painel/contratar"}>
@@ -77,11 +90,17 @@ function PainelHome() {
           Aqui você acompanha o plano contratado, abre novas solicitações de manutenção e controla
           seus pagamentos.
         </p>
-        <Button asChild className="mt-5" variant="secondary">
-          <Link to="/painel/solicitacoes">
-            Abrir nova solicitação <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
+        {isActive ? (
+          <Button asChild className="mt-5" variant="secondary">
+            <Link to="/painel/solicitacoes">
+              Abrir nova solicitação <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        ) : (
+          <p className="mt-5 text-sm text-primary-foreground/90">
+            As ordens de serviço ficam liberadas assim que a nossa equipe aprovar o seu contrato.
+          </p>
+        )}
       </div>
 
       <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
