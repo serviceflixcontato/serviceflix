@@ -666,6 +666,49 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
       .update(patch)
       .eq("id", data.subscription_id);
     if (error) throw error;
+
+    // Aprovação só acontece depois do pagamento confirmado: a fatura da adesão
+    // (primeira mensalidade em aberto) passa a constar como paga no caixa e no
+    // histórico de faturas pagas do cliente.
+    if (data.approval_status === "aprovado") {
+      const { data: subscription } = await supabaseAdmin
+        .from("subscriptions")
+        .select("user_id, payment_method")
+        .eq("id", data.subscription_id)
+        .maybeSingle();
+
+      const { data: openInvoice } = await supabaseAdmin
+        .from("payments")
+        .select("id, method")
+        .eq("subscription_id", data.subscription_id)
+        .eq("category", "mensalidade")
+        .neq("status", "pago")
+        .neq("status", "cancelada")
+        .order("due_date", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (openInvoice) {
+        const fallback =
+          subscription?.payment_method?.startsWith("Pix")
+            ? "pix"
+            : subscription?.payment_method?.startsWith("Cartão")
+              ? "cartao"
+              : subscription?.payment_method?.startsWith("Dinheiro")
+                ? "dinheiro"
+                : null;
+        const { error: payError } = await supabaseAdmin
+          .from("payments")
+          .update({
+            status: "pago",
+            paid_at: new Date().toISOString(),
+            method: openInvoice.method ?? fallback,
+          })
+          .eq("id", openInvoice.id);
+        if (payError) throw payError;
+      }
+    }
+
     return { ok: true as const };
   });
 

@@ -131,5 +131,29 @@ export const activateSubscriptionFromContract = createServerFn({ method: "POST" 
       .eq("id", data.subscription_id);
     if (error) throw error;
 
+    // A ativação manual também pressupõe pagamento confirmado: a primeira
+    // mensalidade (adesão) em aberto passa a constar como fatura paga.
+    const { data: openInvoice } = await supabaseAdmin
+      .from("payments")
+      .select("id, method")
+      .eq("subscription_id", data.subscription_id)
+      .eq("category", "mensalidade")
+      .neq("status", "pago")
+      .neq("status", "cancelada")
+      .order("due_date", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (openInvoice) {
+      await supabaseAdmin
+        .from("payments")
+        .update({
+          status: "pago",
+          paid_at: new Date().toISOString(),
+          method: openInvoice.method ?? "dinheiro",
+        })
+        .eq("id", openInvoice.id);
+    }
+
     return { ok: true as const };
   });
