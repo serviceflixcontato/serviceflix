@@ -820,10 +820,41 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
       approved_at?: string | null;
       started_at?: string;
       next_billing_date?: string;
+      plan_slug?: string;
+      plan_name?: string;
+      monthly_price_cents?: number | null;
+      pending_plan_slug?: string | null;
+      pending_plan_name?: string | null;
+      pending_price_cents?: number | null;
+      pending_requested_at?: string | null;
     } = {
       approval_status: data.approval_status,
       approval_notes: data.approval_notes ?? null,
     };
+
+    // Troca de plano pedida pelo cliente: só entra em vigor com a aprovação.
+    const { data: pendingRow } = await supabaseAdmin
+      .from("subscriptions")
+      .select("user_id, plan_name, pending_plan_slug, pending_plan_name, pending_price_cents")
+      .eq("id", data.subscription_id)
+      .maybeSingle();
+    const hasPendingPlan = Boolean(pendingRow?.pending_plan_slug);
+
+    if (data.approval_status === "aprovado" && hasPendingPlan) {
+      patch.plan_slug = pendingRow!.pending_plan_slug!;
+      patch.plan_name = pendingRow!.pending_plan_name ?? pendingRow!.pending_plan_slug!;
+      patch.monthly_price_cents = pendingRow!.pending_price_cents ?? null;
+      patch.pending_plan_slug = null;
+      patch.pending_plan_name = null;
+      patch.pending_price_cents = null;
+      patch.pending_requested_at = null;
+    }
+    if (data.approval_status === "cancelado" && hasPendingPlan) {
+      patch.pending_plan_slug = null;
+      patch.pending_plan_name = null;
+      patch.pending_price_cents = null;
+      patch.pending_requested_at = null;
+    }
 
     if (data.approval_status === "aprovado") {
       patch.status = "ativa";
