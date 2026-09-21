@@ -127,6 +127,17 @@ export const acceptContract = createServerFn({ method: "POST" })
       .single();
     if (error) throw error;
 
+    const { logClientEvent } = await import("./history.server");
+    await logClientEvent({
+      user_id: userId,
+      subscription_id: subscriptionId,
+      kind: "contrato",
+      title: `Contrato assinado — plano ${data.plan_name}`,
+      detail: `Assinatura eletrônica do contrato (versão ${CONTRACT_VERSION}).`,
+      amount_cents: data.monthly_price_cents,
+      created_by: userId,
+    });
+
     return { ok: true as const, acceptance };
   });
 
@@ -136,8 +147,9 @@ const changePlanSchema = z.object({
 });
 
 /**
- * Troca de plano do cliente: o contrato assinado continua o mesmo (somente leitura).
- * Muda apenas o plano e o valor; a ativação segue dependendo da nossa equipe.
+ * Pedido de troca de plano.
+ * O plano atual continua valendo e visível. A troca só entra em vigor quando a
+ * nossa equipe analisa o pagamento e aprova o contrato no painel administrativo.
  */
 export const changeMyPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -147,7 +159,7 @@ export const changeMyPlan = createServerFn({ method: "POST" })
 
     const { data: subscription, error: subError } = await supabase
       .from("subscriptions")
-      .select("id, plan_slug, plan_name")
+      .select("id, plan_slug, plan_name, monthly_price_cents")
       .eq("id", data.subscription_id)
       .eq("user_id", userId)
       .maybeSingle();
@@ -167,47 +179,30 @@ export const changeMyPlan = createServerFn({ method: "POST" })
     const planName = PLANS.find((plan) => plan.slug === data.plan_slug)?.name ?? data.plan_slug;
     const amount = price?.price_cents ?? null;
 
+    // Guarda o pedido; o plano em vigor não muda agora.
     const { error: updateError } = await supabase
       .from("subscriptions")
       .update({
-        plan_slug: data.plan_slug,
-        plan_name: planName,
-        monthly_price_cents: amount,
+        pending_plan_slug: data.plan_slug,
+        pending_plan_name: planName,
+        pending_price_cents: amount,
+        pending_requested_at: new Date().toISOString(),
         approval_status: "em_analise",
         activation_requested_at: new Date().toISOString(),
       })
       .eq("id", subscription.id);
     if (updateError) throw updateError;
 
-    // A próxima fatura em aberto passa a ter o valor do novo plano.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    if (amount && amount > 0) {
-      const { data: open } = await supabaseAdmin
-        .from("payments")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("subscription_id", subscription.id)
-        .neq("status", "pago")
-        .order("due_date", { ascending: true })
-        .limit(1)
-        .maybeSingle();
+    const { logClientEvent } = await import("./history.server");
+    await logClientEvent({
+      user_id: userId,
+      subscription_id: subscription.id,
+      kind: "plano",
+      title: `Pedido de troca de plano: ${subscription.plan_name} → ${planName}`,
+      detail: "Aguardando análise do pagamento e aprovação da equipe.",
+      amount_cents: amount,
+      created_by: userId,
+    });
 
-      if (open?.id) {
-        await supabaseAdmin
-          .from("payments")
-          .update({ amount_cents: amount, description: `Mensalidade ${planName}` })
-          .eq("id", open.id);
-      } else {
-        await supabaseAdmin.from("payments").insert({
-          user_id: userId,
-          subscription_id: subscription.id,
-          description: `Mensalidade ${planName}`,
-          amount_cents: amount,
-          due_date: new Date().toISOString().slice(0, 10),
-          status: "pendente",
-        });
-      }
-    }
-
-    return { ok: true as const, plan_name: planName, amount_cents: amount };
+    return { ok: true as const, plan_name: planName, amount_cents: amount, pending: true as const };
   });

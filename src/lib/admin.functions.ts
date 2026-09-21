@@ -119,6 +119,12 @@ export const getAdminOverview = createServerFn({ method: "GET" })
           .order("accepted_at", { ascending: false }),
       ]);
 
+    const events = await supabaseAdmin
+      .from("client_events")
+      .select("id, user_id, subscription_id, kind, title, detail, amount_cents, method, created_at")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+
     // Só a conta técnica de acesso administrativo fica fora da relação de clientes.
     const clientProfiles = (profiles.data ?? []).filter(
       (profile) => !(profile.email ?? "").toLowerCase().endsWith("@admin.serviceflix.local"),
@@ -134,6 +140,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       referrals: referrals.data ?? [],
       leads: leads.data ?? [],
       contracts: contracts.data ?? [],
+      events: events.data ?? [],
     };
   });
 
@@ -233,14 +240,40 @@ export const activatePlanManually = createServerFn({ method: "POST" })
       approved_at: isActive ? new Date().toISOString() : null,
     };
 
-    // Sempre cria um novo contrato: um cliente pode ter mais de um plano ativo.
-    const { data: created, error: createError } = await supabaseAdmin
+    // Um contrato por cliente: se já existir um contrato não cancelado, ele é
+    // atualizado com o novo plano em vez de criar outro.
+    const { data: current } = await supabaseAdmin
       .from("subscriptions")
-      .insert(payload)
-      .select("id")
-      .single();
-    if (createError) throw createError;
-    const subscriptionId = created.id;
+      .select("id, plan_name")
+      .eq("user_id", data.user_id)
+      .neq("status", "cancelada")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let subscriptionId: string;
+    if (current) {
+      const { error: updateError } = await supabaseAdmin
+        .from("subscriptions")
+        .update({
+          ...payload,
+          pending_plan_slug: null,
+          pending_plan_name: null,
+          pending_price_cents: null,
+          pending_requested_at: null,
+        })
+        .eq("id", current.id);
+      if (updateError) throw updateError;
+      subscriptionId = current.id;
+    } else {
+      const { data: created, error: createError } = await supabaseAdmin
+        .from("subscriptions")
+        .insert(payload)
+        .select("id")
+        .single();
+      if (createError) throw createError;
+      subscriptionId = created.id;
+    }
 
     if (data.register_cash_payment && data.monthly_price_cents > 0) {
       const { error } = await supabaseAdmin.from("payments").insert({
@@ -278,6 +311,20 @@ export const activatePlanManually = createServerFn({ method: "POST" })
         .update({ subscription_id: subscriptionId, payment_method: contractMethod })
         .eq("id", contract.id);
     }
+
+    const { logClientEvent } = await import("./history.server");
+    await logClientEvent({
+      user_id: data.user_id,
+      subscription_id: subscriptionId,
+      kind: "plano",
+      title: `Plano ${data.plan_name} ativado pela equipe`,
+      detail: data.register_cash_payment
+        ? `Pagamento registrado como ${METHOD_LABELS[data.payment_method]}.`
+        : "Ativação manual sem registro de pagamento.",
+      amount_cents: data.monthly_price_cents,
+      method: data.payment_method,
+      created_by: context.userId,
+    });
 
     return { ok: true as const, subscription_id: subscriptionId };
   });
@@ -325,11 +372,29 @@ export const setPaymentStatusManually = createServerFn({ method: "POST" })
     // Mês pago (inclusive adiantado) não volta a aparecer para pagamento.
     const { data: row } = await supabaseAdmin
       .from("payments")
-      .select("subscription_id")
+      .select("subscription_id, user_id, description, amount_cents")
       .eq("id", data.payment_id)
       .maybeSingle();
     const { syncNextBilling } = await import("./billing.server");
     await syncNextBilling(row?.subscription_id ?? null);
+
+    if (row?.user_id) {
+      const { logClientEvent } = await import("./history.server");
+      await logClientEvent({
+        user_id: row.user_id,
+        subscription_id: row.subscription_id,
+        kind: "pagamento",
+        title:
+          data.status === "pago"
+            ? `Pagamento recebido — ${row.description}`
+            : `Fatura marcada como ${data.status} — ${row.description}`,
+        detail: data.reference || null,
+        amount_cents: row.amount_cents,
+        method: data.method ?? (data.status === "pago" ? "dinheiro" : null),
+        created_by: context.userId,
+      });
+    }
+
 
     return { ok: true as const };
   });
@@ -755,10 +820,41 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
       approved_at?: string | null;
       started_at?: string;
       next_billing_date?: string;
+      plan_slug?: string;
+      plan_name?: string;
+      monthly_price_cents?: number | null;
+      pending_plan_slug?: string | null;
+      pending_plan_name?: string | null;
+      pending_price_cents?: number | null;
+      pending_requested_at?: string | null;
     } = {
       approval_status: data.approval_status,
       approval_notes: data.approval_notes ?? null,
     };
+
+    // Troca de plano pedida pelo cliente: só entra em vigor com a aprovação.
+    const { data: pendingRow } = await supabaseAdmin
+      .from("subscriptions")
+      .select("user_id, plan_name, pending_plan_slug, pending_plan_name, pending_price_cents")
+      .eq("id", data.subscription_id)
+      .maybeSingle();
+    const hasPendingPlan = Boolean(pendingRow?.pending_plan_slug);
+
+    if (data.approval_status === "aprovado" && hasPendingPlan) {
+      patch.plan_slug = pendingRow!.pending_plan_slug!;
+      patch.plan_name = pendingRow!.pending_plan_name ?? pendingRow!.pending_plan_slug!;
+      patch.monthly_price_cents = pendingRow!.pending_price_cents ?? null;
+      patch.pending_plan_slug = null;
+      patch.pending_plan_name = null;
+      patch.pending_price_cents = null;
+      patch.pending_requested_at = null;
+    }
+    if (data.approval_status === "cancelado" && hasPendingPlan) {
+      patch.pending_plan_slug = null;
+      patch.pending_plan_name = null;
+      patch.pending_price_cents = null;
+      patch.pending_requested_at = null;
+    }
 
     if (data.approval_status === "aprovado") {
       patch.status = "ativa";
@@ -778,6 +874,61 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
       .update(patch)
       .eq("id", data.subscription_id);
     if (error) throw error;
+
+    const { logClientEvent } = await import("./history.server");
+    if (pendingRow?.user_id) {
+      const statusTitle: Record<string, string> = {
+        aprovado: "Contrato aprovado e ativo",
+        cancelado: "Contrato cancelado",
+        em_analise: "Contrato em análise financeira",
+        aguardando_pagamento: "Contrato aguardando pagamento",
+      };
+      await logClientEvent({
+        user_id: pendingRow.user_id,
+        subscription_id: data.subscription_id,
+        kind: "contrato",
+        title: statusTitle[data.approval_status] ?? data.approval_status,
+        detail: data.approval_notes ?? null,
+        method: data.payment_method ?? null,
+        created_by: context.userId,
+      });
+
+      if (data.approval_status === "aprovado" && hasPendingPlan) {
+        const newName = patch.plan_name ?? "";
+        await logClientEvent({
+          user_id: pendingRow.user_id,
+          subscription_id: data.subscription_id,
+          kind: "plano",
+          title: `Plano alterado: ${pendingRow.plan_name} → ${newName}`,
+          detail: "Troca aprovada pela equipe após a análise do pagamento.",
+          amount_cents: patch.monthly_price_cents ?? null,
+          created_by: context.userId,
+        });
+
+        // A próxima fatura em aberto passa a ter o valor do novo plano.
+        if ((patch.monthly_price_cents ?? 0) > 0) {
+          const { data: open } = await supabaseAdmin
+            .from("payments")
+            .select("id")
+            .eq("subscription_id", data.subscription_id)
+            .neq("status", "pago")
+            .neq("status", "cancelada")
+            .order("due_date", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (open?.id) {
+            await supabaseAdmin
+              .from("payments")
+              .update({
+                amount_cents: patch.monthly_price_cents!,
+                description: `Mensalidade ${newName}`,
+              })
+              .eq("id", open.id);
+          }
+        }
+      }
+    }
+
 
     // Aprovação só acontece depois do pagamento confirmado: a fatura da adesão
     // (primeira mensalidade em aberto) passa a constar como paga no caixa e no
@@ -991,5 +1142,20 @@ export const createFinanceCharge = createServerFn({ method: "POST" })
       provider_mode: "manual",
     });
     if (error) throw error;
+
+    const { logClientEvent } = await import("./history.server");
+    await logClientEvent({
+      user_id: data.user_id,
+      subscription_id: data.subscription_id ?? null,
+      kind: "cobranca",
+      title:
+        data.status === "pago"
+          ? `Valor adicional recebido — ${data.description}`
+          : `Valor adicional lançado — ${data.description}`,
+      amount_cents: data.amount_cents,
+      method: data.method ?? null,
+      created_by: context.userId,
+    });
+
     return { ok: true as const };
   });

@@ -300,6 +300,7 @@ export function AdminOverview() {
   }
 
   const { profiles, subscriptions, payments, requests, orders, referrals, leads, contracts } = data;
+  const events = data.events ?? [];
   const paid = payments.filter((p) => p.status === "pago");
   const unpaid = payments.filter((p) => p.status !== "pago");
   const totalPaid = paid.reduce((sum, p) => sum + (p.amount_cents ?? 0), 0);
@@ -568,6 +569,9 @@ export function AdminOverview() {
                         />
                       </div>
                     </div>
+                    <ClientHistory
+                      events={events.filter((event) => event.user_id === profile.id)}
+                    />
                   </li>
                 );
               })}
@@ -1285,5 +1289,71 @@ function DeleteClientControl({ userId, clientName }: { userId: string; clientNam
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+type ClientEvent = {
+  id: string;
+  title: string;
+  detail: string | null;
+  kind: string;
+  amount_cents: number | null;
+  method: string | null;
+  created_at: string;
+};
+
+const EVENT_KIND_LABELS: Record<string, string> = {
+  contrato: "Contrato",
+  plano: "Plano",
+  pagamento: "Pagamento",
+  cobranca: "Valor adicional",
+  geral: "Registro",
+};
+
+/** Histórico simples do cliente: o que aconteceu, quando, quanto e como foi pago. */
+function ClientHistory({ events }: { events: ClientEvent[] }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mt-4 border-t border-border pt-3">
+      <button
+        type="button"
+        className="flex items-center gap-2 text-sm font-medium"
+        onClick={() => setOpen((value) => !value)}
+      >
+        <ChevronDown
+          className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+        Histórico do cliente ({events.length})
+      </button>
+      {open ? (
+        events.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            Ainda não há registros para este cliente.
+          </p>
+        ) : (
+          <ul className="mt-3 space-y-2">
+            {events.map((event) => (
+              <li key={event.id} className="rounded-lg border border-border/70 p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium">{event.title}</span>
+                  <Badge variant="outline">
+                    {EVENT_KIND_LABELS[event.kind] ?? event.kind}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {formatDateTime(event.created_at)}
+                  {event.amount_cents != null ? ` · ${formatBRL(event.amount_cents)}` : ""}
+                  {event.method ? ` · ${event.method}` : ""}
+                </p>
+                {event.detail ? (
+                  <p className="mt-1 text-xs text-muted-foreground">{event.detail}</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )
+      ) : null}
+    </div>
   );
 }
