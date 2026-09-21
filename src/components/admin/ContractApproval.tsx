@@ -48,39 +48,104 @@ export function ContractApproval({
 }) {
   const queryClient = useQueryClient();
   const approve = useServerFn(setSubscriptionApproval);
+  const [confirming, setConfirming] = useState(false);
+  const [method, setMethod] = useState("pix");
+  const [paidOn, setPaidOn] = useState(new Date().toISOString().slice(0, 10));
 
   const mutation = useMutation({
-    mutationFn: (approval_status: ApprovalStatus) =>
-      approve({ data: { subscription_id: subscriptionId, approval_status } }),
-    onSuccess: (_result, approval_status) => {
+    mutationFn: (input: {
+      approval_status: ApprovalStatus;
+      payment_method?: string | null;
+      paid_on?: string | null;
+    }) => approve({ data: { subscription_id: subscriptionId, ...input } as never }),
+    onSuccess: (_result, input) => {
       void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+      setConfirming(false);
       toast.success(
-        approval_status === "aprovado"
-          ? "Contrato aprovado e ativo. O cliente já pode abrir ordens de serviço."
-          : `Contrato marcado como "${APPROVAL_STATUS_LABELS[approval_status]}".`,
+        input.approval_status === "aprovado"
+          ? "Contrato ativo. Pagamento registrado no caixa e o cliente já pode abrir ordens de serviço."
+          : `Contrato marcado como "${APPROVAL_STATUS_LABELS[input.approval_status]}".`,
       );
     },
     onError: () => toast.error("Não foi possível atualizar a situação do contrato."),
   });
 
   return (
-    <div className="flex items-center gap-2">
-      {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : null}
-      <Select
-        value={status ?? "aguardando_pagamento"}
-        onValueChange={(value) => mutation.mutate(value as ApprovalStatus)}
-      >
-        <SelectTrigger className="h-9 w-[220px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {APPROVAL_STATUS_OPTIONS.map((option) => (
-            <SelectItem key={option} value={option}>
-              {APPROVAL_STATUS_LABELS[option]}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="flex flex-col items-end gap-2">
+      <div className="flex items-center gap-2">
+        {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : null}
+        <Select
+          value={status ?? "aguardando_pagamento"}
+          onValueChange={(value) => {
+            if (value === "aprovado") {
+              setConfirming(true);
+              return;
+            }
+            setConfirming(false);
+            mutation.mutate({ approval_status: value as ApprovalStatus });
+          }}
+        >
+          <SelectTrigger className="h-9 w-[220px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {APPROVAL_STATUS_OPTIONS.map((option) => (
+              <SelectItem key={option} value={option}>
+                {APPROVAL_STATUS_LABELS[option]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {confirming ? (
+        <div className="w-full max-w-sm space-y-3 rounded-xl border border-primary/50 bg-background p-3 text-left">
+          <p className="text-xs text-muted-foreground">
+            Como o cliente pagou? O meio escolhido fica registrado no contrato e entra no caixa.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Forma do pagamento</Label>
+              <Select value={method} onValueChange={setMethod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pix">Pix</SelectItem>
+                  <SelectItem value="dinheiro">Dinheiro (presencial)</SelectItem>
+                  <SelectItem value="cartao">Cartão de crédito</SelectItem>
+                  <SelectItem value="transferencia">Transferência bancária</SelectItem>
+                  <SelectItem value="online">Pagamento online (Mercado Pago)</SelectItem>
+                  <SelectItem value="voucher">Voucher de indicação</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Data em que o valor entrou</Label>
+              <Input type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              disabled={mutation.isPending}
+              onClick={() =>
+                mutation.mutate({
+                  approval_status: "aprovado",
+                  payment_method: method,
+                  paid_on: paidOn,
+                })
+              }
+            >
+              {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Ativar contrato
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setConfirming(false)}>
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
