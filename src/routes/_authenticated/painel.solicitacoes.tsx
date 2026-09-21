@@ -63,7 +63,9 @@ function Solicitacoes() {
   const queryClient = useQueryClient();
   const { data: requests = [], isLoading } = useServiceRequests();
   const { data: subscription } = useSubscription();
-  const isActive = subscription?.status === "ativa";
+  // Só o contrato aprovado pela equipe libera a abertura de ordens de serviço.
+  const isActive =
+    subscription?.status === "ativa" && (subscription?.approval_status ?? "") === "aprovado";
   const { data: photos = [] } = useServicePhotos();
   const { data: orders = [] } = useWorkOrders();
   const [requestView, setRequestView] = useState<RequestViewId>("novas");

@@ -90,11 +90,17 @@ function PainelHome() {
           Aqui você acompanha o plano contratado, abre novas solicitações de manutenção e controla
           seus pagamentos.
         </p>
-        <Button asChild className="mt-5" variant="secondary">
-          <Link to="/painel/solicitacoes">
-            Abrir nova solicitação <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
+        {isActive ? (
+          <Button asChild className="mt-5" variant="secondary">
+            <Link to="/painel/solicitacoes">
+              Abrir nova solicitação <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        ) : (
+          <p className="mt-5 text-sm text-primary-foreground/90">
+            As ordens de serviço ficam liberadas assim que a nossa equipe aprovar o seu contrato.
+          </p>
+        )}
       </div>
 
       <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
