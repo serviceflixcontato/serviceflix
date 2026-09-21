@@ -232,3 +232,42 @@ export const createUpcomingInvoice = createServerFn({ method: "POST" })
 
     return { ok: true as const, paymentId: created.id, created: true, status: created.status };
   });
+
+const declareSchema = z.object({
+  payment_id: z.string().uuid(),
+  method: z.enum(["pix", "dinheiro", "transferencia"]),
+  note: z.string().trim().max(200).optional(),
+});
+
+/**
+ * Cliente avisa que pagou fora do site (Pix, dinheiro ou transferência).
+ * A fatura continua em aberto até a equipe dar baixa no painel administrativo.
+ */
+export const declareOfflinePayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => declareSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: invoice, error: findError } = await context.supabase
+      .from("payments")
+      .select("id, status")
+      .eq("id", data.payment_id)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (findError) throw findError;
+    if (!invoice) return { ok: false as const, reason: "not_found" as const };
+    if (invoice.status === "pago") return { ok: false as const, reason: "already_paid" as const };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("payments")
+      .update({
+        method: data.method,
+        reference: data.note
+          ? `Cliente informou pagamento (${data.method}): ${data.note}`
+          : `Cliente informou pagamento por ${data.method}`,
+      })
+      .eq("id", data.payment_id)
+      .eq("user_id", context.userId);
+    if (error) throw error;
+    return { ok: true as const };
+  });

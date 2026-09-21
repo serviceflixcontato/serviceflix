@@ -250,6 +250,10 @@ const paymentStatusSchema = z.object({
   payment_id: z.string().uuid(),
   status: z.enum(["pago", "pendente", "atrasado", "cancelada"]),
   method: z.string().trim().max(40).nullable().optional(),
+  /** Data em que o dinheiro/Pix entrou (AAAA-MM-DD). Vazio = agora. */
+  paid_on: z.string().trim().min(8).max(10).nullable().optional(),
+  /** Observação da baixa: comprovante, quem recebeu etc. */
+  reference: z.string().trim().max(200).nullable().optional(),
 });
 
 /** Marca uma fatura como paga (ex.: recebida em dinheiro) ou volta para pendente. */
@@ -263,18 +267,27 @@ export const setPaymentStatusManually = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Error("Apenas administradores podem alterar pagamentos.");
 
+    const paidAt =
+      data.status === "pago"
+        ? data.paid_on
+          ? new Date(`${data.paid_on}T12:00:00`).toISOString()
+          : new Date().toISOString()
+        : null;
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("payments")
       .update({
         status: data.status,
         method: data.method ?? (data.status === "pago" ? "dinheiro" : null),
-        paid_at: data.status === "pago" ? new Date().toISOString() : null,
+        paid_at: paidAt,
+        ...(data.reference !== undefined ? { reference: data.reference || null } : {}),
       })
       .eq("id", data.payment_id);
     if (error) throw error;
     return { ok: true as const };
   });
+
 
 const subscriptionStatusSchema = z.object({
   subscription_id: z.string().uuid(),

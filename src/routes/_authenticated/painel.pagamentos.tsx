@@ -23,6 +23,7 @@ import { CONTACT } from "@/lib/plans";
 import { chooseSubscriptionPayment } from "@/lib/activation.functions";
 import {
   createInvoiceCheckout,
+  declareOfflinePayment,
   createSubscriptionCheckout,
   createUpcomingInvoice,
 } from "@/lib/payments.functions";
@@ -122,6 +123,7 @@ function Pagamentos() {
   );
 
   const invoiceCheckout = useServerFn(createInvoiceCheckout);
+  const declarePayment = useServerFn(declareOfflinePayment);
   const subscriptionCheckout = useServerFn(createSubscriptionCheckout);
   const choosePayment = useServerFn(chooseSubscriptionPayment);
 
@@ -162,6 +164,23 @@ function Pagamentos() {
       goToInvoices();
     },
     onError: () => toast.error("Não foi possível registrar a forma de pagamento."),
+  });
+
+  /** Cliente avisa que pagou por Pix/dinheiro; a equipe confirma no painel. */
+  const declareMutation = useMutation({
+    mutationFn: (input: { payment_id: string; method: "pix" | "dinheiro" }) =>
+      declarePayment({ data: input }),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["payments"] });
+      if (!result.ok) {
+        toast.info("Esta fatura já consta como paga.");
+        return;
+      }
+      toast.success(
+        "Aviso enviado! Nossa equipe vai conferir e dar baixa no pagamento em breve.",
+      );
+    },
+    onError: () => toast.error("Não foi possível enviar o aviso de pagamento."),
   });
 
   const payInvoice = useMutation({
@@ -268,6 +287,43 @@ function Pagamentos() {
             )}
           </div>
         </div>
+
+        {due > 0 ? (
+          <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/40 p-3">
+            <p className="text-xs font-semibold">Pagou por Pix ou em dinheiro?</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Avise nossa equipe. Depois de conferir, damos baixa e a fatura passa para
+              &quot;Faturas pagas&quot;.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={declareMutation.isPending}
+                onClick={() =>
+                  declareMutation.mutate({ payment_id: payment.id, method: "pix" })
+                }
+              >
+                Já paguei por Pix
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={declareMutation.isPending}
+                onClick={() =>
+                  declareMutation.mutate({ payment_id: payment.id, method: "dinheiro" })
+                }
+              >
+                Paguei em dinheiro
+              </Button>
+            </div>
+            {payment.reference ? (
+              <p className="mt-2 text-xs text-primary">
+                Aviso registrado · aguardando confirmação da equipe
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         {due > 0 && availableVouchers.length > 0 ? (
           <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/50 p-3">

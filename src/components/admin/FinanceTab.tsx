@@ -15,6 +15,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { ApprovalBadge, ContractApproval } from "@/components/admin/ContractApproval";
+import { PaymentSettle } from "@/components/admin/PaymentSettle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatBRL, formatDate, formatDateTime } from "@/hooks/use-panel-data";
-import { createFinanceCharge, setPaymentStatusManually } from "@/lib/admin.functions";
+import { createFinanceCharge } from "@/lib/admin.functions";
 import {
   PAYMENT_CATEGORY_LABELS,
   isOverdue,
@@ -49,6 +50,7 @@ type Payment = {
   method: string | null;
   category: string | null;
   provider: string | null;
+  reference?: string | null;
 };
 
 type Subscription = {
@@ -67,6 +69,7 @@ type Subscription = {
 type Profile = { id: string; full_name: string | null; email: string | null };
 
 const VIEWS = [
+  { id: "baixa", label: "Dar baixa em pagamentos" },
   { id: "contratos", label: "Contratos" },
   { id: "recebidos", label: "Recebidos" },
   { id: "areceber", label: "A receber" },
@@ -74,6 +77,7 @@ const VIEWS = [
   { id: "adicionais", label: "Serviços adicionais" },
   { id: "cancelados", label: "Cancelados" },
 ] as const;
+
 
 type ViewId = (typeof VIEWS)[number]["id"];
 
@@ -87,23 +91,11 @@ export function FinanceTab({
   subscriptions: Subscription[];
   payments: Payment[];
 }) {
-  const [view, setView] = useState<ViewId>("contratos");
-  const queryClient = useQueryClient();
-  const setPaymentStatus = useServerFn(setPaymentStatusManually);
+  const [view, setView] = useState<ViewId>("baixa");
 
   const nameById = new Map(
     profiles.map((profile) => [profile.id, profile.full_name ?? profile.email ?? "Cliente"]),
   );
-
-  const confirm = useMutation({
-    mutationFn: (input: { payment_id: string; status: string; method?: string }) =>
-      setPaymentStatus({ data: input as never }),
-    onSuccess: () => {
-      toast.success("Caixa atualizado.");
-      void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
-    },
-    onError: () => toast.error("Não foi possível atualizar o lançamento."),
-  });
 
   const paid = payments.filter((p) => p.status === "pago");
   const canceled = payments.filter((p) => p.status === "cancelada");
@@ -122,6 +114,7 @@ export function FinanceTab({
   );
 
   const listFor: Record<ViewId, Payment[]> = {
+    baixa: [...overdue, ...upcoming],
     contratos: [],
     recebidos: paid,
     areceber: upcoming,
@@ -129,6 +122,7 @@ export function FinanceTab({
     adicionais: extras,
     cancelados: canceled,
   };
+
 
   return (
     <div className="space-y-6">
@@ -222,30 +216,19 @@ export function FinanceTab({
                         {subOpen.map((payment) => (
                           <li
                             key={payment.id}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-background p-3 text-sm"
+                            className="space-y-2 rounded-lg border border-border bg-background p-3 text-sm"
                           >
-                            <span>
+                            <p>
                               {payment.description} · {formatBRL(netAmount(payment))} · vence{" "}
                               {formatDate(payment.due_date)}
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={confirm.isPending}
-                              onClick={() =>
-                                confirm.mutate({
-                                  payment_id: payment.id,
-                                  status: "pago",
-                                  method: payment.method ?? "dinheiro",
-                                })
-                              }
-                            >
-                              Confirmar recebimento
-                            </Button>
+                              {payment.method ? ` · ${methodLabel(payment.method)}` : ""}
+                            </p>
+                            <PaymentSettle payment={payment} />
                           </li>
                         ))}
                       </ul>
                     ) : null}
+
                   </li>
                 );
               })}
@@ -268,48 +251,50 @@ export function FinanceTab({
               {listFor[view].map((payment) => (
                 <li
                   key={payment.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4"
+                  className="space-y-3 rounded-xl border border-border p-4"
                 >
-                  <div>
-                    <p className="font-semibold">
-                      {nameById.get(payment.user_id) ?? "Cliente"} · {payment.description}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {PAYMENT_CATEGORY_LABELS[payment.category ?? "mensalidade"]} ·{" "}
-                      {payment.method ? methodLabel(payment.method) : "meio não informado"} ·
-                      vencimento {formatDate(payment.due_date)}
-                      {payment.paid_at ? ` · pago em ${formatDateTime(payment.paid_at)}` : ""}
-                    </p>
-                    {(payment.voucher_discount_cents ?? 0) > 0 ? (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Desconto em voucher: -{formatBRL(payment.voucher_discount_cents)}
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">
+                        {nameById.get(payment.user_id) ?? "Cliente"} · {payment.description}
                       </p>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-base font-semibold">{formatBRL(netAmount(payment))}</span>
-                    {payment.status !== "pago" && payment.status !== "cancelada" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={confirm.isPending}
-                        onClick={() =>
-                          confirm.mutate({
-                            payment_id: payment.id,
-                            status: "pago",
-                            method: payment.method ?? "dinheiro",
-                          })
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {PAYMENT_CATEGORY_LABELS[payment.category ?? "mensalidade"]} ·{" "}
+                        {payment.method ? methodLabel(payment.method) : "meio não informado"} ·
+                        vencimento {formatDate(payment.due_date)}
+                        {payment.paid_at ? ` · pago em ${formatDateTime(payment.paid_at)}` : ""}
+                      </p>
+                      {payment.reference ? (
+                        <p className="mt-1 text-xs text-muted-foreground">{payment.reference}</p>
+                      ) : null}
+                      {(payment.voucher_discount_cents ?? 0) > 0 ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Desconto em voucher: -{formatBRL(payment.voucher_discount_cents)}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-base font-semibold">{formatBRL(netAmount(payment))}</span>
+                      <Badge
+                        variant={
+                          payment.status === "pago"
+                            ? "default"
+                            : payment.status === "cancelada"
+                              ? "secondary"
+                              : "outline"
                         }
                       >
-                        Marcar como recebido
-                      </Button>
-                    ) : (
-                      <Badge variant={payment.status === "pago" ? "default" : "secondary"}>
-                        {payment.status === "pago" ? "Recebido" : "Cancelado"}
+                        {payment.status === "pago"
+                          ? "Recebido"
+                          : payment.status === "cancelada"
+                            ? "Cancelado"
+                            : "Em aberto"}
                       </Badge>
-                    )}
+                    </div>
                   </div>
+                  {payment.status !== "cancelada" ? <PaymentSettle payment={payment} /> : null}
                 </li>
+
               ))}
             </ul>
           )}
