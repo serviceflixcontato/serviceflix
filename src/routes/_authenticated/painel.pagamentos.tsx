@@ -27,7 +27,14 @@ import {
   createSubscriptionCheckout,
   createUpcomingInvoice,
 } from "@/lib/payments.functions";
-import { daysUntilDue, dueLabel, isDueSoon, monthLabel } from "@/lib/billing";
+import {
+  adhesionPaymentOf,
+  daysUntilDue,
+  dueLabel,
+  isDueSoon,
+  monthLabel,
+  nextMonthOf,
+} from "@/lib/billing";
 import { usePaymentConfig } from "@/hooks/use-payment-config";
 import { useMyContracts } from "@/hooks/use-contract";
 import { useApplyAvailableVouchers, useApplyVoucher, useMyVouchers } from "@/hooks/use-vouchers";
@@ -520,6 +527,44 @@ function Pagamentos() {
                     </Badge>
                   </div>
 
+                  {(() => {
+                    const adhesion = adhesionPaymentOf(payments, subscription.id);
+                    if (!adhesion) return null;
+                    const startDate = adhesion.paid_at ?? adhesion.due_date;
+                    return (
+                      <div className="mt-4 rounded-xl border-2 border-primary bg-primary/10 p-4">
+                        <p className="text-sm font-bold uppercase tracking-wide text-primary">
+                          Adesão paga
+                        </p>
+                        <p className="mt-1 text-sm text-primary">
+                          {adhesion.description} · {formatBRL(adhesion.amount_cents)}
+                        </p>
+                        <p className="mt-1 text-xs text-primary">
+                          Início da adesão em {formatDate(startDate)} · próximo vencimento em{" "}
+                          {formatDate(
+                            subscription.next_billing_date ?? nextMonthOf(adhesion.due_date),
+                          )}
+                        </p>
+                        <p className="mt-1 text-xs text-primary">
+                          Forma de pagamento:{" "}
+                          {adhesion.method ?? subscription.payment_method ?? "—"}
+                        </p>
+                      </div>
+                    );
+                  })()}
+
+                  {!isActive && subscription.approval_status === "em_analise" ? (
+                    <div className="mt-4 blink-alert rounded-xl border p-4">
+                      <p className="text-sm font-semibold">
+                        Pagamento recebido · ativação pendente
+                      </p>
+                      <p className="mt-1 text-xs">
+                        Nossa equipe está conferindo o valor na conta. Assim que confirmarmos, seu
+                        plano é ativado e as solicitações de serviço ficam liberadas.
+                      </p>
+                    </div>
+                  ) : null}
+
                   {!isActive ? (
                     <div className="mt-6 space-y-4">
                       <div className="rounded-xl border border-primary/40 bg-accent p-4">
@@ -665,6 +710,8 @@ function Pagamentos() {
                                 payment.subscription_id === subscription.id &&
                                 payment.due_date?.slice(0, 10) === nextDue.slice(0, 10),
                             );
+                            // Mês já quitado (inclusive adiantado) não volta a aparecer.
+                            if (existingInvoice?.status === "pago") return null;
                             const soon = isDueSoon({ due_date: nextDue, status: "pendente" });
                             return (
                               <div
@@ -834,9 +881,25 @@ function Pagamentos() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paid.map((payment) => (
-                    <tr key={payment.id} className="border-t border-border">
-                      <td className="py-3 font-medium">{payment.description}</td>
+                  {paid.map((payment) => {
+                    const isAdhesion = payment.subscription_id
+                      ? adhesionPaymentOf(payments, payment.subscription_id)?.id === payment.id
+                      : false;
+                    return (
+                    <tr
+                      key={payment.id}
+                      className={`border-t ${
+                        isAdhesion ? "border-primary text-primary" : "border-border"
+                      }`}
+                    >
+                      <td className="py-3 font-medium">
+                        {payment.description}
+                        {isAdhesion ? (
+                          <span className="ml-2 rounded-full border border-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                            Adesão paga
+                          </span>
+                        ) : null}
+                      </td>
                       <td className="py-3">{formatBRL(payment.amount_cents)}</td>
                       <td className="py-3 text-primary">
                         -{formatBRL(payment.voucher_discount_cents ?? 0)}
@@ -844,7 +907,8 @@ function Pagamentos() {
                       <td className="py-3 text-muted-foreground">{formatDate(payment.paid_at)}</td>
                       <td className="py-3 text-muted-foreground">{payment.method ?? "—"}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
