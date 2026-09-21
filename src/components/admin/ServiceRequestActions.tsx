@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { scheduleServiceRequest, setServiceRequestStatus } from "@/lib/admin.functions";
+import { useProviders } from "@/components/admin/ProviderManager";
+import { providerRoleLabel } from "@/lib/providers";
 
 const STATUS_OPTIONS = [
   { value: "aberta", label: "Aberta" },
@@ -53,6 +55,8 @@ export function ServiceRequestActions({
   const [technician, setTechnician] = useState(request.scheduled_technician ?? "");
   const [materials, setMaterials] = useState(request.materials_needed ?? "");
   const [message, setMessage] = useState(request.team_message ?? "");
+  // Só profissionais cadastrados e ativos podem ser escolhidos.
+  const providers = (useProviders().data ?? []).filter((provider) => provider.active);
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
@@ -124,13 +128,25 @@ export function ServiceRequestActions({
       </div>
 
       <div className="mt-3 space-y-1.5">
-        <Label htmlFor={`prof-${request.id}`}>Profissional que fará o serviço</Label>
-        <Input
-          id={`prof-${request.id}`}
-          value={technician}
-          onChange={(event) => setTechnician(event.target.value)}
-          placeholder="Ex.: Carlos Silva"
-        />
+        <Label>Profissional que fará o serviço</Label>
+        <Select value={technician || "none"} onValueChange={(value) => setTechnician(value === "none" ? "" : value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Escolha o profissional cadastrado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">A definir</SelectItem>
+            {providers.map((provider) => (
+              <SelectItem key={provider.id} value={provider.full_name}>
+                {provider.full_name} · {providerRoleLabel(provider.role)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {providers.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Cadastre os profissionais na aba Prestadores para escolher aqui.
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-3 space-y-1.5">
