@@ -256,6 +256,27 @@ export const activatePlanManually = createServerFn({ method: "POST" })
         provider_mode: data.payment_method === "online" ? "online" : "manual",
       });
       if (error) throw error;
+
+      // Mês já recebido não volta a aparecer para pagamento do cliente.
+      const { syncNextBilling } = await import("./billing.server");
+      await syncNextBilling(subscriptionId);
+    }
+
+    // Vincula o contrato assinado (se ainda estiver solto) e registra nele a
+    // forma de pagamento usada, para aparecer na área do cliente e no caixa.
+    const { data: contract } = await supabaseAdmin
+      .from("contract_acceptances")
+      .select("id")
+      .eq("user_id", data.user_id)
+      .is("subscription_id", null)
+      .order("accepted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (contract) {
+      await supabaseAdmin
+        .from("contract_acceptances")
+        .update({ subscription_id: subscriptionId, payment_method: contractMethod })
+        .eq("id", contract.id);
     }
 
     return { ok: true as const, subscription_id: subscriptionId };
