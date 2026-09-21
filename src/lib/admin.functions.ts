@@ -312,6 +312,20 @@ export const activatePlanManually = createServerFn({ method: "POST" })
         .eq("id", contract.id);
     }
 
+    const { logClientEvent } = await import("./history.server");
+    await logClientEvent({
+      user_id: data.user_id,
+      subscription_id: subscriptionId,
+      kind: "plano",
+      title: `Plano ${data.plan_name} ativado pela equipe`,
+      detail: data.register_cash_payment
+        ? `Pagamento registrado como ${METHOD_LABELS[data.payment_method]}.`
+        : "Ativação manual sem registro de pagamento.",
+      amount_cents: data.monthly_price_cents,
+      method: data.payment_method,
+      created_by: context.userId,
+    });
+
     return { ok: true as const, subscription_id: subscriptionId };
   });
 
