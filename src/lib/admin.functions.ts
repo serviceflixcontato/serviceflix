@@ -830,6 +830,62 @@ export const setRegistrationStatus = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Exclui definitivamente o cadastro do cliente e todos os registros vinculados. */
+export const deleteClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ user_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.user_id === context.userId) {
+      throw new Error("A conta administrativa não pode ser excluída por esta tela.");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: photos, error: photosError }, { data: referrals, error: referralsError }] =
+      await Promise.all([
+        supabaseAdmin.from("service_photos").select("storage_path").eq("user_id", data.user_id),
+        supabaseAdmin
+          .from("referrals")
+          .select("reward_receipt_path")
+          .eq("referrer_id", data.user_id),
+      ]);
+    if (photosError) throw photosError;
+    if (referralsError) throw referralsError;
+
+    const storagePaths = [
+      ...(photos ?? []).map((photo) => photo.storage_path),
+      ...(referrals ?? [])
+        .map((referral) => referral.reward_receipt_path)
+        .filter((path): path is string => Boolean(path)),
+    ];
+    if (storagePaths.length > 0) {
+      const { error: storageError } = await supabaseAdmin.storage
+        .from("service-photos")
+        .remove(storagePaths);
+      if (storageError) throw storageError;
+    }
+
+    const deleteRows = async (table: string, column: string) => {
+      const { error } = await supabaseAdmin.from(table as never).delete().eq(column, data.user_id);
+      if (error) throw error;
+    };
+
+    await deleteRows("service_photos", "user_id");
+    await deleteRows("work_orders", "user_id");
+    await deleteRows("service_requests", "user_id");
+    await deleteRows("payments", "user_id");
+    await deleteRows("contract_acceptances", "user_id");
+    await deleteRows("subscriptions", "user_id");
+    await deleteRows("vouchers", "user_id");
+    await deleteRows("referrals", "referrer_id");
+    await deleteRows("user_roles", "user_id");
+    await deleteRows("profiles", "id");
+
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+    if (authError) throw authError;
+    return { ok: true as const };
+  });
+
 const chargeSchema = z.object({
   user_id: z.string().uuid(),
   subscription_id: z.string().uuid().nullable().optional(),
