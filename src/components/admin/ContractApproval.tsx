@@ -99,7 +99,13 @@ export function ContractApproval({
           <SelectContent>
             {APPROVAL_STATUS_OPTIONS.map((option) => (
               <SelectItem key={option} value={option}>
-                {APPROVAL_STATUS_LABELS[option]}
+                {isPlanChange && option === "aprovado"
+                  ? "Aprovar mudança"
+                  : isPlanChange && option === "cancelado"
+                    ? "Recusar mudança"
+                    : isPlanChange && option === "em_analise"
+                      ? "Mudança em análise"
+                      : APPROVAL_STATUS_LABELS[option]}
               </SelectItem>
             ))}
           </SelectContent>
