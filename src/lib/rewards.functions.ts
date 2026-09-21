@@ -183,6 +183,7 @@ export const applyAvailableVouchersToPayment = createServerFn({ method: "POST" }
     const { data: vouchers, error: voucherError } = await supabase
       .from("vouchers")
       .select("id, code, balance_cents")
+      .eq("user_id", userId)
       .eq("status", "disponivel")
       .gt("balance_cents", 0)
       .order("created_at", { ascending: true });
@@ -192,12 +193,12 @@ export const applyAvailableVouchersToPayment = createServerFn({ method: "POST" }
     }
 
     let remaining = initialRemaining;
-    const uses: Array<{ id: string; applied: number }> = [];
+    const uses: Array<{ id: string; applied: number; balance: number }> = [];
     for (const voucher of vouchers) {
       if (remaining === 0) break;
       const applied = Math.min(voucher.balance_cents, remaining);
       if (applied > 0) {
-        uses.push({ id: voucher.id, applied });
+        uses.push({ id: voucher.id, applied, balance: voucher.balance_cents });
         remaining -= applied;
       }
     }
@@ -223,9 +224,14 @@ export const applyAvailableVouchersToPayment = createServerFn({ method: "POST" }
     if (updatePaymentError) throw updatePaymentError;
 
     for (const use of uses) {
+      // Saldo acumulativo: o voucher só zera quando o crédito acaba de verdade.
+      const newBalance = use.balance - use.applied;
       const { error: updateVoucherError } = await supabaseAdmin
         .from("vouchers")
-        .update({ balance_cents: 0, status: "usado" })
+        .update({
+          balance_cents: newBalance,
+          status: newBalance > 0 ? "disponivel" : "usado",
+        })
         .eq("id", use.id)
         .eq("user_id", userId);
       if (updateVoucherError) throw updateVoucherError;
