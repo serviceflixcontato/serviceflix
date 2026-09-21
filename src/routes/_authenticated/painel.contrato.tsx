@@ -1,11 +1,22 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Download, FileCheck2, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { ContractText } from "@/components/site/ContractText";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CONTACT } from "@/lib/plans";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CONTACT, PLANS } from "@/lib/plans";
+import { changeMyPlan } from "@/lib/contract.functions";
 import { buildContractFields } from "@/lib/contract-fields";
 import { downloadContractPdf } from "@/lib/contract-pdf";
 import { useMyContracts, type ContractAcceptanceRow } from "@/hooks/use-contract";
@@ -232,12 +243,63 @@ function ContractCard({
         )}
       </div>
 
+      {subscription ? <ChangePlan subscription={subscription} /> : null}
+
       {showContract && contractFields ? (
         <div className="mt-6 max-h-[520px] overflow-y-auto rounded-xl border border-border bg-muted/30 p-4">
           <ContractText fields={contractFields} />
         </div>
       ) : null}
     </section>
+  );
+}
+
+function ChangePlan({ subscription }: { subscription: SubscriptionLike }) {
+  const queryClient = useQueryClient();
+  const change = useServerFn(changeMyPlan);
+  const [slug, setSlug] = useState(
+    PLANS.find((plan) => plan.name === subscription.plan_name)?.slug ?? PLANS[0]!.slug,
+  );
+  const mutation = useMutation({
+    mutationFn: () =>
+      change({ data: { subscription_id: subscription.id, plan_slug: slug as never } }),
+    onSuccess: async () => {
+      toast.success("Plano alterado. Efetue o pagamento do novo valor na aba Pagamentos.");
+      await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      await queryClient.invalidateQueries({ queryKey: ["payments"] });
+    },
+    onError: () => toast.error("Não foi possível mudar o plano agora."),
+  });
+
+  return (
+    <div className="mt-6 rounded-xl border border-border bg-muted/30 p-4">
+      <h3 className="text-sm font-semibold">Mudar de plano</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        O contrato assinado continua o mesmo, apenas para leitura. Ao mudar de plano, o novo valor
+        aparece na aba Pagamentos e a liberação acontece após a aprovação da nossa equipe.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Select value={slug} onValueChange={setSlug}>
+          <SelectTrigger className="w-56">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PLANS.map((plan) => (
+              <SelectItem key={plan.slug} value={plan.slug}>
+                {plan.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          disabled={mutation.isPending}
+          onClick={() => mutation.mutate()}
+        >
+          {mutation.isPending ? "Alterando..." : "Mudar de plano"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
