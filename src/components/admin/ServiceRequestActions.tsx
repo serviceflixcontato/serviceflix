@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { scheduleServiceRequest, setServiceRequestStatus } from "@/lib/admin.functions";
+import { useProviders } from "@/components/admin/ProviderManager";
+import { providerRoleLabel } from "@/lib/providers";
 
 const STATUS_OPTIONS = [
   { value: "aberta", label: "Aberta" },
