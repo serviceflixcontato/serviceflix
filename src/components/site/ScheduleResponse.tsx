@@ -29,7 +29,7 @@ export function ScheduleResponse({
   providerPhoto,
 }: {
   request: RequestRow;
-  providerPhoto?: string | null;
+  providerPhoto?: string | null | undefined;
 }) {
   const queryClient = useQueryClient();
   const [showReschedule, setShowReschedule] = useState(false);

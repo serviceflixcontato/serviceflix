@@ -417,7 +417,7 @@ function RequestItem({
   startOpen,
   providerPhoto,
 }: {
-  providerPhoto?: string | null;
+  providerPhoto?: string | null | undefined;
   request: NonNullable<ReturnType<typeof useServiceRequests>["data"]>[number];
   photos: ServicePhoto[];
   startOpen: boolean;
