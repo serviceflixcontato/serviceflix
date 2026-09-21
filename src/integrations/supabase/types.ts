@@ -489,6 +489,10 @@ export type Database = {
           location: string | null
           materials_needed: string | null
           preferred_date: string | null
+          provider_id: string | null
+          provider_name: string | null
+          provider_photo_url: string | null
+          provider_role: string | null
           request_code: string | null
           schedule_status: string
           scheduled_at: string | null
@@ -510,6 +514,10 @@ export type Database = {
           location?: string | null
           materials_needed?: string | null
           preferred_date?: string | null
+          provider_id?: string | null
+          provider_name?: string | null
+          provider_photo_url?: string | null
+          provider_role?: string | null
           request_code?: string | null
           schedule_status?: string
           scheduled_at?: string | null
@@ -531,6 +539,10 @@ export type Database = {
           location?: string | null
           materials_needed?: string | null
           preferred_date?: string | null
+          provider_id?: string | null
+          provider_name?: string | null
+          provider_photo_url?: string | null
+          provider_role?: string | null
           request_code?: string | null
           schedule_status?: string
           scheduled_at?: string | null
@@ -542,7 +554,15 @@ export type Database = {
           urgency?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
