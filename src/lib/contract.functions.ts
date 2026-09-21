@@ -70,6 +70,21 @@ export const acceptContract = createServerFn({ method: "POST" })
       .eq("id", userId);
     if (profileError) throw profileError;
 
+    // Regra: um contrato por cliente. Só é possível assinar outro se o anterior foi cancelado.
+    const { data: existing, error: existingError } = await supabase
+      .from("subscriptions")
+      .select("id, status")
+      .eq("user_id", userId)
+      .neq("status", "cancelada")
+      .limit(1)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (existing) {
+      throw new Error(
+        "Você já possui um contrato ativo. Cada cliente pode ter apenas um contrato.",
+      );
+    }
+
     const subscriptionPayload = {
       user_id: userId,
       plan_slug: data.plan_slug,
