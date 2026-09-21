@@ -290,7 +290,7 @@ function Pagamentos() {
 
         {due > 0 ? (
           <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/40 p-3">
-            <p className="text-xs font-semibold">Pagou por Pix ou em dinheiro?</p>
+            <p className="text-xs font-semibold">Pagou por Pix?</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Avise nossa equipe. Depois de conferir, damos baixa e a fatura passa para
               &quot;Faturas pagas&quot;.
@@ -305,16 +305,6 @@ function Pagamentos() {
                 }
               >
                 Já paguei por Pix
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={declareMutation.isPending}
-                onClick={() =>
-                  declareMutation.mutate({ payment_id: payment.id, method: "dinheiro" })
-                }
-              >
-                Paguei em dinheiro
               </Button>
             </div>
             {payment.reference ? (
