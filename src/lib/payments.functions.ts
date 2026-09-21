@@ -232,3 +232,31 @@ export const createUpcomingInvoice = createServerFn({ method: "POST" })
 
     return { ok: true as const, paymentId: created.id, created: true, status: created.status };
   });
+
+const declareSchema = z.object({
+  payment_id: z.string().uuid(),
+  method: z.enum(["pix", "dinheiro", "transferencia"]),
+  note: z.string().trim().max(200).optional(),
+});
+
+/**
+ * Cliente avisa que pagou fora do site (Pix, dinheiro ou transferência).
+ * A fatura continua em aberto até a equipe dar baixa no painel administrativo.
+ */
+export const declareOfflinePayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => declareSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("payments")
+      .update({
+        method: data.method,
+        reference: data.note
+          ? `Cliente informou pagamento (${data.method}): ${data.note}`
+          : `Cliente informou pagamento por ${data.method}`,
+      })
+      .eq("id", data.payment_id)
+      .eq("user_id", context.userId);
+    if (error) throw error;
+    return { ok: true as const };
+  });
