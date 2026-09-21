@@ -58,28 +58,7 @@ function notConfiguredToast() {
   );
 }
 
-const OPTIONS = [
-  {
-    id: "pix" as const,
-    icon: QrCode,
-    title: "Pix online",
-    description: "Pague na hora pelo Mercado Pago e envie para análise da nossa equipe.",
-  },
-  {
-    id: "cartao" as const,
-    icon: CreditCard,
-    title: "Cartão de crédito",
-    description: "Pagamento online pelo Mercado Pago, com opção de mensalidade recorrente.",
-  },
-  {
-    id: "dinheiro" as const,
-    icon: Banknote,
-    title: "Dinheiro (presencial)",
-    description: "Combinamos a entrega do valor e a equipe confirma o recebimento no sistema.",
-  },
-];
-
-type OptionId = "pix" | "cartao" | "dinheiro";
+type OptionId = "online";
 
 const TABS = [
   { id: "efetuar" as const, label: "Efetuar pagamento" },
