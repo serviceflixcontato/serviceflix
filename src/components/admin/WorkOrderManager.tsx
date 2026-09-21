@@ -112,7 +112,7 @@ export function WorkOrderManager({
           request_id: requestId === "none" ? null : requestId,
           title: title.trim(),
           description: description.trim() || undefined,
-          technician: technician.trim() || undefined,
+          provider_id: providerId === "none" ? null : providerId,
           scheduled_for: scheduledFor || null,
         },
       }),
@@ -122,7 +122,7 @@ export function WorkOrderManager({
       setRequestId("none");
       setTitle("");
       setDescription("");
-      setTechnician("");
+      setProviderId("none");
       setScheduledFor("");
       invalidate();
     },
