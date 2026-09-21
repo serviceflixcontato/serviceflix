@@ -38,10 +38,22 @@ function Contrato() {
   const { data: subscriptions = [], isLoading } = useSubscriptions();
   const { data: contracts = [] } = useMyContracts();
 
-  const orphanContracts = contracts.filter(
-    (contract) => !subscriptions.some((sub) => sub.id === contract.subscription_id),
-  );
-  const hasContract = subscriptions.some((sub) => sub.status !== "cancelada");
+  // Um contrato por cliente: mostramos apenas o contrato atual (o mais recente
+  // não cancelado; se todos estiverem cancelados, o mais recente).
+  const currentSubscription =
+    subscriptions
+      .filter((sub) => sub.status !== "cancelada")
+      .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))[0] ??
+    [...subscriptions].sort((a, b) =>
+      String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")),
+    )[0] ??
+    null;
+
+  const currentContract = currentSubscription
+    ? (contracts.find((item) => item.subscription_id === currentSubscription.id) ?? null)
+    : (contracts[0] ?? null);
+
+  const hasContract = currentSubscription != null && currentSubscription.status !== "cancelada";
 
   return (
     <div className="space-y-6">
