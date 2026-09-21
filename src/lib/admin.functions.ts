@@ -636,22 +636,29 @@ export const setSubscriptionApproval = createServerFn({ method: "POST" })
     const next = new Date(today);
     next.setMonth(next.getMonth() + 1);
 
-    const patch: Record<string, unknown> = {
+    const patch: {
+      approval_status: string;
+      approval_notes: string | null;
+      status?: string;
+      approved_at?: string | null;
+      started_at?: string;
+      next_billing_date?: string;
+    } = {
       approval_status: data.approval_status,
       approval_notes: data.approval_notes ?? null,
     };
 
     if (data.approval_status === "aprovado") {
-      patch["status"] = "ativa";
-      patch["approved_at"] = new Date().toISOString();
-      patch["started_at"] = today.toISOString().slice(0, 10);
-      patch["next_billing_date"] = next.toISOString().slice(0, 10);
+      patch.status = "ativa";
+      patch.approved_at = new Date().toISOString();
+      patch.started_at = today.toISOString().slice(0, 10);
+      patch.next_billing_date = next.toISOString().slice(0, 10);
     } else if (data.approval_status === "cancelado") {
-      patch["status"] = "cancelada";
-      patch["approved_at"] = null;
+      patch.status = "cancelada";
+      patch.approved_at = null;
     } else {
-      patch["status"] = "pendente";
-      patch["approved_at"] = null;
+      patch.status = "pendente";
+      patch.approved_at = null;
     }
 
     const { error } = await supabaseAdmin
