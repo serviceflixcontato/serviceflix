@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -80,6 +80,7 @@ function Pagamentos() {
   const nextInvoice = groups.open[0] ?? null;
   const adhesion = subscription ? adhesionOf(invoices, subscription.id) : null;
 
+  const navigate = useNavigate();
   const checkout = useServerFn(createInvoiceCheckout);
   const upcoming = useServerFn(createUpcomingInvoice);
   const choosePayment = useServerFn(chooseSubscriptionPayment);
@@ -95,6 +96,13 @@ function Pagamentos() {
     mutationFn: (paymentId: string) => checkout({ data: { paymentId } }),
     onSuccess: (result) => {
       if (result.ok && result.checkoutUrl) {
+        const simulated = "simulated" in result && result.simulated;
+        if (simulated) {
+          void navigate({ to: "/painel/pagamento-teste", search: { fatura: result.checkoutUrl.split("fatura=")[1] ?? "" } });
+          toast.info("Modo teste: simulação do pagamento online, sem cobrança real.");
+          refresh();
+          return;
+        }
         window.open(result.checkoutUrl, "_blank", "noopener");
         toast.success("Abrimos o pagamento online em outra aba.");
         refresh();

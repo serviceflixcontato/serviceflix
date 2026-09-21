@@ -79,7 +79,9 @@ export const createInvoiceCheckout = createServerFn({ method: "POST" })
 
     const mode = await loadContext(context.supabase as never);
     const token = getAccessToken(mode);
-    if (!token) {
+    // Sem credenciais em modo teste, o site abre um checkout simulado para
+    // conferir todo o fluxo sem cobrar nada de verdade.
+    if (!token && mode === "live") {
       return {
         ok: false as const,
         reason: "not_configured" as const,
@@ -107,6 +109,22 @@ export const createInvoiceCheckout = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const origin = requestOrigin();
+
+    if (!token) {
+      const simulatedUrl = `${origin}/painel/pagamento-teste?fatura=${payment.id}`;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin
+        .from("payments")
+        .update({
+          provider: "mercado_pago",
+          provider_mode: "simulado",
+          checkout_url: simulatedUrl,
+        })
+        .eq("id", payment.id)
+        .eq("user_id", context.userId);
+      return { ok: true as const, mode, simulated: true as const, checkoutUrl: simulatedUrl };
+    }
+
     const preference = await createPreference(mode, token, {
       title: payment.description ?? "Mensalidade Service Flix",
       amountCents: dueCents,
@@ -269,5 +287,63 @@ export const declareOfflinePayment = createServerFn({ method: "POST" })
       .eq("id", data.payment_id)
       .eq("user_id", context.userId);
     if (error) throw error;
+    return { ok: true as const };
+  });
+
+
+/**
+ * Checkout simulado: usado só enquanto o Mercado Pago não está configurado.
+ * Marca a fatura como recebida e deixa o contrato aguardando a aprovação da equipe,
+ * exatamente como acontece com um pagamento online real.
+ */
+export const simulateOnlinePayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ paymentId: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { getAccessToken } = await import("./mercadopago.server");
+    const mode = await loadContext(context.supabase as never);
+    if (getAccessToken(mode)) {
+      throw new Error("O Mercado Pago está configurado: o pagamento simulado está desativado.");
+    }
+
+    const { data: payment, error } = await context.supabase
+      .from("payments")
+      .select("id, subscription_id, status, amount_cents, voucher_discount_cents")
+      .eq("id", data.paymentId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!payment) throw new Error("Fatura não encontrada.");
+    if (payment.status === "pago") return { ok: true as const, already: true as const };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: payError } = await supabaseAdmin
+      .from("payments")
+      .update({
+        status: "pago",
+        paid_at: new Date().toISOString(),
+        method: "online",
+        provider: "mercado_pago",
+        provider_mode: "simulado",
+        provider_payment_id: `SIMULADO-${payment.id.slice(0, 8)}`,
+      })
+      .eq("id", payment.id);
+    if (payError) throw payError;
+
+    if (payment.subscription_id) {
+      await supabaseAdmin
+        .from("subscriptions")
+        .update({
+          approval_status: "em_analise",
+          payment_method: "Pagamento online (Mercado Pago)",
+          payment_choice: "online",
+          activation_requested_at: new Date().toISOString(),
+        })
+        .eq("id", payment.subscription_id);
+
+      const { syncNextBilling } = await import("./billing.server");
+      await syncNextBilling(payment.subscription_id);
+    }
+
     return { ok: true as const };
   });
