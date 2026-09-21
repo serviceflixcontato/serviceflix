@@ -257,48 +257,50 @@ export function FinanceTab({
               {listFor[view].map((payment) => (
                 <li
                   key={payment.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4"
+                  className="space-y-3 rounded-xl border border-border p-4"
                 >
-                  <div>
-                    <p className="font-semibold">
-                      {nameById.get(payment.user_id) ?? "Cliente"} · {payment.description}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {PAYMENT_CATEGORY_LABELS[payment.category ?? "mensalidade"]} ·{" "}
-                      {payment.method ? methodLabel(payment.method) : "meio não informado"} ·
-                      vencimento {formatDate(payment.due_date)}
-                      {payment.paid_at ? ` · pago em ${formatDateTime(payment.paid_at)}` : ""}
-                    </p>
-                    {(payment.voucher_discount_cents ?? 0) > 0 ? (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Desconto em voucher: -{formatBRL(payment.voucher_discount_cents)}
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">
+                        {nameById.get(payment.user_id) ?? "Cliente"} · {payment.description}
                       </p>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-base font-semibold">{formatBRL(netAmount(payment))}</span>
-                    {payment.status !== "pago" && payment.status !== "cancelada" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={confirm.isPending}
-                        onClick={() =>
-                          confirm.mutate({
-                            payment_id: payment.id,
-                            status: "pago",
-                            method: payment.method ?? "dinheiro",
-                          })
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {PAYMENT_CATEGORY_LABELS[payment.category ?? "mensalidade"]} ·{" "}
+                        {payment.method ? methodLabel(payment.method) : "meio não informado"} ·
+                        vencimento {formatDate(payment.due_date)}
+                        {payment.paid_at ? ` · pago em ${formatDateTime(payment.paid_at)}` : ""}
+                      </p>
+                      {payment.reference ? (
+                        <p className="mt-1 text-xs text-muted-foreground">{payment.reference}</p>
+                      ) : null}
+                      {(payment.voucher_discount_cents ?? 0) > 0 ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Desconto em voucher: -{formatBRL(payment.voucher_discount_cents)}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-base font-semibold">{formatBRL(netAmount(payment))}</span>
+                      <Badge
+                        variant={
+                          payment.status === "pago"
+                            ? "default"
+                            : payment.status === "cancelada"
+                              ? "secondary"
+                              : "outline"
                         }
                       >
-                        Marcar como recebido
-                      </Button>
-                    ) : (
-                      <Badge variant={payment.status === "pago" ? "default" : "secondary"}>
-                        {payment.status === "pago" ? "Recebido" : "Cancelado"}
+                        {payment.status === "pago"
+                          ? "Recebido"
+                          : payment.status === "cancelada"
+                            ? "Cancelado"
+                            : "Em aberto"}
                       </Badge>
-                    )}
+                    </div>
                   </div>
+                  {payment.status !== "cancelada" ? <PaymentSettle payment={payment} /> : null}
                 </li>
+
               ))}
             </ul>
           )}
