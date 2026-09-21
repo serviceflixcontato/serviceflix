@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -80,6 +80,7 @@ function Pagamentos() {
   const nextInvoice = groups.open[0] ?? null;
   const adhesion = subscription ? adhesionOf(invoices, subscription.id) : null;
 
+  const navigate = useNavigate();
   const checkout = useServerFn(createInvoiceCheckout);
   const upcoming = useServerFn(createUpcomingInvoice);
   const choosePayment = useServerFn(chooseSubscriptionPayment);
