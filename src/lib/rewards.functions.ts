@@ -110,6 +110,7 @@ export const applyVoucherToPayment = createServerFn({ method: "POST" })
       .from("vouchers")
       .select("id, code, balance_cents, status")
       .eq("code", data.code.toUpperCase())
+      .eq("user_id", userId)
       .maybeSingle();
     if (voucherError) throw voucherError;
     if (!voucher || voucher.status !== "disponivel" || voucher.balance_cents <= 0) {
@@ -134,11 +135,13 @@ export const applyVoucherToPayment = createServerFn({ method: "POST" })
       .eq("user_id", userId);
     if (payError) throw payError;
 
+    // O voucher é acumulativo: só o valor realmente usado sai do saldo.
+    const newBalance = voucher.balance_cents - applied;
     const { error: balanceError } = await supabaseAdmin
       .from("vouchers")
       .update({
-        balance_cents: 0,
-        status: "usado",
+        balance_cents: newBalance,
+        status: newBalance > 0 ? "disponivel" : "usado",
       })
       .eq("id", voucher.id);
     if (balanceError) throw balanceError;
