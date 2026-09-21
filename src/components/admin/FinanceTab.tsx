@@ -275,6 +275,11 @@ export function FinanceTab({
                       {payment.reference ? (
                         <p className="mt-1 text-xs text-muted-foreground">{payment.reference}</p>
                       ) : null}
+                      {declared(payment) && payment.status !== "pago" ? (
+                        <Badge variant="outline" className="mt-2 border-primary text-primary">
+                          Cliente avisou que pagou · confirmar e dar baixa
+                        </Badge>
+                      ) : null}
                       {(payment.voucher_discount_cents ?? 0) > 0 ? (
                         <p className="mt-1 text-xs text-muted-foreground">
                           Desconto em voucher: -{formatBRL(payment.voucher_discount_cents)}
