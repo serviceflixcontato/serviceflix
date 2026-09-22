@@ -354,6 +354,24 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_settings: {
+        Row: {
+          id: string
+          reward_cents: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          reward_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          reward_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           address: string

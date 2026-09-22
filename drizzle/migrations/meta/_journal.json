@@ -36,6 +36,13 @@
       "when": 1790003010702,
       "tag": "0004_plan_change_requests_and_client_history",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790040468234,
+      "tag": "0005_referral_reward_settings",
+      "breakpoints": true
     }
   ]
 }
