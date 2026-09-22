@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Banknote, Gift, Loader2, Ticket } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+import { useReferralReward } from "@/hooks/use-referral-settings";
 import { z } from "zod";
 
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +47,7 @@ const schema = z.object({
 
 function Indicacoes() {
   const { data: referrals = [], isLoading } = useMyReferrals();
+  const { rewardCents } = useReferralReward();
   const create = useCreateReferral();
   const [propertyType, setPropertyType] = useState("condominio");
   const [formKey, setFormKey] = useState(0);
@@ -97,7 +100,7 @@ function Indicacoes() {
           <Gift className="h-3.5 w-3.5" /> Indique e ganhe
         </span>
         <h1 className="mt-4 text-2xl font-bold">
-          Ganhe {formatBRL(REFERRAL_REWARD_CENTS)} por indicação que fechar contrato
+          Ganhe {formatBRL(rewardCents)} por indicação que fechar contrato
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-primary-foreground/90">
           Indique um condomínio ou uma residência. Quando o indicado contratar um plano Service
