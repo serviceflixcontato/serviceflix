@@ -241,7 +241,7 @@ function Home_() {
                   loading="lazy"
                   width={1200}
                   height={900}
-                  className="h-56 w-full object-cover sm:h-64 lg:h-auto"
+                  className="h-56 w-full object-cover sm:h-auto"
                 />
                 <div className="p-6 sm:p-8">
                   <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-foreground">
