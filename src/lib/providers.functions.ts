@@ -14,7 +14,7 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
 const providerSchema = z.object({
   id: z.string().uuid().optional(),
   full_name: z.string().trim().min(2).max(120),
-  role: z.enum(["encanador", "eletricista", "pedreiro", "pintor", "jardineiro"]),
+  role: z.enum(["encanador", "eletricista", "pedreiro", "pintor", "jardineiro", "mestre_faz_tudo"]),
   phone: z.string().trim().max(40).optional().nullable(),
   email: z.string().trim().max(120).optional().nullable(),
   address: z.string().trim().max(240).optional().nullable(),
