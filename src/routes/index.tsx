@@ -23,7 +23,9 @@ import { PlanCard } from "@/components/site/PlanCard";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Button } from "@/components/ui/button";
+import { useReferralReward } from "@/hooks/use-referral-settings";
 import { PLANS, whatsappLink } from "@/lib/plans";
+import { formatRewardShort } from "@/lib/referrals";
 
 export const Route = createFileRoute("/")({
   head: () => ({
