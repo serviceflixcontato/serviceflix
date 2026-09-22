@@ -15,7 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import heroAsset from "@/assets/familia-serviceflix-topo.jpg.asset.json";
+import heroAsset from "@/assets/profissional-serviceflix-topo.jpg.asset.json";
 import mascoteAsset from "@/assets/mascote-serviceflix.png.asset.json";
 import condominiosAsset from "@/assets/equipe-condominios.jpg.asset.json";
 import residenciasAsset from "@/assets/publico-residencias.jpg.asset.json";
