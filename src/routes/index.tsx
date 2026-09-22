@@ -15,7 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import heroImg from "@/assets/hero-manutencao.jpg";
+import heroAsset from "@/assets/familia-serviceflix-topo.jpg.asset.json";
 import mascoteAsset from "@/assets/mascote-serviceflix.png.asset.json";
 import condominiosAsset from "@/assets/equipe-condominios.jpg.asset.json";
 import residenciasAsset from "@/assets/publico-residencias.jpg.asset.json";
@@ -96,8 +96,8 @@ function Home_() {
         {/* HERO */}
         <section className="relative isolate overflow-hidden">
           <img
-            src={heroImg}
-            alt="Técnico de manutenção Service Flix trabalhando na fachada de um condomínio"
+            src={heroAsset.url}
+            alt="Família em frente a um condomínio residencial"
             width={1600}
             height={1008}
             className="absolute inset-0 -z-10 h-full w-full object-cover object-right"
