@@ -1182,8 +1182,7 @@ export const updateReferralRewardSetting = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: updated, error } = await context.supabase
       .from("referral_settings")
-      .update({ reward_cents: data.reward_cents })
-      .eq("id", "default")
+      .upsert({ id: "default", reward_cents: data.reward_cents }, { onConflict: "id" })
       .select("id")
       .maybeSingle();
     if (error) throw error;
