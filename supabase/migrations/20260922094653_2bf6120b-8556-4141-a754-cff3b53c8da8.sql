@@ -1,0 +1,1 @@
+INSERT INTO public.referral_settings (id, reward_cents) VALUES ('default', 50000) ON CONFLICT (id) DO NOTHING;
