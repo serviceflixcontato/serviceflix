@@ -367,7 +367,7 @@ function Home_() {
                 <Gift className="h-3.5 w-3.5" /> Indique e ganhe
               </span>
               <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
-                Ganhe R$ 500 por indicação que fechar contrato
+                Ganhe {rewardLabel} por indicação que fechar contrato
               </h2>
               <p className="mt-3 text-muted-foreground">
                 Conhece um condomínio ou uma residência que precisa de manutenção? Faça seu
