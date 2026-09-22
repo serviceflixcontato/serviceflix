@@ -26,7 +26,6 @@ import {
   useChooseReferralReward,
 } from "@/hooks/use-vouchers";
 import {
-  REFERRAL_REWARD_CENTS,
   REFERRAL_STATUS_LABELS,
   REWARD_STATUS_LABELS,
 } from "@/lib/referrals";
