@@ -66,6 +66,10 @@ import { PhotoGrid } from "@/components/site/PhotoGrid";
 import { groupPhotos, useServicePhotos, type ServicePhoto } from "@/hooks/use-service-photos";
 import { uploadServicePhotos } from "@/lib/service-photos";
 import { RewardReceiptUpload } from "@/components/admin/RewardReceiptUpload";
+import {
+  ReferralRewardAmount,
+  ReferralRewardSettings,
+} from "@/components/admin/ReferralRewardSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { buildContractFields } from "@/lib/contract-fields";
 import { downloadContractPdf } from "@/lib/contract-pdf";
@@ -860,6 +864,9 @@ export function AdminOverview() {
             Marque como <strong>Contratou o plano</strong> e libere a recompensa quando o indicado
             fechar contrato.
           </p>
+          <div className="mt-4">
+            <ReferralRewardSettings />
+          </div>
           {referrals.length === 0 ? (
             <Empty text="Nenhuma indicação recebida ainda." />
           ) : (
@@ -954,6 +961,10 @@ export function AdminOverview() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <ReferralRewardAmount
+                      referralId={referral.id}
+                      rewardCents={referral.reward_cents ?? 0}
+                    />
                    </div>
 
                   <RewardReceiptUpload
