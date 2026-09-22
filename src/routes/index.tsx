@@ -23,7 +23,9 @@ import { PlanCard } from "@/components/site/PlanCard";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Button } from "@/components/ui/button";
+import { useReferralReward } from "@/hooks/use-referral-settings";
 import { PLANS, whatsappLink } from "@/lib/plans";
+import { formatRewardShort } from "@/lib/referrals";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -88,6 +90,9 @@ const PASSOS = [
 ];
 
 function Home_() {
+  const { rewardCents } = useReferralReward();
+  const rewardLabel = formatRewardShort(rewardCents);
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -362,7 +367,7 @@ function Home_() {
                 <Gift className="h-3.5 w-3.5" /> Indique e ganhe
               </span>
               <h2 className="mt-4 text-3xl font-bold sm:text-4xl">
-                Ganhe R$ 500 por indicação que fechar contrato
+                Ganhe {rewardLabel} por indicação que fechar contrato
               </h2>
               <p className="mt-3 text-muted-foreground">
                 Conhece um condomínio ou uma residência que precisa de manutenção? Faça seu
@@ -397,7 +402,7 @@ function Home_() {
               <p className="text-sm uppercase tracking-wider text-primary-foreground/80">
                 Recompensa por indicação
               </p>
-              <p className="mt-2 font-display text-5xl font-bold">R$ 500</p>
+              <p className="mt-2 font-display text-5xl font-bold">{rewardLabel}</p>
               <p className="mt-3 text-sm text-primary-foreground/90">
                 Valor pago por cada indicação que se tornar cliente Service Flix. Sem limite de
                 indicações.
