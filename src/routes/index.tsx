@@ -402,7 +402,7 @@ function Home_() {
               <p className="text-sm uppercase tracking-wider text-primary-foreground/80">
                 Recompensa por indicação
               </p>
-              <p className="mt-2 font-display text-5xl font-bold">R$ 500</p>
+              <p className="mt-2 font-display text-5xl font-bold">{rewardLabel}</p>
               <p className="mt-3 text-sm text-primary-foreground/90">
                 Valor pago por cada indicação que se tornar cliente Service Flix. Sem limite de
                 indicações.
