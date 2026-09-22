@@ -88,6 +88,9 @@ const PASSOS = [
 ];
 
 function Home_() {
+  const { rewardCents } = useReferralReward();
+  const rewardLabel = formatRewardShort(rewardCents);
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
