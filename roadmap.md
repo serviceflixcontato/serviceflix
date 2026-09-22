@@ -10,3 +10,4 @@
 - [x] Um contrato ativo por cliente; troca de plano só vale após aprovação da equipe.
 - [x] Histórico por cliente no painel (alterações, pagamentos, valores adicionais).
 - [x] Identificar e tratar solicitações de mudança de plano separadamente no painel administrativo.
+- [x] Manter inalterado o enquadramento atual das duas fotos abaixo do topo.
