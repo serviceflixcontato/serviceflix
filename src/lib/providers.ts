@@ -9,6 +9,7 @@ export const PROVIDER_ROLES = [
   { value: "pedreiro", label: "Pedreiro" },
   { value: "pintor", label: "Pintor" },
   { value: "jardineiro", label: "Jardineiro" },
+  { value: "mestre_faz_tudo", label: "Mestre/Faz tudo" },
 ] as const;
 
 export function providerRoleLabel(value: string | null | undefined) {
