@@ -1170,3 +1170,59 @@ export const createFinanceCharge = createServerFn({ method: "POST" })
 
     return { ok: true as const };
   });
+
+const referralRewardSettingSchema = z.object({
+  reward_cents: z.number().int().min(0).max(100_000_000),
+});
+
+/** Define o valor padrão da recompensa por indicação (usado nas novas indicações). */
+export const updateReferralRewardSetting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => referralRewardSettingSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: updated, error } = await context.supabase
+      .from("referral_settings")
+      .update({ reward_cents: data.reward_cents })
+      .eq("id", "default")
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    if (!updated) throw new Error("Apenas administradores podem alterar o valor das indicações.");
+    return { ok: true as const };
+  });
+
+const referralRewardAmountSchema = z.object({
+  id: z.string().uuid(),
+  reward_cents: z.number().int().min(0).max(100_000_000),
+});
+
+/** Ajusta o valor da recompensa de uma indicação específica. */
+export const updateReferralRewardAmount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => referralRewardAmountSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: updated, error } = await context.supabase
+      .from("referrals")
+      .update({ reward_cents: data.reward_cents })
+      .eq("id", data.id)
+      .select("id, referral_reward:reward_cents, reward_method, reward_status")
+      .maybeSingle();
+    if (error) throw error;
+    if (!updated) throw new Error("Apenas administradores podem alterar indicações.");
+
+    // Mantém o voucher já gerado alinhado ao novo valor, quando ainda não foi usado.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: voucher } = await supabaseAdmin
+      .from("vouchers")
+      .select("id, amount_cents, balance_cents")
+      .eq("referral_id", data.id)
+      .maybeSingle();
+    if (voucher && voucher.amount_cents === voucher.balance_cents) {
+      await supabaseAdmin
+        .from("vouchers")
+        .update({ amount_cents: data.reward_cents, balance_cents: data.reward_cents })
+        .eq("id", voucher.id);
+    }
+
+    return { ok: true as const };
+  });
