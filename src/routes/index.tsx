@@ -315,7 +315,7 @@ function Home_() {
                 Do primeiro contato ao acompanhamento pelo painel, você sabe exatamente o que foi
                 feito, quando e por quem.
               </p>
-              <Button asChild className="mt-6" variant="secondary">
+              <Button asChild className="mt-6">
                 <Link to="/planos">Comparar planos</Link>
               </Button>
             </div>
