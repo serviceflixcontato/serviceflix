@@ -106,11 +106,17 @@ function ValoresPlanos() {
         {PLANS.map((plan) => (
           <div key={plan.slug} className="rounded-2xl border border-border bg-card p-5 shadow-card">
             <h2 className="text-lg font-semibold">{plan.name}</h2>
-            <p className="mt-1 text-xs text-muted-foreground">{plan.frequency}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {plan.slug === "personalizado"
+                ? "O cliente escolhe os dias; a mensalidade é diária × dias."
+                : plan.frequency}
+            </p>
 
             <div className="mt-4 space-y-3">
               <div className="space-y-2">
-                <Label htmlFor={`valor-${plan.slug}`}>Valor mensal (R$)</Label>
+                <Label htmlFor={`valor-${plan.slug}`}>
+                  {plan.slug === "personalizado" ? "Valor da diária (R$)" : "Valor mensal (R$)"}
+                </Label>
                 <Input
                   id={`valor-${plan.slug}`}
                   inputMode="decimal"
