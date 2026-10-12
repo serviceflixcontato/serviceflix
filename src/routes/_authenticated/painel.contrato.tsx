@@ -15,7 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CONTACT, PLANS } from "@/lib/plans";
+import { CONTACT, PLANS, customPlanTotal } from "@/lib/plans";
+import { usePlanPrices } from "@/hooks/use-plan-prices";
+import { CustomDays } from "@/components/site/CustomDays";
 import { changeMyPlan } from "@/lib/contract.functions";
 import { buildContractFields } from "@/lib/contract-fields";
 import { downloadContractPdf } from "@/lib/contract-pdf";
@@ -269,9 +271,27 @@ function ChangePlan({ subscription }: { subscription: SubscriptionLike }) {
   const [slug, setSlug] = useState(
     PLANS.find((plan) => plan.name === subscription.plan_name)?.slug ?? PLANS[0]!.slug,
   );
+  const { data: prices } = usePlanPrices();
+  const [customDays, setCustomDays] = useState("");
+  const isCustom = slug === "personalizado";
+  const days = Number.parseInt(customDays, 10);
+  const validDays = Number.isFinite(days) && days >= 1 && days <= 31 ? days : null;
+  const dailyRow = prices?.find((item) => item.slug === "personalizado");
+  const dailyCents = typeof dailyRow?.price_cents === "number" ? dailyRow.price_cents : null;
+  const totalCents = dailyCents != null && validDays ? customPlanTotal(dailyCents, validDays) : null;
   const mutation = useMutation({
-    mutationFn: () =>
-      change({ data: { subscription_id: subscription.id, plan_slug: slug as never } }),
+    mutationFn: () => {
+      if (isCustom && !validDays) {
+        throw new Error("dias");
+      }
+      return change({
+        data: {
+          subscription_id: subscription.id,
+          plan_slug: slug as never,
+          ...(isCustom && validDays ? { custom_days: validDays } : {}),
+        },
+      });
+    },
     onSuccess: async () => {
       toast.success(
         "Pedido enviado. Nosso time analisa o pagamento e ativa o novo plano em seguida.",
@@ -279,7 +299,12 @@ function ChangePlan({ subscription }: { subscription: SubscriptionLike }) {
       await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       await queryClient.invalidateQueries({ queryKey: ["payments"] });
     },
-    onError: () => toast.error("Não foi possível pedir a mudança de plano agora."),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error && error.message === "dias"
+          ? "Informe quantos dias por mês você quer (1 a 31)."
+          : "Não foi possível pedir a mudança de plano agora.",
+      ),
   });
 
   const pending = subscription.pending_plan_name ?? null;
@@ -321,6 +346,16 @@ function ChangePlan({ subscription }: { subscription: SubscriptionLike }) {
           {mutation.isPending ? "Alterando..." : "Mudar de plano"}
         </Button>
       </div>
+      {isCustom ? (
+        <div className="mt-3">
+          <CustomDays
+            value={customDays}
+            onChange={setCustomDays}
+            dailyCents={dailyCents}
+            totalCents={totalCents}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

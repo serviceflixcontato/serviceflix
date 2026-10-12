@@ -2,6 +2,7 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { CustomDays } from "@/components/site/CustomDays";
 import { ContractText } from "@/components/site/ContractText";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,7 +17,8 @@ import {
 } from "@/components/ui/select";
 import { ACCEPT_ITEMS } from "@/lib/contract";
 import { buildContractFields } from "@/lib/contract-fields";
-import { PLANS } from "@/lib/plans";
+import { PLANS, customPlanName, customPlanTotal } from "@/lib/plans";
+import { formatBRL } from "@/hooks/use-plan-prices";
 import { planPriceLabel, usePlanPrices } from "@/hooks/use-plan-prices";
 import { useAcceptContract } from "@/hooks/use-contract";
 import { useProfile, useSubscriptions } from "@/hooks/use-panel-data";
@@ -75,6 +77,7 @@ function Contratar() {
     client_type: "residencia",
     payment_method: PAYMENT_METHODS[0]!,
   });
+  const [customDays, setCustomDays] = useState("");
   const [checks, setChecks] = useState<boolean[]>(ACCEPT_ITEMS.map(() => false));
 
   useEffect(() => {
@@ -98,19 +101,32 @@ function Contratar() {
 
   const plan = PLANS.find((item) => item.slug === form.plan_slug) ?? PLANS[0]!;
   const price = prices?.find((item) => item.slug === form.plan_slug);
-  const priceLabel = planPriceLabel(price) ?? "Sob consulta";
-  const priceCents = typeof price?.price_cents === "number" ? price.price_cents : null;
+  const isCustom = form.plan_slug === "personalizado";
+  const days = Number.parseInt(customDays, 10);
+  const validDays = Number.isFinite(days) && days >= 1 && days <= 31 ? days : null;
+  const dailyCents = typeof price?.price_cents === "number" ? price.price_cents : null;
+  const priceCents = isCustom
+    ? dailyCents != null && validDays
+      ? customPlanTotal(dailyCents, validDays)
+      : null
+    : dailyCents;
+  const priceLabel = isCustom
+    ? priceCents != null
+      ? formatBRL(priceCents)
+      : "Informe os dias"
+    : (planPriceLabel(price) ?? "Sob consulta");
+  const planDisplayName = isCustom && validDays ? customPlanName(validDays) : plan.name;
 
   const fields = useMemo(
     () =>
       buildContractFields(form, {
         plan_slug: plan.slug,
-        plan_name: plan.name,
+        plan_name: planDisplayName,
         monthly_price_label: priceLabel,
         periodicity: "Mensal",
         payment_method: form.payment_method,
       }),
-    [form, plan, priceLabel],
+    [form, plan, priceLabel, planDisplayName],
   );
 
   const allChecked = checks.every(Boolean);
@@ -138,6 +154,10 @@ function Contratar() {
       toast.error("Preencha todos os dados obrigatórios do contrato.");
       return;
     }
+    if (isCustom && !validDays) {
+      toast.error("Informe quantos dias por mês você quer no plano personalizado (1 a 31).");
+      return;
+    }
     if (!allChecked) {
       toast.error("Marque as quatro declarações de aceite para concluir.");
       return;
@@ -146,7 +166,7 @@ function Contratar() {
     try {
       await acceptMutation.mutateAsync({
         plan_slug: plan.slug,
-        plan_name: plan.name,
+        plan_name: planDisplayName,
         monthly_price_cents: priceCents,
         monthly_price_label: priceLabel,
         periodicity: "Mensal",
@@ -163,6 +183,7 @@ function Contratar() {
         client_type: form.client_type,
         fields,
         accepted_all: true,
+        ...(isCustom && validDays ? { custom_days: validDays } : {}),
       });
       toast.success("Contrato assinado! Agora escolha como pagar.");
       void navigate({ to: "/painel/pagamentos" });
@@ -219,6 +240,15 @@ function Contratar() {
               {plan.frequency} · {plan.hours} · {priceLabel}
             </p>
           </div>
+
+          {isCustom ? (
+            <CustomDays
+              value={customDays}
+              onChange={setCustomDays}
+              dailyCents={dailyCents}
+              totalCents={priceCents}
+            />
+          ) : null}
 
           <div className="space-y-2">
             <Label>Forma de pagamento</Label>

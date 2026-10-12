@@ -27,7 +27,27 @@ const acceptSchema = z.object({
   ),
   fields: z.record(z.string(), z.string()),
   accepted_all: z.literal(true),
+  custom_days: z.number().int().min(1).max(31).optional(),
 });
+
+/** Plano personalizado: valor = diária (definida no administrativo) × dias por mês. */
+async function resolveCustomPlan(
+  supabase: { from: (t: "plan_prices") => any },
+  days: number | undefined,
+) {
+  if (!days) throw new Error("Informe a quantidade de dias do plano personalizado.");
+  const { data: price } = await supabase
+    .from("plan_prices")
+    .select("price_cents")
+    .eq("slug", "personalizado")
+    .maybeSingle();
+  const { customPlanName, customPlanTotal } = await import("@/lib/plans");
+  const daily = typeof price?.price_cents === "number" ? price.price_cents : null;
+  return {
+    name: customPlanName(days),
+    amount: daily == null ? null : customPlanTotal(daily, days),
+  };
+}
 
 /** Aceite do contrato registrado com data, hora, IP e versão. */
 export const acceptContract = createServerFn({ method: "POST" })
@@ -35,6 +55,11 @@ export const acceptContract = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => acceptSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    if (data.plan_slug === "personalizado") {
+      const custom = await resolveCustomPlan(supabase as never, data.custom_days);
+      data.plan_name = custom.name;
+      data.monthly_price_cents = custom.amount;
+    }
     const request = getRequest();
     const forwarded = request.headers.get("x-forwarded-for") ?? "";
     const ip =
@@ -144,6 +169,7 @@ export const acceptContract = createServerFn({ method: "POST" })
 const changePlanSchema = z.object({
   subscription_id: z.string().uuid(),
   plan_slug: z.enum(["basico", "master", "premium", "personalizado"]),
+  custom_days: z.number().int().min(1).max(31).optional(),
 });
 
 /**
@@ -165,7 +191,7 @@ export const changeMyPlan = createServerFn({ method: "POST" })
       .maybeSingle();
     if (subError) throw subError;
     if (!subscription) throw new Error("Contrato não encontrado.");
-    if (subscription.plan_slug === data.plan_slug) {
+    if (subscription.plan_slug === data.plan_slug && data.plan_slug !== "personalizado") {
       return { ok: true as const, unchanged: true as const };
     }
 
@@ -176,8 +202,13 @@ export const changeMyPlan = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const { PLANS } = await import("@/lib/plans");
-    const planName = PLANS.find((plan) => plan.slug === data.plan_slug)?.name ?? data.plan_slug;
-    const amount = price?.price_cents ?? null;
+    let planName = PLANS.find((plan) => plan.slug === data.plan_slug)?.name ?? data.plan_slug;
+    let amount = price?.price_cents ?? null;
+    if (data.plan_slug === "personalizado") {
+      const custom = await resolveCustomPlan(supabase as never, data.custom_days);
+      planName = custom.name;
+      amount = custom.amount;
+    }
 
     // Guarda o pedido; o plano em vigor não muda agora.
     const { error: updateError } = await supabase

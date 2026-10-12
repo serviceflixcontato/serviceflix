@@ -95,3 +95,12 @@ export function whatsappLink(message: string) {
 export function planName(slug: string) {
   return PLANS.find((plan) => plan.slug === slug)?.name ?? slug;
 }
+
+/** Plano personalizado: mensalidade = valor da diária × dias por mês. */
+export function customPlanTotal(dailyCents: number, days: number) {
+  return Math.round(dailyCents) * Math.round(days);
+}
+
+export function customPlanName(days: number) {
+  return `Plano Personalizado (${days} ${days === 1 ? "dia" : "dias"}/mês)`;
+}
