@@ -50,7 +50,7 @@ const CATEGORIES = [
   "Pintura (reparos)",
   "Alvenaria",
   "Ar-condicionado",
-  "Jardinagem",
+  "Jardinagem (roçada e poda)",
   "Outros",
 ];
 
