@@ -82,6 +82,7 @@ const SERVICOS = [
   { icon: PaintRoller, title: "Pintura (reparos)", text: "Retoques e reparos de pintura em áreas comuns e ambientes." },
   { icon: Hammer, title: "Reparos gerais", text: "Alvenaria, fixações e ajustes do dia a dia. Reformas são feitas por contrato." },
   { icon: Leaf, title: "Jardinagem", text: "Roçada, poda e cuidados com as áreas verdes do imóvel." },
+  { icon: Sparkles, title: "Limpeza de caixa d'água", text: "Limpeza e higienização completa da caixa d'água do imóvel." },
 ];
 
 const PASSOS = [
