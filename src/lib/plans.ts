@@ -22,6 +22,7 @@ export const PLANS: Plan[] = [
     features: [
       "1 atendimento semanal de 4 horas",
       "Serviços gerais de manutenção predial",
+      "Jardinagem, roçada e poda",
       "Abertura de OS pelo painel do cliente",
       "Relatório de cada atendimento",
     ],
@@ -38,6 +39,7 @@ export const PLANS: Plan[] = [
     features: [
       "2 atendimentos semanais de 4 horas",
       "Plano de manutenção preventiva mensal",
+      "Jardinagem, roçada e poda",
       "Prioridade no atendimento de urgências",
       "Histórico completo de OS e serviços",
     ],
@@ -53,6 +55,7 @@ export const PLANS: Plan[] = [
     features: [
       "4 atendimentos semanais de 4 horas",
       "Cronograma preventivo e corretivo",
+      "Jardinagem, roçada e poda",
       "Atendimento prioritário de urgências",
       "Acompanhamento técnico dedicado",
     ],
@@ -68,6 +71,7 @@ export const PLANS: Plan[] = [
     features: [
       "Quantidade de dias e horas negociada",
       "Escopo de serviços personalizado",
+      "Jardinagem, roçada e poda",
       "Equipe dimensionada para a demanda",
       "Contrato ajustado ao seu orçamento",
     ],

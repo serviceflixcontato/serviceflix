@@ -7,6 +7,7 @@ import {
   Gift,
   Hammer,
   Home,
+  Leaf,
   PaintRoller,
   ShieldCheck,
   Sparkles,
