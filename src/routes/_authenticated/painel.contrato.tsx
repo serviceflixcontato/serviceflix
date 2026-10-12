@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { CONTACT, PLANS, customPlanTotal } from "@/lib/plans";
 import { usePlanPrices } from "@/hooks/use-plan-prices";
-import { CustomDays } from "./painel.contratar";
+import { CustomDays } from "@/components/site/CustomDays";
 import { changeMyPlan } from "@/lib/contract.functions";
 import { buildContractFields } from "@/lib/contract-fields";
 import { downloadContractPdf } from "@/lib/contract-pdf";
