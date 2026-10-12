@@ -7,6 +7,7 @@ import {
   Gift,
   Hammer,
   Home,
+  Leaf,
   PaintRoller,
   ShieldCheck,
   Sparkles,
@@ -80,6 +81,7 @@ const SERVICOS = [
   { icon: Droplets, title: "Hidráulica", text: "Vazamentos, torneiras, caixas d'água e desentupimento." },
   { icon: PaintRoller, title: "Pintura (reparos)", text: "Retoques e reparos de pintura em áreas comuns e ambientes." },
   { icon: Hammer, title: "Reparos gerais", text: "Alvenaria, fixações e ajustes do dia a dia. Reformas são feitas por contrato." },
+  { icon: Leaf, title: "Jardinagem", text: "Roçada, poda e cuidados com as áreas verdes do imóvel." },
 ];
 
 const PASSOS = [
