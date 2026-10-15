@@ -175,7 +175,16 @@ export const acceptContract = createServerFn({ method: "POST" })
         phone: data.phone,
         accept_ip: ip,
         user_agent: userAgent,
-        fields: { ...data.fields, ip_aceite: ip ?? "" },
+        fields: {
+          ...data.fields,
+          ip_aceite: ip ?? "",
+          ...(data.plan_slug === "solar"
+            ? {
+                quantidade_paineis: String(data.solar_panels ?? ""),
+                limpezas_ano: String(data.solar_cleanings ?? ""),
+              }
+            : {}),
+        },
       })
       .select("id, accepted_at, accept_ip, contract_version")
       .single();

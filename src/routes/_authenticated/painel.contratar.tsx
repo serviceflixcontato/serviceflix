@@ -138,14 +138,25 @@ function Contratar() {
 
   const fields = useMemo(
     () =>
-      buildContractFields(form, {
-        plan_slug: plan.slug,
-        plan_name: planDisplayName,
-        monthly_price_label: priceLabel,
-        periodicity: isSolar ? "Periódico (cobrança mensal)" : "Mensal",
-        payment_method: form.payment_method,
-      }),
-    [form, plan, priceLabel, planDisplayName, isSolar],
+      buildContractFields(
+        form,
+        {
+          plan_slug: plan.slug,
+          plan_name: planDisplayName,
+          monthly_price_label: priceLabel,
+          periodicity: isSolar ? "Periódico (cobrança mensal)" : "Mensal",
+          payment_method: form.payment_method,
+        },
+        {},
+        isSolar && solarReady
+          ? {
+              panels: solar.panels,
+              cleanings: solar.cleanings,
+              per_panel_label: dailyCents != null ? formatBRL(dailyCents) : "",
+            }
+          : {},
+      ),
+    [form, plan, priceLabel, planDisplayName, isSolar, solarReady, solar.panels, solar.cleanings, dailyCents],
   );
 
   const allChecked = checks.every(Boolean);
