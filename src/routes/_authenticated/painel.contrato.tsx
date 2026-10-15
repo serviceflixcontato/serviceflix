@@ -182,6 +182,13 @@ function ContractCard({
           contract_version: contract.contract_version,
           started_at: subscription?.started_at ?? null,
         },
+        contract.plan_slug === "solar"
+          ? {
+              panels: Number(contract.fields?.quantidade_paineis) || null,
+              cleanings: Number(contract.fields?.limpezas_ano) || null,
+              per_panel_label: contract.fields?.valor_por_painel ?? null,
+            }
+          : {},
       )
     : null;
 
