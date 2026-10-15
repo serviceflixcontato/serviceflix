@@ -28,6 +28,8 @@ const acceptSchema = z.object({
   fields: z.record(z.string(), z.string()),
   accepted_all: z.literal(true),
   custom_days: z.number().int().min(1).max(31).optional(),
+  solar_panels: z.number().int().min(1).max(1000).optional(),
+  solar_cleanings: z.number().int().min(1).max(12).optional(),
 });
 
 /** Plano personalizado: valor = diária (definida no administrativo) × dias por mês. */
@@ -49,6 +51,28 @@ async function resolveCustomPlan(
   };
 }
 
+/** Flix Solar: mensalidade = (valor por painel × painéis × limpezas/ano) ÷ 12. */
+async function resolveSolarPlan(
+  supabase: { from: (t: "plan_prices") => any },
+  panels: number | undefined,
+  cleanings: number | undefined,
+) {
+  if (!panels || !cleanings) {
+    throw new Error("Informe a quantidade de painéis e de limpezas por ano do Flix Solar.");
+  }
+  const { data: price } = await supabase
+    .from("plan_prices")
+    .select("price_cents")
+    .eq("slug", "solar")
+    .maybeSingle();
+  const { solarPlanName, solarMonthlyTotal } = await import("@/lib/plans");
+  const perPanel = typeof price?.price_cents === "number" ? price.price_cents : null;
+  return {
+    name: solarPlanName(panels, cleanings),
+    amount: perPanel == null ? null : solarMonthlyTotal(perPanel, panels, cleanings),
+  };
+}
+
 /** Aceite do contrato registrado com data, hora, IP e versão. */
 export const acceptContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -59,6 +83,11 @@ export const acceptContract = createServerFn({ method: "POST" })
       const custom = await resolveCustomPlan(supabase as never, data.custom_days);
       data.plan_name = custom.name;
       data.monthly_price_cents = custom.amount;
+    }
+    if (data.plan_slug === "solar") {
+      const solar = await resolveSolarPlan(supabase as never, data.solar_panels, data.solar_cleanings);
+      data.plan_name = solar.name;
+      data.monthly_price_cents = solar.amount;
     }
     const request = getRequest();
     const forwarded = request.headers.get("x-forwarded-for") ?? "";
@@ -170,6 +199,8 @@ const changePlanSchema = z.object({
   subscription_id: z.string().uuid(),
   plan_slug: z.enum(["basico", "master", "premium", "personalizado", "solar"]),
   custom_days: z.number().int().min(1).max(31).optional(),
+  solar_panels: z.number().int().min(1).max(1000).optional(),
+  solar_cleanings: z.number().int().min(1).max(12).optional(),
 });
 
 /**
@@ -191,7 +222,7 @@ export const changeMyPlan = createServerFn({ method: "POST" })
       .maybeSingle();
     if (subError) throw subError;
     if (!subscription) throw new Error("Contrato não encontrado.");
-    if (subscription.plan_slug === data.plan_slug && data.plan_slug !== "personalizado") {
+    if (subscription.plan_slug === data.plan_slug && data.plan_slug !== "personalizado" && data.plan_slug !== "solar") {
       return { ok: true as const, unchanged: true as const };
     }
 
@@ -208,6 +239,11 @@ export const changeMyPlan = createServerFn({ method: "POST" })
       const custom = await resolveCustomPlan(supabase as never, data.custom_days);
       planName = custom.name;
       amount = custom.amount;
+    }
+    if (data.plan_slug === "solar") {
+      const solar = await resolveSolarPlan(supabase as never, data.solar_panels, data.solar_cleanings);
+      planName = solar.name;
+      amount = solar.amount;
     }
 
     // Guarda o pedido; o plano em vigor não muda agora.
