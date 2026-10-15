@@ -70,6 +70,7 @@ async function resolveSolarPlan(
   return {
     name: solarPlanName(panels, cleanings),
     amount: perPanel == null ? null : solarMonthlyTotal(perPanel, panels, cleanings),
+    per_panel_cents: perPanel,
   };
 }
 
@@ -84,10 +85,12 @@ export const acceptContract = createServerFn({ method: "POST" })
       data.plan_name = custom.name;
       data.monthly_price_cents = custom.amount;
     }
+    let solarPerPanelCents: number | null = null;
     if (data.plan_slug === "solar") {
       const solar = await resolveSolarPlan(supabase as never, data.solar_panels, data.solar_cleanings);
       data.plan_name = solar.name;
       data.monthly_price_cents = solar.amount;
+      solarPerPanelCents = solar.per_panel_cents;
     }
     const request = getRequest();
     const forwarded = request.headers.get("x-forwarded-for") ?? "";
@@ -182,6 +185,13 @@ export const acceptContract = createServerFn({ method: "POST" })
             ? {
                 quantidade_paineis: String(data.solar_panels ?? ""),
                 limpezas_ano: String(data.solar_cleanings ?? ""),
+                valor_por_painel:
+                  solarPerPanelCents != null
+                    ? (solarPerPanelCents / 100).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })
+                    : "",
               }
             : {}),
         },

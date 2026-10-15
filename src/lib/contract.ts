@@ -4,7 +4,7 @@
  * Campos entre {{ }} são preenchidos automaticamente com os dados do cliente e do plano.
  */
 
-export const CONTRACT_VERSION = "1.0";
+export const CONTRACT_VERSION = "1.1";
 
 export const CONTRACT_TITLE = "CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE MANUTENÇÃO POR ASSINATURA";
 
