@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { CustomDays } from "@/components/site/CustomDays";
+import { SolarOptions, parseSolar } from "@/components/site/SolarOptions";
 import { ContractText } from "@/components/site/ContractText";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { ACCEPT_ITEMS } from "@/lib/contract";
 import { buildContractFields } from "@/lib/contract-fields";
-import { PLANS, customPlanName, customPlanTotal } from "@/lib/plans";
+import { PLANS, customPlanName, customPlanTotal, solarMonthlyTotal, solarPlanName } from "@/lib/plans";
 import { formatBRL } from "@/hooks/use-plan-prices";
 import { planPriceLabel, usePlanPrices } from "@/hooks/use-plan-prices";
 import { useAcceptContract } from "@/hooks/use-contract";
@@ -78,6 +79,8 @@ function Contratar() {
     payment_method: PAYMENT_METHODS[0]!,
   });
   const [customDays, setCustomDays] = useState("");
+  const [solarPanels, setSolarPanels] = useState("");
+  const [solarCleanings, setSolarCleanings] = useState("");
   const [checks, setChecks] = useState<boolean[]>(ACCEPT_ITEMS.map(() => false));
 
   useEffect(() => {
@@ -105,17 +108,33 @@ function Contratar() {
   const days = Number.parseInt(customDays, 10);
   const validDays = Number.isFinite(days) && days >= 1 && days <= 31 ? days : null;
   const dailyCents = typeof price?.price_cents === "number" ? price.price_cents : null;
+  const isSolar = form.plan_slug === "solar";
+  const solar = parseSolar(solarPanels, solarCleanings);
+  const solarReady = Boolean(solar.panels && solar.cleanings);
   const priceCents = isCustom
     ? dailyCents != null && validDays
       ? customPlanTotal(dailyCents, validDays)
       : null
-    : dailyCents;
+    : isSolar
+      ? dailyCents != null && solarReady
+        ? solarMonthlyTotal(dailyCents, solar.panels!, solar.cleanings!)
+        : null
+      : dailyCents;
   const priceLabel = isCustom
     ? priceCents != null
       ? formatBRL(priceCents)
       : "Informe os dias"
-    : (planPriceLabel(price) ?? "Sob consulta");
-  const planDisplayName = isCustom && validDays ? customPlanName(validDays) : plan.name;
+    : isSolar
+      ? priceCents != null
+        ? formatBRL(priceCents)
+        : "Informe painéis e limpezas"
+      : (planPriceLabel(price) ?? "Sob consulta");
+  const planDisplayName =
+    isCustom && validDays
+      ? customPlanName(validDays)
+      : isSolar && solarReady
+        ? solarPlanName(solar.panels!, solar.cleanings!)
+        : plan.name;
 
   const fields = useMemo(
     () =>
@@ -123,10 +142,10 @@ function Contratar() {
         plan_slug: plan.slug,
         plan_name: planDisplayName,
         monthly_price_label: priceLabel,
-        periodicity: "Mensal",
+        periodicity: isSolar ? "Periódico (cobrança mensal)" : "Mensal",
         payment_method: form.payment_method,
       }),
-    [form, plan, priceLabel, planDisplayName],
+    [form, plan, priceLabel, planDisplayName, isSolar],
   );
 
   const allChecked = checks.every(Boolean);
@@ -158,6 +177,10 @@ function Contratar() {
       toast.error("Informe quantos dias por mês você quer no plano personalizado (1 a 31).");
       return;
     }
+    if (isSolar && !solarReady) {
+      toast.error("Informe a quantidade de painéis e quantas limpezas por ano (1 a 12).");
+      return;
+    }
     if (!allChecked) {
       toast.error("Marque as quatro declarações de aceite para concluir.");
       return;
@@ -169,7 +192,7 @@ function Contratar() {
         plan_name: planDisplayName,
         monthly_price_cents: priceCents,
         monthly_price_label: priceLabel,
-        periodicity: "Mensal",
+        periodicity: isSolar ? "Periódico (cobrança mensal)" : "Mensal",
         payment_method: form.payment_method,
         full_name: form.full_name.trim(),
         cpf_cnpj: form.cpf_cnpj.trim(),
@@ -184,6 +207,9 @@ function Contratar() {
         fields,
         accepted_all: true,
         ...(isCustom && validDays ? { custom_days: validDays } : {}),
+        ...(isSolar && solarReady
+          ? { solar_panels: solar.panels!, solar_cleanings: solar.cleanings! }
+          : {}),
       });
       toast.success("Contrato assinado! Agora escolha como pagar.");
       void navigate({ to: "/painel/pagamentos" });
@@ -247,6 +273,16 @@ function Contratar() {
               onChange={setCustomDays}
               dailyCents={dailyCents}
               totalCents={priceCents}
+            />
+          ) : null}
+
+          {isSolar ? (
+            <SolarOptions
+              panels={solarPanels}
+              cleanings={solarCleanings}
+              onPanels={setSolarPanels}
+              onCleanings={setSolarCleanings}
+              perPanelCents={dailyCents}
             />
           ) : null}
 
