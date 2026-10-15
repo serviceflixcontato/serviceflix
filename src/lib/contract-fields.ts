@@ -29,6 +29,13 @@ export type ContractAcceptanceData = {
   started_at?: string | null;
 };
 
+/** Dados específicos do Flix Solar (limpeza de painéis). */
+export type ContractSolarData = {
+  panels?: number | null;
+  cleanings?: number | null;
+  per_panel_label?: string | null;
+};
+
 function formatDateTimeBR(value?: string | null) {
   if (!value) return "";
   return new Date(value).toLocaleString("pt-BR", {
@@ -65,6 +72,7 @@ export function buildContractFields(
   profile: ContractProfileData,
   plan: ContractPlanData,
   acceptance: ContractAcceptanceData = {},
+  solar: ContractSolarData = {},
 ): ContractFields {
   const planDetails = PLANS.find((item) => item.slug === plan.plan_slug);
 
@@ -93,5 +101,8 @@ export function buildContractFields(
     ip_aceite: acceptance.accept_ip ?? "",
     id_contratacao: acceptance.id ?? "",
     versao_contrato: acceptance.contract_version ?? CONTRACT_VERSION,
+    quantidade_paineis: solar.panels ? String(solar.panels) : "",
+    limpezas_ano: solar.cleanings ? String(solar.cleanings) : "",
+    valor_por_painel: solar.per_panel_label ?? "",
   };
 }
