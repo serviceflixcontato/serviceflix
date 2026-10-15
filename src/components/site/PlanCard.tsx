@@ -27,7 +27,7 @@ export function PlanCard({ plan }: { plan: Plan }) {
         <p className="mt-4 flex items-baseline gap-1.5">
           <span className="text-3xl font-bold">{priceLabel}</span>
           {priceLabel.startsWith("R$") ? (
-            <span className="text-sm text-muted-foreground">/ mês</span>
+            <span className="text-sm text-muted-foreground">{plan.slug === "solar" ? "/ painel por limpeza" : plan.slug === "personalizado" ? "/ diária" : "/ mês"}</span>
           ) : null}
         </p>
       ) : null}

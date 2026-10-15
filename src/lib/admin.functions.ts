@@ -187,7 +187,7 @@ export const updateReferralStatus = createServerFn({ method: "POST" })
 
 const manualPlanSchema = z.object({
   user_id: z.string().uuid(),
-  plan_slug: z.enum(["basico", "master", "premium", "personalizado"]),
+  plan_slug: z.enum(["basico", "master", "premium", "personalizado", "solar"]),
   plan_name: z.string().trim().min(1).max(80),
   monthly_price_cents: z.number().int().min(0).max(100_000_000),
   status: z.enum(["ativa", "pendente", "suspensa", "cancelada"]).default("ativa"),
@@ -444,7 +444,7 @@ export const setSubscriptionStatus = createServerFn({ method: "POST" })
 
 const subscriptionEditSchema = z.object({
   subscription_id: z.string().uuid(),
-  plan_slug: z.enum(["basico", "master", "premium", "personalizado"]),
+  plan_slug: z.enum(["basico", "master", "premium", "personalizado", "solar"]),
   plan_name: z.string().trim().min(1).max(80),
   monthly_price_cents: z.number().int().min(0).max(100_000_000),
   status: z.enum(["ativa", "pendente", "suspensa", "cancelada"]),

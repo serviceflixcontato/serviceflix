@@ -5,3 +5,12 @@ describe("plano personalizado", () => {
     expect(customPlanTotal(50000, 5)).toBe(250000);
   });
 });
+import { solarAnnualTotal, solarMonthlyTotal } from "./plans";
+describe("Flix Solar", () => {
+  it("R$ 30 por painel × 10 painéis × 4 limpezas = R$ 1.200 no ano", () => {
+    expect(solarAnnualTotal(3000, 10, 4)).toBe(120000);
+  });
+  it("mensalidade = total anual ÷ 12 (R$ 100)", () => {
+    expect(solarMonthlyTotal(3000, 10, 4)).toBe(10000);
+  });
+});

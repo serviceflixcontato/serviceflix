@@ -18,6 +18,7 @@ import {
 import { CONTACT, PLANS, customPlanTotal } from "@/lib/plans";
 import { usePlanPrices } from "@/hooks/use-plan-prices";
 import { CustomDays } from "@/components/site/CustomDays";
+import { SolarOptions, parseSolar } from "@/components/site/SolarOptions";
 import { changeMyPlan } from "@/lib/contract.functions";
 import { buildContractFields } from "@/lib/contract-fields";
 import { downloadContractPdf } from "@/lib/contract-pdf";
@@ -279,16 +280,28 @@ function ChangePlan({ subscription }: { subscription: SubscriptionLike }) {
   const dailyRow = prices?.find((item) => item.slug === "personalizado");
   const dailyCents = typeof dailyRow?.price_cents === "number" ? dailyRow.price_cents : null;
   const totalCents = dailyCents != null && validDays ? customPlanTotal(dailyCents, validDays) : null;
+  const isSolar = slug === "solar";
+  const [solarPanels, setSolarPanels] = useState("");
+  const [solarCleanings, setSolarCleanings] = useState("");
+  const solar = parseSolar(solarPanels, solarCleanings);
+  const solarRow = prices?.find((item) => item.slug === "solar");
+  const perPanelCents = typeof solarRow?.price_cents === "number" ? solarRow.price_cents : null;
   const mutation = useMutation({
     mutationFn: () => {
       if (isCustom && !validDays) {
         throw new Error("dias");
+      }
+      if (isSolar && !(solar.panels && solar.cleanings)) {
+        throw new Error("solar");
       }
       return change({
         data: {
           subscription_id: subscription.id,
           plan_slug: slug as never,
           ...(isCustom && validDays ? { custom_days: validDays } : {}),
+          ...(isSolar && solar.panels && solar.cleanings
+            ? { solar_panels: solar.panels, solar_cleanings: solar.cleanings }
+            : {}),
         },
       });
     },
@@ -303,7 +316,9 @@ function ChangePlan({ subscription }: { subscription: SubscriptionLike }) {
       toast.error(
         error instanceof Error && error.message === "dias"
           ? "Informe quantos dias por mês você quer (1 a 31)."
-          : "Não foi possível pedir a mudança de plano agora.",
+          : error instanceof Error && error.message === "solar"
+            ? "Informe a quantidade de painéis e quantas limpezas por ano (1 a 12)."
+            : "Não foi possível pedir a mudança de plano agora.",
       ),
   });
 
@@ -353,6 +368,17 @@ function ChangePlan({ subscription }: { subscription: SubscriptionLike }) {
             onChange={setCustomDays}
             dailyCents={dailyCents}
             totalCents={totalCents}
+          />
+        </div>
+      ) : null}
+      {isSolar ? (
+        <div className="mt-3">
+          <SolarOptions
+            panels={solarPanels}
+            cleanings={solarCleanings}
+            onPanels={setSolarPanels}
+            onCleanings={setSolarCleanings}
+            perPanelCents={perPanelCents}
           />
         </div>
       ) : null}

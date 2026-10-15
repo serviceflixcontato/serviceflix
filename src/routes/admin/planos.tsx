@@ -109,13 +109,19 @@ function ValoresPlanos() {
             <p className="mt-1 text-xs text-muted-foreground">
               {plan.slug === "personalizado"
                 ? "O cliente escolhe os dias; a mensalidade é diária × dias."
-                : plan.frequency}
+                : plan.slug === "solar"
+                  ? "O cliente informa painéis e limpezas/ano; mensalidade = valor × painéis × limpezas ÷ 12."
+                  : plan.frequency}
             </p>
 
             <div className="mt-4 space-y-3">
               <div className="space-y-2">
                 <Label htmlFor={`valor-${plan.slug}`}>
-                  {plan.slug === "personalizado" ? "Valor da diária (R$)" : "Valor mensal (R$)"}
+                  {plan.slug === "personalizado"
+                    ? "Valor da diária (R$)"
+                    : plan.slug === "solar"
+                      ? "Valor por painel, por limpeza (R$)"
+                      : "Valor mensal (R$)"}
                 </Label>
                 <Input
                   id={`valor-${plan.slug}`}
