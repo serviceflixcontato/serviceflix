@@ -80,6 +80,23 @@ export const PLANS: Plan[] = [
       "Contrato ajustado ao seu orçamento",
     ],
   },
+  {
+    slug: "solar",
+    name: "Flix Solar",
+    tagline: "Limpeza periódica de painéis solares de energia e de aquecimento.",
+    frequency: "Plano periódico — você escolhe quantas vezes no ano",
+    hours: "Valor por painel",
+    monthlyHours: "Limpezas programadas no ano",
+    bestFor: "Quem tem painéis solares",
+    features: [
+      "Limpeza de painéis solares fotovoltaicos (energia)",
+      "Limpeza de painéis de aquecimento solar",
+      "Você escolhe quantas limpezas por ano",
+      "Valor calculado pela quantidade de painéis",
+      "Agendamento pelo painel do cliente",
+      "Relatório de cada limpeza",
+    ],
+  },
 ];
 
 export const CONTACT = {
@@ -103,4 +120,18 @@ export function customPlanTotal(dailyCents: number, days: number) {
 
 export function customPlanName(days: number) {
   return `Plano Personalizado (${days} ${days === 1 ? "dia" : "dias"}/mês)`;
+}
+
+/** Flix Solar: total anual = valor por painel (por limpeza) × painéis × limpezas no ano. */
+export function solarAnnualTotal(perPanelCents: number, panels: number, cleaningsPerYear: number) {
+  return Math.round(perPanelCents) * Math.round(panels) * Math.round(cleaningsPerYear);
+}
+
+/** Flix Solar: mensalidade = total anual ÷ 12. */
+export function solarMonthlyTotal(perPanelCents: number, panels: number, cleaningsPerYear: number) {
+  return Math.round(solarAnnualTotal(perPanelCents, panels, cleaningsPerYear) / 12);
+}
+
+export function solarPlanName(panels: number, cleaningsPerYear: number) {
+  return `Flix Solar (${panels} ${panels === 1 ? "painel" : "painéis"}, ${cleaningsPerYear}x/ano)`;
 }

@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { CONTRACT_VERSION } from "@/lib/contract";
 
 const acceptSchema = z.object({
-  plan_slug: z.enum(["basico", "master", "premium", "personalizado"]),
+  plan_slug: z.enum(["basico", "master", "premium", "personalizado", "solar"]),
   plan_name: z.string().trim().min(1).max(80),
   monthly_price_cents: z.number().int().min(0).max(100_000_000).nullable(),
   monthly_price_label: z.string().trim().min(1).max(60),
@@ -168,7 +168,7 @@ export const acceptContract = createServerFn({ method: "POST" })
 
 const changePlanSchema = z.object({
   subscription_id: z.string().uuid(),
-  plan_slug: z.enum(["basico", "master", "premium", "personalizado"]),
+  plan_slug: z.enum(["basico", "master", "premium", "personalizado", "solar"]),
   custom_days: z.number().int().min(1).max(31).optional(),
 });
 
