@@ -41,6 +41,7 @@ export type ContractFields = {
   quantidade_paineis: string;
   limpezas_ano: string;
   valor_por_painel: string;
+  valor_adesao: string;
 };
 
 export type ContractSection = {
