@@ -12,4 +12,4 @@
 - [x] Identificar e tratar solicitações de mudança de plano separadamente no painel administrativo.
 - [x] Manter inalterado o enquadramento atual das duas fotos abaixo do topo.
 - [x] Incluir o plano Flix Solar no texto do contrato (cláusula própria com painéis, limpezas/ano e valor por painel).
-- [ ] Flix Solar: 1ª mensalidade = adesão (equivalente a 10 painéis, valor editável no admin); saldo do ano dividido por 11 meses. AGUARDANDO confirmação da regra com o usuário antes de implementar.
+- [x] Flix Solar: 1ª mensalidade = adesão (10 painéis, valor por painel editável no admin); saldo do ano em 11 parcelas; vale para contrato novo e troca de plano; sem carência (promoção especial).
