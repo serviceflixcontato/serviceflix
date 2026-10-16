@@ -87,11 +87,13 @@ export const acceptContract = createServerFn({ method: "POST" })
       data.monthly_price_cents = custom.amount;
     }
     let solarPerPanelCents: number | null = null;
+    let solarAdesaoCents: number | null = null;
     if (data.plan_slug === "solar") {
       const solar = await resolveSolarPlan(supabase as never, data.solar_panels, data.solar_cleanings);
       data.plan_name = solar.name;
       data.monthly_price_cents = solar.amount;
       solarPerPanelCents = solar.per_panel_cents;
+      solarAdesaoCents = solar.adesao_cents;
     }
     const request = getRequest();
     const forwarded = request.headers.get("x-forwarded-for") ?? "";
