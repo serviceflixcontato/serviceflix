@@ -65,12 +65,13 @@ async function resolveSolarPlan(
     .select("price_cents")
     .eq("slug", "solar")
     .maybeSingle();
-  const { solarPlanName, solarMonthlyTotal } = await import("@/lib/plans");
+  const { solarPlanName, solarMonthlyTotal, solarAdesao } = await import("@/lib/plans");
   const perPanel = typeof price?.price_cents === "number" ? price.price_cents : null;
   return {
     name: solarPlanName(panels, cleanings),
     amount: perPanel == null ? null : solarMonthlyTotal(perPanel, panels, cleanings),
     per_panel_cents: perPanel,
+    adesao_cents: perPanel == null ? null : solarAdesao(perPanel),
   };
 }
 
@@ -86,11 +87,13 @@ export const acceptContract = createServerFn({ method: "POST" })
       data.monthly_price_cents = custom.amount;
     }
     let solarPerPanelCents: number | null = null;
+    let solarAdesaoCents: number | null = null;
     if (data.plan_slug === "solar") {
       const solar = await resolveSolarPlan(supabase as never, data.solar_panels, data.solar_cleanings);
       data.plan_name = solar.name;
       data.monthly_price_cents = solar.amount;
       solarPerPanelCents = solar.per_panel_cents;
+      solarAdesaoCents = solar.adesao_cents;
     }
     const request = getRequest();
     const forwarded = request.headers.get("x-forwarded-for") ?? "";
@@ -188,6 +191,13 @@ export const acceptContract = createServerFn({ method: "POST" })
                 valor_por_painel:
                   solarPerPanelCents != null
                     ? (solarPerPanelCents / 100).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })
+                    : "",
+                valor_adesao:
+                  solarAdesaoCents != null
+                    ? (solarAdesaoCents / 100).toLocaleString("pt-BR", {
                         style: "currency",
                         currency: "BRL",
                       })

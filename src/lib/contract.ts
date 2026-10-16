@@ -41,6 +41,7 @@ export type ContractFields = {
   quantidade_paineis: string;
   limpezas_ano: string;
   valor_por_painel: string;
+  valor_adesao: string;
 };
 
 export type ContractSection = {
@@ -348,11 +349,13 @@ export const CONTRACT_SECTIONS: ContractSection[] = [
       "QUANTIDADE DE PAINÉIS: {{quantidade_paineis}}",
       "LIMPEZAS POR ANO: {{limpezas_ano}}",
       "VALOR POR PAINEL (POR LIMPEZA): {{valor_por_painel}}",
-      "31.3. O valor da assinatura do FLIX SOLAR é calculado pela multiplicação do valor por painel (por limpeza), definido pela CONTRATADA e vigente no momento da contratação, pela quantidade de painéis informada e pela quantidade de limpezas anuais escolhida, dividido em 12 (doze) parcelas mensais.",
+      "VALOR DA ADESÃO (1ª MENSALIDADE): {{valor_adesao}}",
+      "31.3. O valor total anual do FLIX SOLAR é calculado pela multiplicação do valor por painel (por limpeza), definido pela CONTRATADA e vigente no momento da contratação, pela quantidade de painéis informada e pela quantidade de limpezas anuais escolhida. A primeira mensalidade corresponde à ADESÃO, equivalente ao valor de 10 (dez) painéis, e o saldo restante será dividido em 11 (onze) parcelas mensais. A regra da adesão aplica-se tanto a novas contratações quanto a mudanças de plano para o FLIX SOLAR.",
       "31.4. As limpezas serão agendadas pelo CONTRATANTE por meio dos canais disponibilizados pela SERVICEFLIX, respeitada a quantidade de limpezas anuais contratada e a disponibilidade operacional da CONTRATADA.",
       "31.5. A execução da limpeza depende de condições seguras de acesso aos painéis. Quando os painéis estiverem instalados em telhados ou locais elevados, aplicam-se as regras deste contrato sobre equipamentos especiais, estruturas de acesso e segurança do local (Cláusulas 7ª, 8ª e 21ª).",
       "31.6. Não estão incluídos no FLIX SOLAR, salvo contratação específica: reparos, manutenção elétrica, troca de componentes, desinstalação ou reinstalação de painéis, serviços de telhado e quaisquer serviços que não sejam a limpeza dos painéis.",
       "31.7. Caso a quantidade real de painéis no local seja diferente da informada pelo CONTRATANTE, a CONTRATADA poderá ajustar o valor da assinatura ou readequar a contratação, mediante prévia comunicação ao CONTRATANTE.",
+      "31.8. PROMOÇÃO ESPECIAL: após a contratação do FLIX SOLAR não há período de carência — as limpezas contratadas podem ser agendadas desde o início da vigência.",
     ],
   },
   {

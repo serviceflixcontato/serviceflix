@@ -34,6 +34,7 @@ export type ContractSolarData = {
   panels?: number | null;
   cleanings?: number | null;
   per_panel_label?: string | null;
+  adesao_label?: string | null;
 };
 
 function formatDateTimeBR(value?: string | null) {
@@ -104,5 +105,6 @@ export function buildContractFields(
     quantidade_paineis: solar.panels ? String(solar.panels) : "",
     limpezas_ano: solar.cleanings ? String(solar.cleanings) : "",
     valor_por_painel: solar.per_panel_label ?? "",
+    valor_adesao: solar.adesao_label ?? "",
   };
 }

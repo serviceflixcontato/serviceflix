@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatBRL } from "@/hooks/use-plan-prices";
-import { solarAnnualTotal, solarMonthlyTotal } from "@/lib/plans";
+import { SOLAR_ADESAO_PANEIS, solarAdesao, solarAnnualTotal, solarMonthlyTotal } from "@/lib/plans";
 
 export function parseSolar(panels: string, cleanings: string) {
   const p = Number.parseInt(panels, 10);
@@ -68,8 +68,16 @@ export function SolarOptions({
           {ready ? formatBRL(solarAnnualTotal(perPanelCents, valid.panels!, valid.cleanings!)) : "—"}
         </p>
         <p className="text-base font-semibold">
-          Mensalidade:{" "}
+          1ª mensalidade (adesão, equivale a {SOLAR_ADESAO_PANEIS} painéis):{" "}
+          {perPanelCents != null ? formatBRL(solarAdesao(perPanelCents)) : "—"}
+        </p>
+        <p className="text-base font-semibold">
+          Mais 11 parcelas de:{" "}
           {ready ? formatBRL(solarMonthlyTotal(perPanelCents, valid.panels!, valid.cleanings!)) : "—"}
+        </p>
+        <p className="rounded-lg border border-primary/40 bg-primary/5 p-2 text-xs font-medium text-foreground">
+          Promoção especial: após a contratação não há carência — as limpezas já podem ser
+          agendadas.
         </p>
       </div>
     </div>

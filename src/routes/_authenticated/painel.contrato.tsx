@@ -187,6 +187,7 @@ function ContractCard({
               panels: Number(contract.fields?.["quantidade_paineis"]) || null,
               cleanings: Number(contract.fields?.["limpezas_ano"]) || null,
               per_panel_label: contract.fields?.["valor_por_painel"] ?? null,
+              adesao_label: contract.fields?.["valor_adesao"] ?? null,
             }
           : {},
       )

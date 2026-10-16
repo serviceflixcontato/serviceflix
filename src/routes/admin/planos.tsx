@@ -110,7 +110,7 @@ function ValoresPlanos() {
               {plan.slug === "personalizado"
                 ? "O cliente escolhe os dias; a mensalidade é diária × dias."
                 : plan.slug === "solar"
-                  ? "O cliente informa painéis e limpezas/ano; mensalidade = valor × painéis × limpezas ÷ 12."
+                  ? "O cliente informa painéis e limpezas/ano. 1ª mensalidade = adesão (10 × valor por painel); saldo do ano em 11 parcelas."
                   : plan.frequency}
             </p>
 
