@@ -34,6 +34,7 @@ export type ContractSolarData = {
   panels?: number | null;
   cleanings?: number | null;
   per_panel_label?: string | null;
+  adesao_label?: string | null;
 };
 
 function formatDateTimeBR(value?: string | null) {
