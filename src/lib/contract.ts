@@ -354,6 +354,7 @@ export const CONTRACT_SECTIONS: ContractSection[] = [
       "31.5. A execução da limpeza depende de condições seguras de acesso aos painéis. Quando os painéis estiverem instalados em telhados ou locais elevados, aplicam-se as regras deste contrato sobre equipamentos especiais, estruturas de acesso e segurança do local (Cláusulas 7ª, 8ª e 21ª).",
       "31.6. Não estão incluídos no FLIX SOLAR, salvo contratação específica: reparos, manutenção elétrica, troca de componentes, desinstalação ou reinstalação de painéis, serviços de telhado e quaisquer serviços que não sejam a limpeza dos painéis.",
       "31.7. Caso a quantidade real de painéis no local seja diferente da informada pelo CONTRATANTE, a CONTRATADA poderá ajustar o valor da assinatura ou readequar a contratação, mediante prévia comunicação ao CONTRATANTE.",
+      "31.8. PROMOÇÃO ESPECIAL: após a contratação do FLIX SOLAR não há período de carência — as limpezas contratadas podem ser agendadas desde o início da vigência.",
     ],
   },
   {

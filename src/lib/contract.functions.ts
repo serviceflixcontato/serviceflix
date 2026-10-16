@@ -65,12 +65,13 @@ async function resolveSolarPlan(
     .select("price_cents")
     .eq("slug", "solar")
     .maybeSingle();
-  const { solarPlanName, solarMonthlyTotal } = await import("@/lib/plans");
+  const { solarPlanName, solarMonthlyTotal, solarAdesao } = await import("@/lib/plans");
   const perPanel = typeof price?.price_cents === "number" ? price.price_cents : null;
   return {
     name: solarPlanName(panels, cleanings),
     amount: perPanel == null ? null : solarMonthlyTotal(perPanel, panels, cleanings),
     per_panel_cents: perPanel,
+    adesao_cents: perPanel == null ? null : solarAdesao(perPanel),
   };
 }
 
