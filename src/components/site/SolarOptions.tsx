@@ -67,9 +67,11 @@ export function SolarOptions({
           Total no ano:{" "}
           {ready ? formatBRL(solarAnnualTotal(perPanelCents, valid.panels!, valid.cleanings!)) : "—"}
         </p>
-        <p className="text-base font-semibold">
+        <p className="text-lg font-bold">
           1ª mensalidade (adesão, equivale a {SOLAR_ADESAO_PANEIS} painéis):{" "}
-          {perPanelCents != null ? formatBRL(solarAdesao(perPanelCents)) : "—"}
+          <span className="text-xl font-extrabold text-primary">
+            {perPanelCents != null ? formatBRL(solarAdesao(perPanelCents)) : "—"}
+          </span>
         </p>
         <p className="text-base font-semibold">
           Mais 11 parcelas de:{" "}
