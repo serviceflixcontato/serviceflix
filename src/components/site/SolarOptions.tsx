@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatBRL } from "@/hooks/use-plan-prices";
-import { solarAnnualTotal, solarMonthlyTotal } from "@/lib/plans";
+import { SOLAR_ADESAO_PANEIS, solarAdesao, solarAnnualTotal, solarMonthlyTotal } from "@/lib/plans";
 
 export function parseSolar(panels: string, cleanings: string) {
   const p = Number.parseInt(panels, 10);

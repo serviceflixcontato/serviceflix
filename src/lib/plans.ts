@@ -127,9 +127,17 @@ export function solarAnnualTotal(perPanelCents: number, panels: number, cleaning
   return Math.round(perPanelCents) * Math.round(panels) * Math.round(cleaningsPerYear);
 }
 
-/** Flix Solar: mensalidade = total anual ÷ 12. */
+/** Flix Solar: a adesão (1ª mensalidade) equivale sempre a 10 painéis. */
+export const SOLAR_ADESAO_PANEIS = 10;
+
+export function solarAdesao(perPanelCents: number) {
+  return Math.round(perPanelCents) * SOLAR_ADESAO_PANEIS;
+}
+
+/** Flix Solar: mensalidade = (total anual − adesão) ÷ 11 meses. */
 export function solarMonthlyTotal(perPanelCents: number, panels: number, cleaningsPerYear: number) {
-  return Math.round(solarAnnualTotal(perPanelCents, panels, cleaningsPerYear) / 12);
+  const saldo = solarAnnualTotal(perPanelCents, panels, cleaningsPerYear) - solarAdesao(perPanelCents);
+  return Math.round(Math.max(saldo, 0) / 11);
 }
 
 export function solarPlanName(panels: number, cleaningsPerYear: number) {
